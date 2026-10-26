@@ -1,8 +1,7 @@
-import { env, createLogger, createRedis, pingRedis } from "@wasanni/kit";
+import { env, createLogger, createRedis, isRedisReady } from "@wasanni/kit";
+import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
 import { createDb, pingDatabase } from "@wasanni/db";
 import { createApp } from "./app.ts";
-import { DOCS_PATH } from "./constants.ts";
-import { AUTH_REFERENCE_PATH } from "./modules/auth/constants.ts";
 import type { AppDeps } from "./types.ts";
 import pkg from "../package.json" with { type: "json" };
 
@@ -17,6 +16,22 @@ const logger = createLogger({
 const { db, sql } = createDb(cfg.DATABASE_URL, { max: 20 });
 const redis = createRedis(cfg.REDIS_URL);
 
+let redisWarned = false;
+
+redis.on("error", (error: Error) => {
+  if (redisWarned) {
+    logger.debug("redis reconnect failed", { err: error.message });
+    return;
+  }
+  redisWarned = true;
+  logger.warn("redis unavailable", { err: error.message });
+});
+
+redis.on("ready", () => {
+  redisWarned = false;
+  logger.info("redis connected");
+});
+
 const deps: AppDeps = {
   logger,
   version: pkg.version,
@@ -27,7 +42,7 @@ const deps: AppDeps = {
   ready: async () => {
     const [database, redisOk] = await Promise.all([
       pingDatabase(sql).catch(() => false),
-      pingRedis(redis).catch(() => false),
+      Promise.resolve(isRedisReady(redis)),
     ]);
     return { database, redis: redisOk };
   },
@@ -42,7 +57,7 @@ logger.info("api listening", {
   port: cfg.PORT,
   env: cfg.NODE_ENV,
   docs: new URL(DOCS_PATH, apiOrigin).href,
-  authReference: new URL(AUTH_REFERENCE_PATH, apiOrigin).href,
+  openApi: `${new URL(AUTH_ROUTE_PREFIX, apiOrigin).href}/open-api/generate-schema`,
 });
 
 let shuttingDown = false;

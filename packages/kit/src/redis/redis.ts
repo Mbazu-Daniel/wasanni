@@ -1,6 +1,8 @@
 import IORedis from "ioredis";
 import type { Redis } from "./types.ts";
 
+const REDIS_CONNECT_TIMEOUT_MS = 5000;
+
 export function createRedis(
   url: string,
   opts?: { maxRetriesPerRequest?: number | null; keyPrefix?: string },
@@ -10,9 +12,10 @@ export function createRedis(
     ...(opts?.keyPrefix ? { keyPrefix: opts.keyPrefix } : {}),
     enableReadyCheck: true,
     lazyConnect: false,
+    connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
   });
 }
 
-export async function pingRedis(client: Redis): Promise<boolean> {
-  return (await client.ping()) === "PONG";
+export function isRedisReady(client: Redis): boolean {
+  return client.status === "ready";
 }

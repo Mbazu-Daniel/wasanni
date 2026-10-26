@@ -54,7 +54,7 @@ generated SQL by hand and commit it.
 | `apps/api` | Elysia HTTP server, `/api/v1` routes, OpenAPI document, composition root |
 | `apps/worker` | Background jobs |
 | `packages/contracts` | Entity vocabulary and wire schemas. Depends on `elysia` only. |
-| `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the workspace scope |
+| `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope |
 | `packages/db` | Drizzle schema, migrations, the Postgres adapter |
 
 Every module in `packages/` and `apps/` is a folder holding:
@@ -76,18 +76,28 @@ and the type it derives are one declaration, so `model.ts` holds both. See
 
 ```
 apps/api/src/modules/auth/
-  index.ts       controller — routing, validation, responses, the auth macro
-  auth.ts        the Better Auth instance, built from the feature's deps
+  index.ts       controller — mounts the handler, resolves the session
   model.ts       schemas, grouped, types derived from them
-  constants.ts   the route prefix
+  openapi.ts     the Better Auth half of the OpenAPI document
+
+apps/api/src/modules/organization/
+  index.ts       controller — the caller's organizations and invitations
+  service.ts    reads backed by @wasanni/db's membership module
+
+apps/api/src/modules/members/
+  index.ts       the member lifecycle under /organizations/:organizationId/members
+  service.ts     member reads and the display-name write
 ```
 
-One Elysia instance is one controller. `Context` is never passed to a function.
-Schemas come from `t` in `elysia`. `auth` is the first feature and is the shape
-the rest get. Full conventions: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+`apps/api/src/config/better-auth.ts` holds the Better Auth instance and every
+plugin, outside the feature folders because three places read it.
 
-`auth` mounts Better Auth at `/api/v1/auth` for sign-up, sign-in, magic link,
-password reset and the Google and GitHub callbacks, and answers
+One Elysia instance is one controller. `Context` is never passed to a function.
+Schemas come from `t` in `elysia`. `auth`, `organization` and `members` are the features. Full conventions:
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+The auth module mounts Better Auth at `/api/v1/auth` for sign-up, sign-in, password
+reset and the Google and GitHub callbacks, and answers
 `GET /api/v1/auth/me` from the session it resolves. With `LOG_LEVEL=debug` and
 no transport configured, the mail it would send is written to the API log as
 `mail.dev`, so a local sign-up can be verified from there. The module refuses to
@@ -102,22 +112,25 @@ marketing site is a separate origin and is not versioned by this API at all.
 |---|---|
 | `/api/v1/...` | client routes, one segment per resource |
 | `/api/v1/auth/...` | Better Auth and `GET /me` |
+| `/api/v1/organizations` | the caller's organizations |
+| `/api/v1/organizations/:organizationId/...` | every tenant-scoped resource |
 | `/docs` | one OpenAPI document describing all of the above |
-| `/api/v1/auth/reference` | Better Auth's own page for its 32 endpoints |
+| `/api/v1/auth/reference` | Better Auth's own page for its endpoints |
 | `/healthz`, `/readyz` | the ops probes |
 
-`/docs` carries better-auth's endpoints, not just ours: the auth module
-contributes them through `openapi()`'s `generateOpenAPISchema`, each key prefixed
-with `/api/v1/auth`, so `curl localhost:9000/docs/json` lists every sign-up,
-sign-in, magic-link and OAuth route with its operation id, request body and
-security scheme. The startup log prints both URLs.
+`/docs` carries better-auth's endpoints — 22 of the organization plugin's among
+them — not just ours: the auth module contributes them through `openAPI()`'s
+`generateOpenAPISchema`, each key prefixed with `/api/v1/auth`, so
+`curl localhost:9000/docs/json` lists every sign-up,
+sign-in, email-verification and OAuth route with its operation id, request body
+and security scheme. The startup log prints both URLs.
 
 ## Conventions
 
 - Every module is `domain / app / adapters`. Arrows point inward. The domain
   never imports Elysia or Drizzle.
-- Every tenant query passes through `workspaceScope(...)`, in `@wasanni/kit`.
-  An empty workspace ID throws. `scopeTo(...)` in `@wasanni/db` is the adapter
+- Every tenant query passes through `organizationScope(...)`, in `@wasanni/kit`.
+  An empty organization ID throws. `scopeTo(...)` in `@wasanni/db` is the adapter
   that applies it.
 - Public IDs are `prefix_` + 16 Crockford base32 characters. Internal keys
   never leave the database. The prefixes live in `@wasanni/contracts`, not in

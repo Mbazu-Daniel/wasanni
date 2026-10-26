@@ -1,17 +1,22 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, openAPI } from "better-auth/plugins";
+import { openAPI, organization } from "better-auth/plugins";
 import * as schema from "@wasanni/db/schema";
-import { newId, sendDevEmail } from "@wasanni/kit";
+import { readMembership } from "@wasanni/db";
+import { internal, newId, sendDevEmail } from "@wasanni/kit";
 import type { IdPrefix, SendEmail } from "@wasanni/kit";
-import { AUTH_ROUTE_PREFIX } from "./constants.ts";
-import type { ModuleDeps } from "../../types.ts";
+import { AUTH_ROUTE_PREFIX } from "../constants.ts";
+import type { ModuleDeps } from "../types.ts";
+import { ac, roles } from "../permissions.ts";
 
 const ID_PREFIX_BY_MODEL: Record<string, IdPrefix> = {
   user: "usr",
   session: "ses",
   account: "acc",
   verification: "ver",
+  organization: "wsp",
+  member: "wsm",
+  invitation: "ver",
 };
 
 function credentialsFor(
@@ -22,13 +27,14 @@ function credentialsFor(
   return { clientId, clientSecret };
 }
 
-export function createAuth(deps: ModuleDeps) {
+export function createBetterAuth(deps: ModuleDeps) {
   const { db, env } = deps;
 
-  const sendMail: SendEmail = deps.sendEmail ?? ((payload) => sendDevEmail(payload, deps.logger));
+  if (env.NODE_ENV === "production" && deps.sendEmail === undefined) {
+    throw internal("better-auth refuses to boot in production without an email transport");
+  }
 
-  const sendSignInLink = (email: string, url: string): Promise<void> =>
-    sendMail({ to: email, subject: "Your Wasanni sign-in link", url, purpose: "magic_link" });
+  const sendMail: SendEmail = deps.sendEmail ?? ((payload) => sendDevEmail(payload, deps.logger));
 
   const sendConfirmationLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Confirm your Wasanni email", url, purpose: "verify" });
@@ -44,6 +50,7 @@ export function createAuth(deps: ModuleDeps) {
     basePath: AUTH_ROUTE_PREFIX,
     baseURL: env.BETTER_AUTH_URL,
     secret: env.SESSION_SECRET,
+
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: {
@@ -51,26 +58,34 @@ export function createAuth(deps: ModuleDeps) {
         session: schema.session,
         account: schema.account,
         verification: schema.verification,
+        organization: schema.organization,
+        member: schema.member,
+        invitation: schema.invitation,
       },
     }),
+
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
       sendResetPassword: async ({ user, url }) => sendPasswordResetLink(user.email, url),
     },
+
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => sendConfirmationLink(user.email, url),
     },
+
     socialProviders: {
       ...(google ? { google } : {}),
       ...(github ? { github } : {}),
     },
+
     account: {
       accountLinking: {
         enabled: true,
         trustedProviders: ["google", "github"],
       },
     },
+
     advanced: {
       database: {
         generateId: ({ model }) => {
@@ -80,13 +95,42 @@ export function createAuth(deps: ModuleDeps) {
         joins: true,
       },
     },
+
     plugins: [
-      magicLink({
-        sendMagicLink: async ({ email, url }) => sendSignInLink(email, url),
+      organization({
+        ac,
+        roles,
+        allowUserToCreateOrganization: (user) => user.emailVerified === true,
+        requireEmailVerificationOnInvitation: true,
+        invitationExpiresIn: 60 * 60 * 24 * 7,
+        cancelPendingInvitationsOnReinvite: true,
+        sendInvitationEmail: async ({ email, organization: invited, inviter, invitation }) => {
+          const membership = await readMembership(db, invited.id, inviter.user.id);
+          const inviterName = membership?.displayName ?? inviter.user.name;
+          const url = `${env.PUBLIC_WEB_ORIGIN}/accept-invitation/${invitation.id}`;
+
+          await sendMail({
+            to: email,
+            subject: `${inviterName} invited you to ${invited.name}`,
+            url,
+            purpose: "invitation",
+          });
+        },
+        schema: {
+          member: {
+            additionalFields: {
+              displayName: {
+                type: "string",
+                required: false,
+                input: true,
+              },
+            },
+          },
+        },
       }),
       openAPI(),
     ],
   });
 }
 
-export type Auth = ReturnType<typeof createAuth>;
+export type BetterAuth = ReturnType<typeof createBetterAuth>;

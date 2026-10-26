@@ -1,10 +1,10 @@
 import type { OpenAPIV3_1 } from "openapi-types";
-import { AUTH_ROUTE_PREFIX } from "./constants.ts";
-import type { Auth } from "./auth.ts";
+import { AUTH_ROUTE_PREFIX } from "../../constants.ts";
+import type { BetterAuth } from "../../config/better-auth.ts";
 
 export type AuthApiDocument = Pick<OpenAPIV3_1.Document, "paths" | "components">;
 
-export async function authApiDocument(auth: Auth): Promise<AuthApiDocument> {
+export async function authApiDocument(auth: BetterAuth): Promise<AuthApiDocument> {
   const generated = await auth.api.generateOpenAPISchema();
   const separator = AUTH_ROUTE_PREFIX.endsWith("/") ? "" : "/";
 
