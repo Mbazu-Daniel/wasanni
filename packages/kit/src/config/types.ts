@@ -12,8 +12,10 @@ export type Env = {
   readonly DATABASE_URL: string;
   readonly REDIS_URL: string;
   readonly SESSION_SECRET: string;
-  readonly API_KEY_PEPPER: string;
-  readonly REALTIME_JWT_SECRET: string;
   readonly PUBLIC_WEB_ORIGIN: string;
-  readonly COOKIE_DOMAIN: string | undefined;
+  readonly BETTER_AUTH_URL: string;
+  readonly GOOGLE_CLIENT_ID: string | undefined;
+  readonly GOOGLE_CLIENT_SECRET: string | undefined;
+  readonly GITHUB_CLIENT_ID: string | undefined;
+  readonly GITHUB_CLIENT_SECRET: string | undefined;
 };

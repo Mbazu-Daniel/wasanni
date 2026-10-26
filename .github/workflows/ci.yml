@@ -37,8 +37,6 @@ jobs:
       DATABASE_URL: postgres://wasanni:wasanni@localhost:5432/wasanni_test
       REDIS_URL: redis://localhost:6379
       SESSION_SECRET: ci-session-secret-ci-session-secret-0001
-      API_KEY_PEPPER: ci-api-key-pepper-ci-api-key-pepper-0001
-      REALTIME_JWT_SECRET: ci-realtime-secret-ci-realtime-secret-0001
 
     steps:
       - uses: actions/checkout@v4

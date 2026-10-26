@@ -6,6 +6,10 @@ export * from "./errors/types.ts";
 export * from "./errors/constants.ts";
 export * from "./errors/errors.ts";
 
+export * from "./email/types.ts";
+export * from "./email/constants.ts";
+export * from "./email/email.ts";
+
 export * from "./httpx/types.ts";
 export * from "./httpx/constants.ts";
 export * from "./httpx/limits.ts";
@@ -24,7 +28,6 @@ export * from "./redis/redis.ts";
 export * from "./scope/types.ts";
 export * from "./scope/scope.ts";
 
-export * from "./security/types.ts";
 export * from "./security/constants.ts";
 export * from "./security/security.ts";
 

@@ -84,20 +84,28 @@ function readEnum<T extends string>(
   return value as T;
 }
 
+function readOptional(raw: RawEnv, key: string): string | undefined {
+  return raw[key]?.trim() || undefined;
+}
+
 export function parseEnv(raw: RawEnv): Env {
   const problems = new Problems();
+
+  const port = readPort(raw, problems, "PORT");
 
   const parsed: Env = {
     NODE_ENV: readEnum(raw, problems, "NODE_ENV", NODE_ENVS, DEFAULT_NODE_ENV),
     LOG_LEVEL: readEnum(raw, problems, "LOG_LEVEL", LOG_LEVELS, "info"),
-    PORT: readPort(raw, problems, "PORT"),
+    PORT: port,
     DATABASE_URL: readString(raw, problems, "DATABASE_URL"),
     REDIS_URL: readString(raw, problems, "REDIS_URL"),
     SESSION_SECRET: readSecret(raw, problems, "SESSION_SECRET"),
-    API_KEY_PEPPER: readSecret(raw, problems, "API_KEY_PEPPER"),
-    REALTIME_JWT_SECRET: readSecret(raw, problems, "REALTIME_JWT_SECRET"),
     PUBLIC_WEB_ORIGIN: readString(raw, problems, "PUBLIC_WEB_ORIGIN", DEFAULT_WEB_ORIGIN),
-    COOKIE_DOMAIN: raw.COOKIE_DOMAIN?.trim() || undefined,
+    BETTER_AUTH_URL: readString(raw, problems, "BETTER_AUTH_URL", `http://localhost:${port}`),
+    GOOGLE_CLIENT_ID: readOptional(raw, "GOOGLE_CLIENT_ID"),
+    GOOGLE_CLIENT_SECRET: readOptional(raw, "GOOGLE_CLIENT_SECRET"),
+    GITHUB_CLIENT_ID: readOptional(raw, "GITHUB_CLIENT_ID"),
+    GITHUB_CLIENT_SECRET: readOptional(raw, "GITHUB_CLIENT_SECRET"),
   };
 
   if (problems.invalid) throw problems.report();
@@ -110,8 +118,4 @@ let cached: Env | undefined;
 export function env(): Env {
   cached ??= parseEnv({ ...Bun.env });
   return cached;
-}
-
-export function resetEnvCache(): void {
-  cached = undefined;
 }

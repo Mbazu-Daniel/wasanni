@@ -3,11 +3,17 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { AppError } from "@wasanni/kit";
 import { toErrorBody } from "@wasanni/contracts";
+import { authModule } from "./modules/auth/index.ts";
+import { AUTH_ROUTE_PREFIX } from "./modules/auth/constants.ts";
+import { DOCS_PATH } from "./constants.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { requestContext, requestContextOf } from "./plugins/request-context.ts";
-import type { AppDeps } from "./types.ts";
+import type { AppDeps, ModuleDeps } from "./types.ts";
 
-export function createApp(deps: AppDeps) {
+export async function createApp(deps: AppDeps) {
+  const moduleDeps: ModuleDeps = { db: deps.db, env: deps.env, logger: deps.logger };
+  const auth = authModule(moduleDeps);
+
   return new Elysia({ name: "wasanni-api" })
     .use(requestContext(deps.logger))
     .use(
@@ -16,13 +22,15 @@ export function createApp(deps: AppDeps) {
         credentials: true,
         methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
-        exposeHeaders: ["X-Request-Id"],
+        exposeHeaders: ["X-Request-Id", "Set-Cookie"],
       }),
     )
     .use(
       openapi({
-        path: "/docs",
+        path: DOCS_PATH,
+        exclude: { paths: [`${AUTH_ROUTE_PREFIX}/*`] },
         documentation: {
+          ...(await auth.apiDocument()),
           info: {
             title: "Wasanni API",
             version: deps.version,
@@ -31,6 +39,7 @@ export function createApp(deps: AppDeps) {
         },
       }),
     )
+    .use(auth.plugin)
     .use(healthRoutes(deps))
     .onError(({ error, code: lifecycleCode, set, request }) => {
       const { requestId } = requestContextOf(request);

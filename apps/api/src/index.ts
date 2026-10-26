@@ -1,6 +1,8 @@
 import { env, createLogger, createRedis, pingRedis } from "@wasanni/kit";
 import { createDb, pingDatabase } from "@wasanni/db";
 import { createApp } from "./app.ts";
+import { DOCS_PATH } from "./constants.ts";
+import { AUTH_REFERENCE_PATH } from "./modules/auth/constants.ts";
 import type { AppDeps } from "./types.ts";
 import pkg from "../package.json" with { type: "json" };
 
@@ -12,7 +14,7 @@ const logger = createLogger({
   bindings: { service: "api" },
 });
 
-const { sql } = createDb(cfg.DATABASE_URL, { max: 20 });
+const { db, sql } = createDb(cfg.DATABASE_URL, { max: 20 });
 const redis = createRedis(cfg.REDIS_URL);
 
 const deps: AppDeps = {
@@ -20,6 +22,8 @@ const deps: AppDeps = {
   version: pkg.version,
   startedAt: Date.now(),
   corsOrigins: [cfg.PUBLIC_WEB_ORIGIN],
+  db,
+  env: cfg,
   ready: async () => {
     const [database, redisOk] = await Promise.all([
       pingDatabase(sql).catch(() => false),
@@ -29,10 +33,17 @@ const deps: AppDeps = {
   },
 };
 
-const app = createApp(deps);
+const app = await createApp(deps);
 
 app.listen(cfg.PORT);
-logger.info("api listening", { port: cfg.PORT, env: cfg.NODE_ENV });
+
+const apiOrigin = new URL(cfg.BETTER_AUTH_URL);
+logger.info("api listening", {
+  port: cfg.PORT,
+  env: cfg.NODE_ENV,
+  docs: new URL(DOCS_PATH, apiOrigin).href,
+  authReference: new URL(AUTH_REFERENCE_PATH, apiOrigin).href,
+});
 
 let shuttingDown = false;
 

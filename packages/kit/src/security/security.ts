@@ -1,13 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import {
-  API_KEY_PREFIX,
-  API_KEY_PREFIX_BYTES,
-  API_KEY_SECRET_BYTES,
-  ARGON,
-} from "./constants.ts";
-import type { GeneratedApiKey } from "./types.ts";
-
-const API_KEY_RE = new RegExp(`^${API_KEY_PREFIX}_([0-9a-f]{${API_KEY_PREFIX_BYTES * 2}})_`);
+import { ARGON } from "./constants.ts";
 
 export function newOpaqueToken(bytes = 32): string {
   return randomBytes(bytes).toString("base64url");
@@ -39,21 +31,6 @@ export async function dummyVerify(plain: string): Promise<false> {
   dummyHash ??= await hashPassword(newOpaqueToken(16));
   await Bun.password.verify(plain, dummyHash).catch(() => false);
   return false;
-}
-
-export function generateApiKey(pepper: string): GeneratedApiKey {
-  const prefix = randomBytes(API_KEY_PREFIX_BYTES).toString("hex");
-  const secret = randomBytes(API_KEY_SECRET_BYTES).toString("base64url");
-  const full = `${API_KEY_PREFIX}_${prefix}_${secret}`;
-  return { full, prefix, hash: hashApiKey(full, pepper) };
-}
-
-export function hashApiKey(full: string, pepper: string): string {
-  return createHmac("sha256", pepper).update(full, "utf8").digest("hex");
-}
-
-export function apiKeyPrefix(full: string): string | null {
-  return API_KEY_RE.exec(full)?.[1] ?? null;
 }
 
 export function hmacSign(
