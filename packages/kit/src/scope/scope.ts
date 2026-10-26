@@ -2,12 +2,12 @@ import { badRequest } from "../errors/errors.ts";
 import type { Principal } from "../tenancy/types.ts";
 import type { Scope } from "./types.ts";
 
-export function workspaceScope(principal: Principal | null | undefined): Scope {
-  const workspaceId = principal?.workspaceId.trim() ?? "";
+export function organizationScope(principal: Principal | null | undefined): Scope {
+  const organizationId = principal?.organizationId.trim() ?? "";
 
-  if (workspaceId === "") {
-    throw badRequest("workspace scope requires a principal with a workspace");
+  if (organizationId === "") {
+    throw badRequest("organization scope requires a principal with an organization");
   }
 
-  return { workspaceId };
+  return { organizationId };
 }

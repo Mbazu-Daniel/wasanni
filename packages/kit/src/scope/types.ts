@@ -1,1 +1,1 @@
-export type Scope = { readonly workspaceId: string };
+export type Scope = { readonly organizationId: string };
