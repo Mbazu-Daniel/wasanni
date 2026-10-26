@@ -1,0 +1,76 @@
+import { cors } from "@elysiajs/cors";
+import { openapi } from "@elysiajs/openapi";
+import { Elysia } from "elysia";
+import { AppError } from "@wasanni/kit";
+import { toEnvelope } from "@wasanni/contracts";
+import { healthRoutes } from "./routes/health.ts";
+import { requestContext, requestContextOf } from "./plugins/request-context.ts";
+import type { AppDeps } from "./types.ts";
+
+export function createApp(deps: AppDeps) {
+  return new Elysia({ name: "wasanni-api" })
+    .use(requestContext(deps.logger))
+    .use(
+      cors({
+        origin: deps.corsOrigins,
+        credentials: true,
+        methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+        exposeHeaders: ["X-Request-Id"],
+      }),
+    )
+    .use(
+      openapi({
+        path: "/docs",
+        documentation: {
+          info: {
+            title: "Wasanni API",
+            version: deps.version,
+            description: "Sessions, scores, tournaments, and replays for games.",
+          },
+        },
+      }),
+    )
+    .use(healthRoutes(deps))
+    .onError(({ error, code: lifecycleCode, set, request }) => {
+      const { requestId } = requestContextOf(request);
+
+      if (error instanceof AppError) {
+        set.status = error.status;
+        return toEnvelope(error, requestId);
+      }
+
+      if (lifecycleCode === "VALIDATION") {
+        set.status = 422;
+        return toEnvelope(
+          {
+            code: "bad_request",
+            message: "request validation failed",
+            details: (error as { all?: unknown }).all,
+          },
+          requestId,
+        );
+      }
+
+      if (lifecycleCode === "NOT_FOUND") {
+        set.status = 404;
+        return toEnvelope({ code: "not_found", message: "route not found" }, requestId);
+      }
+
+      deps.logger.error("unhandled error", { err: error, requestId });
+      set.status = 500;
+      return toEnvelope({ code: "internal", message: "internal error" }, requestId);
+    })
+    .onAfterResponse(({ request, set }) => {
+      const { requestId, startedAt } = requestContextOf(request);
+      deps.logger.info("http", {
+        requestId,
+        method: request.method,
+        path: new URL(request.url).pathname,
+        status: set.status ?? 200,
+        durationMs: Math.round(performance.now() - startedAt),
+      });
+    });
+}
+
+export type App = ReturnType<typeof createApp>;
