@@ -1,24 +1,24 @@
 import { Elysia } from "elysia";
-import { EnvelopeModel } from "@wasanni/contracts";
+import { HealthModel, ReadyModel } from "@wasanni/contracts";
 import type { AppDeps } from "../types.ts";
 
 export const healthRoutes = (deps: AppDeps) =>
   new Elysia({ name: "health" })
     .get(
       "/healthz",
-      (): EnvelopeModel["health"] => ({
+      (): HealthModel => ({
         status: "ok",
         version: deps.version,
         uptimeSeconds: Math.round((Date.now() - deps.startedAt) / 1000),
       }),
       {
         detail: { tags: ["ops"], summary: "Liveness probe" },
-        response: { 200: EnvelopeModel.health },
+        response: { 200: HealthModel },
       },
     )
     .get(
       "/readyz",
-      async ({ set }): Promise<EnvelopeModel["ready"]> => {
+      async ({ set }): Promise<ReadyModel> => {
         const checks = await deps.ready();
         const healthy = checks.database && checks.redis;
         if (!healthy) set.status = 503;
@@ -26,6 +26,6 @@ export const healthRoutes = (deps: AppDeps) =>
       },
       {
         detail: { tags: ["ops"], summary: "Readiness probe" },
-        response: { 200: EnvelopeModel.ready, 503: EnvelopeModel.ready },
+        response: { 200: ReadyModel, 503: ReadyModel },
       },
     );

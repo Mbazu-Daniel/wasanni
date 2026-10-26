@@ -2,7 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { AppError } from "@wasanni/kit";
-import { toEnvelope } from "@wasanni/contracts";
+import { toErrorBody } from "@wasanni/contracts";
 import { healthRoutes } from "./routes/health.ts";
 import { requestContext, requestContextOf } from "./plugins/request-context.ts";
 import type { AppDeps } from "./types.ts";
@@ -37,12 +37,12 @@ export function createApp(deps: AppDeps) {
 
       if (error instanceof AppError) {
         set.status = error.status;
-        return toEnvelope(error, requestId);
+        return toErrorBody(error, requestId);
       }
 
       if (lifecycleCode === "VALIDATION") {
         set.status = 422;
-        return toEnvelope(
+        return toErrorBody(
           {
             code: "bad_request",
             message: "request validation failed",
@@ -54,12 +54,12 @@ export function createApp(deps: AppDeps) {
 
       if (lifecycleCode === "NOT_FOUND") {
         set.status = 404;
-        return toEnvelope({ code: "not_found", message: "route not found" }, requestId);
+        return toErrorBody({ code: "not_found", message: "route not found" }, requestId);
       }
 
       deps.logger.error("unhandled error", { err: error, requestId });
       set.status = 500;
-      return toEnvelope({ code: "internal", message: "internal error" }, requestId);
+      return toErrorBody({ code: "internal", message: "internal error" }, requestId);
     })
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
