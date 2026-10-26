@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wasanni
+          POSTGRES_PASSWORD: wasanni
+          POSTGRES_DB: wasanni_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wasanni"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://wasanni:wasanni@localhost:5432/wasanni_test
+      REDIS_URL: redis://localhost:6379
+      SESSION_SECRET: ci-session-secret-ci-session-secret-0001
+      API_KEY_PEPPER: ci-api-key-pepper-ci-api-key-pepper-0001
+      REALTIME_JWT_SECRET: ci-realtime-secret-ci-realtime-secret-0001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test

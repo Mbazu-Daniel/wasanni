@@ -1,0 +1,25 @@
+{
+  "name": "wasanni",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run dev:api & bun run dev:worker",
+    "dev:api": "bun --watch apps/api/src/index.ts",
+    "dev:worker": "bun --watch apps/worker/src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "db:generate": "bun run --cwd packages/db generate",
+    "db:migrate": "bun run --cwd packages/db migrate",
+    "db:studio": "bun run --cwd packages/db studio",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "ci": "bun run typecheck && bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "drizzle-kit": "^0.28.1",
+    "drizzle-orm": "^0.36.4",
+    "typescript": "^5.6.3"
+  }
+}
