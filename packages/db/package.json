@@ -10,7 +10,7 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "bun src/cli-migrate.ts",
+    "migrate": "bun --env-file=../../.env src/cli-migrate.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
