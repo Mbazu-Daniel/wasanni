@@ -132,14 +132,11 @@ and security scheme. The startup log prints both URLs.
 - Every tenant query passes through `organizationScope(...)`, in `@wasanni/kit`.
   An empty organization ID throws. `scopeTo(...)` in `@wasanni/db` is the adapter
   that applies it.
-- Public IDs are `prefix_` + 16 Crockford base32 characters. Internal keys
-  never leave the database. The prefixes live in `@wasanni/contracts`, not in
-  the ID generator.
+- Public IDs are uuid v7. Internal keys never leave the database.
 - Error responses are serialized by `toErrorBody(...)`. Never built by hand.
 - Runtime schemas come from `t` in `elysia`. `@sinclair/typebox` is a supported
   peer dependency of Elysia, so import it directly only when `t` lacks what you
   need — never as a rival schema dialect.
-  A prefix is a noun; if it needs a verb to explain it, it is two entities.
 - Secrets are hashed or HMAC'd. Plaintext is never stored and never logged.
 - Schema changes are generated SQL files, reviewed by hand, and applied against
   a real Postgres in CI.

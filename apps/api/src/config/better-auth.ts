@@ -4,20 +4,10 @@ import { openAPI, organization } from "better-auth/plugins";
 import * as schema from "@wasanni/db/schema";
 import { readMembership } from "@wasanni/db";
 import { internal, newId, sendDevEmail } from "@wasanni/kit";
-import type { IdPrefix, SendEmail } from "@wasanni/kit";
+import type { SendEmail } from "@wasanni/kit";
 import { AUTH_ROUTE_PREFIX } from "../constants.ts";
 import type { ModuleDeps } from "../types.ts";
 import { ac, roles } from "../permissions.ts";
-
-const ID_PREFIX_BY_MODEL: Record<string, IdPrefix> = {
-  user: "usr",
-  session: "ses",
-  account: "acc",
-  verification: "ver",
-  organization: "wsp",
-  member: "wsm",
-  invitation: "ver",
-};
 
 function credentialsFor(
   clientId: string | undefined,
@@ -88,10 +78,7 @@ export function createBetterAuth(deps: ModuleDeps) {
 
     advanced: {
       database: {
-        generateId: ({ model }) => {
-          const prefix = ID_PREFIX_BY_MODEL[model];
-          return prefix === undefined ? false : newId(prefix);
-        },
+        generateId: () => newId(),
         joins: true,
       },
     },
