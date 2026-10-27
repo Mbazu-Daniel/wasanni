@@ -7,3 +7,4 @@ export * from "./template/index.ts";
 export * from "./competition/index.ts";
 export * from "./play/index.ts";
 export * from "./webhook/index.ts";
+export * from "./audit/index.ts";
