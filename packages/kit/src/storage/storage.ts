@@ -7,6 +7,7 @@ import type {
   DownloadUrlInput,
   GetObjectRangeInput,
   ObjectStorage,
+  ObjectStream,
   PutObjectInput,
   StorageConfig,
   StoredObject,
@@ -60,6 +61,7 @@ function createUnconfiguredObjectStorage(): ObjectStorage {
     createDownloadUrl: reject,
     putObject: reject,
     getObjectRange: reject,
+    getObjectStream: reject,
     publicUrl: () => {
       throw new BadRequestError("object storage is not configured");
     },
@@ -86,6 +88,10 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
 
     const headers: Record<string, string> = { "content-type": input.contentType };
     if (input.sizeBytes !== undefined) headers["content-length"] = String(input.sizeBytes);
+    if (input.contentEncoding !== undefined) {
+      headers["content-encoding"] = input.contentEncoding;
+    }
+    if (input.cacheControl !== undefined) headers["cache-control"] = input.cacheControl;
 
     const signed = await client.sign(url.toString(), {
       method: "PUT",
@@ -97,7 +103,13 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
       key: input.key,
       url: signed.url,
       method: "PUT",
-      headers: { "Content-Type": input.contentType },
+      headers: {
+        "Content-Type": input.contentType,
+        ...(input.contentEncoding === undefined
+          ? {}
+          : { "Content-Encoding": input.contentEncoding }),
+        ...(input.cacheControl === undefined ? {} : { "Cache-Control": input.cacheControl }),
+      },
       sizeBytes: input.sizeBytes ?? 0,
       expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000).toISOString(),
     };
@@ -126,6 +138,10 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
         contentType: input.contentType,
         sizeBytes: input.body.byteLength,
         expiresInSeconds: STORAGE_INTERNAL_UPLOAD_TTL_SECONDS,
+        ...(input.contentEncoding === undefined
+          ? {}
+          : { contentEncoding: input.contentEncoding }),
+        ...(input.cacheControl === undefined ? {} : { cacheControl: input.cacheControl }),
       });
 
       const response = await fetch(target.url, {
@@ -160,6 +176,38 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
       if (!response.ok) throw new InternalServerError("object storage could not read the object");
 
       return new Uint8Array(await response.arrayBuffer());
+    },
+
+    async getObjectStream(
+      key: string,
+      range?: string | null,
+    ): Promise<ObjectStream | null> {
+      const url = await createDownloadUrl({
+        key,
+        expiresInSeconds: STORAGE_INTERNAL_UPLOAD_TTL_SECONDS,
+      });
+
+      const response = await fetch(
+        url,
+        range === undefined || range === null ? {} : { headers: { Range: range } },
+      );
+
+      if (response.status === 404 || response.status === 416) return null;
+      if (!response.ok || response.body === null) {
+        throw new InternalServerError("object storage could not read the object");
+      }
+
+      const length = response.headers.get("content-length");
+
+      return {
+        stream: response.body,
+        status: response.status,
+        contentLength: length === null ? null : Number(length),
+        contentRange: response.headers.get("content-range"),
+        contentType: response.headers.get("content-type") ?? "application/octet-stream",
+        contentEncoding: response.headers.get("content-encoding"),
+        etag: response.headers.get("etag")?.replaceAll('"', "") ?? null,
+      };
     },
 
     publicUrl(key: string): string {

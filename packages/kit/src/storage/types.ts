@@ -23,6 +23,8 @@ export type CreateUploadTargetInput = {
   key: string;
   contentType: string;
   sizeBytes?: number;
+  contentEncoding?: string;
+  cacheControl?: string;
   expiresInSeconds: number;
 };
 
@@ -39,10 +41,18 @@ export type StoredObject = {
   lastModified: Date | null;
 };
 
+export type ResolvedContent = {
+  contentType: string;
+  contentEncoding: string | null;
+  servedPath: string;
+};
+
 export type PutObjectInput = {
   key: string;
   body: Uint8Array;
   contentType: string;
+  contentEncoding?: string;
+  cacheControl?: string;
 };
 
 export type GetObjectRangeInput = {
@@ -51,11 +61,22 @@ export type GetObjectRangeInput = {
   length: number;
 };
 
+export type ObjectStream = {
+  stream: ReadableStream<Uint8Array>;
+  status: number;
+  contentLength: number | null;
+  contentRange: string | null;
+  contentType: string;
+  contentEncoding: string | null;
+  etag: string | null;
+};
+
 export interface ObjectStorage {
   createUploadTarget(input: CreateUploadTargetInput): Promise<UploadTarget>;
   createDownloadUrl(input: DownloadUrlInput): Promise<string>;
   putObject(input: PutObjectInput): Promise<StoredObject>;
   getObjectRange(input: GetObjectRangeInput): Promise<Uint8Array>;
+  getObjectStream(key: string, range?: string | null): Promise<ObjectStream | null>;
   publicUrl(key: string): string;
   headObject(key: string): Promise<StoredObject | null>;
   deleteObject(key: string): Promise<void>;

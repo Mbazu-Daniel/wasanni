@@ -7,6 +7,7 @@ import type {
   UpdateGameConfigBody,
 } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
+import type { Enqueuer } from "@wasanni/jobs";
 import type {
   game,
   gameConfig,
@@ -81,6 +82,7 @@ export type GamesDeps = {
   db: Db;
   storage: ObjectStorage;
   config: StorageLimits;
+  enqueuer?: Enqueuer | null;
   onConfigChanged?: (input: {
     organizationId: string;
     configId: string;
