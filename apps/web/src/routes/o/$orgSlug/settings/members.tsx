@@ -28,25 +28,7 @@ import { DataTable, type DataTableColumn } from "@/components/primitives/data-ta
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 
-type MemberRow = {
-  memberId: string;
-  userId: string;
-  name: string;
-  email: string;
-  image: string | null;
-  role: string;
-  displayName: string | null;
-  joinedAt: string;
-};
-
-type InvitationRow = {
-  id: string;
-  email: string;
-  role: string | null;
-  status: string;
-  expiresAt: Date;
-  createdAt: Date;
-};
+import type { InvitationRow, MemberRow } from "@/lib/member-types";
 
 export const Route = createFileRoute("/o/$orgSlug/settings/members")({
   head: () => ({ meta: [{ title: "Members · Wasanni" }] }),

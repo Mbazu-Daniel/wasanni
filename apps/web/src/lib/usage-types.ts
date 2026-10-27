@@ -8,4 +8,5 @@ export type {
   UsageStorageTemplate,
   UsageQuotaView,
   UsageMetric,
+  OrganizationExport,
 } from "@wasanni/contracts";

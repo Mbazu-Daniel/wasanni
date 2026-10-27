@@ -3,12 +3,7 @@ import { IconTrophy, IconFlag } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { StandingsRow, TournamentRow } from "@/lib/tournament-types";
-
-type StandingsResponse = {
-  format: "leaderboard";
-  rows: StandingsRow[];
-};
+import type { Standings, TournamentRow } from "@/lib/tournament-types";
 
 export function TournamentStandingsPanel({
   organizationId,
@@ -20,7 +15,7 @@ export function TournamentStandingsPanel({
   const { data, isLoading } = useQuery({
     queryKey: ["tournament-standings", organizationId, tournament.id],
     queryFn: () =>
-      apiFetch<StandingsResponse>(
+      apiFetch<Standings>(
         `/api/v1/organizations/${organizationId}/tournaments/${tournament.id}/standings`,
       ),
     refetchInterval: tournament.status === "open" ? 10_000 : false,
@@ -36,7 +31,7 @@ export function TournamentStandingsPanel({
     );
   }
 
-  if (!data || data.rows.length === 0) {
+  if (data === undefined || data.format !== "leaderboard" || data.rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center">
         <IconTrophy className="mx-auto size-6 text-muted-foreground" />

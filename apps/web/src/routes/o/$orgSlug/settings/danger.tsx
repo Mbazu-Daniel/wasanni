@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/primitives/page-header";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
+import type { OrganizationExport } from "@/lib/usage-types";
 
 export const Route = createFileRoute("/o/$orgSlug/settings/danger")({
   head: () => ({ meta: [{ title: "Danger zone · Wasanni" }] }),
@@ -32,7 +33,7 @@ function DangerZonePage() {
     setExporting(true);
 
     try {
-      const data = await apiFetch<unknown>(
+      const data = await apiFetch<OrganizationExport>(
         `/api/v1/organizations/${organizationId}/export`,
         { method: "POST" },
       );

@@ -1,4 +1,8 @@
-import { OrganizationIdParams, PERMISSION } from "@wasanni/contracts";
+import {
+  OrganizationExport,
+  OrganizationIdParams,
+  PERMISSION,
+} from "@wasanni/contracts";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { ExportService } from "./types.ts";
 
@@ -21,6 +25,7 @@ export const createOrganizationRoutes = <T extends PrincipalApi>(
     {
       organizationAuth: PERMISSION.organizationUpdate,
       params: OrganizationIdParams,
+      response: { 200: OrganizationExport },
       detail: { tags: ["organization"], summary: "Export all organization data as JSON" },
     },
   );
