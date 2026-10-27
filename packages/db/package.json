@@ -16,7 +16,7 @@
   "dependencies": {
     "@wasanni/contracts": "workspace:*",
     "@wasanni/kit": "workspace:*",
-    "drizzle-orm": "^0.45.4",
-    "postgres": "^3.4.5"
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9"
   }
 }
