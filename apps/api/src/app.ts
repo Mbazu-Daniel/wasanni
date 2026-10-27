@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import { STATUS, toErrorBody } from "@wasanni/contracts";
 import {
   createMemorySessionEventStore,
+  createMetrics,
   createObjectStorage,
   readStorageConfig,
   readStorageLimits,
@@ -11,6 +12,7 @@ import {
 import { buildAuthApiDocument, createAuthRoutes } from "./modules/auth/index.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
 import { createPrincipalPlugin } from "./plugins/principal.ts";
+import { createRateLimiter } from "./plugins/rate-limit.ts";
 import type { PrincipalDeps } from "./plugins/types.ts";
 import { createHealthRoutes } from "./routes/health.ts";
 import { failureOf } from "./failures.ts";
@@ -30,8 +32,22 @@ import { createAuditService } from "./modules/audit/service.ts";
 import { createAuditPlugin } from "./plugins/audit.ts";
 import { createWebhooksRoutes } from "./modules/webhook/index.ts";
 import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
-import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
+import {
+  AUTH_ROUTE_PREFIX,
+  DOCS_PATH,
+  LEADERBOARD_RATE_LIMIT_PER_MINUTE,
+  METRICS_PATH,
+} from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
+
+const ROUTE_ID = /^[a-z]{3}_[A-Za-z0-9]+$/;
+
+const routeLabel = (path: string): string =>
+  path
+    .replace(/\/org_[A-Za-z0-9]+/g, "/:organizationId")
+    .split("/")
+    .map((segment) => (ROUTE_ID.test(segment) ? ":id" : segment))
+    .join("/");
 
 export async function createApp(deps: AppDeps) {
   const audit = createAuditService(deps.db, deps.logger);
@@ -47,6 +63,34 @@ export async function createApp(deps: AppDeps) {
 
   const principalDeps: PrincipalDeps = { db: deps.db, auth: betterAuth };
   const base = createPrincipalPlugin(principalDeps);
+
+  const rateLimit = createRateLimiter(
+    deps.redis ?? null,
+    {
+      scoreSubmit: {
+        limit: deps.env.SCORE_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ sessionPrincipal }) =>
+          sessionPrincipal === undefined ? null : `rl:score:${sessionPrincipal.sessionId}`,
+      },
+      sessionCreate: {
+        limit: deps.env.SESSION_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ principal }) =>
+          principal?.kind === "platform" ? `rl:sess:${principal.apiKeyId}` : null,
+      },
+      leaderboardRead: {
+        limit: LEADERBOARD_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ principal }) =>
+          principal?.kind === "platform" ? `rl:lb:${principal.apiKeyId}` : null,
+      },
+    },
+    deps.logger,
+  );
+
+  const metrics = createMetrics();
+  metrics.counter("wasanni_http_requests_total", "HTTP requests handled by the API");
 
   const storage = deps.storage ?? createObjectStorage(readStorageConfig(deps.env));
   const events = deps.events ?? createMemorySessionEventStore();
@@ -150,18 +194,35 @@ export async function createApp(deps: AppDeps) {
         enqueuer,
         realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
         matchRecorder: competition.matches,
+        rateLimit,
       }),
     )
     .use(createHealthRoutes(deps))
+    .get(
+      METRICS_PATH,
+      ({ set }) => {
+        set.headers["content-type"] = "text/plain; version=0.0.4; charset=utf-8";
+        return metrics.render();
+      },
+      { detail: { tags: ["ops"], hide: true } },
+    )
     .use(createAuditRoutes(base, { service: audit }))
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
+      const path = new URL(request.url).pathname;
+
       deps.logger.info("http", {
         requestId,
         method: request.method,
-        path: new URL(request.url).pathname,
+        path,
         status: set.status ?? 200,
         durationMs: Math.round(performance.now() - startedAt),
+      });
+
+      metrics.inc("wasanni_http_requests_total", {
+        method: request.method,
+        route: routeLabel(path),
+        status: String(set.status ?? 200),
       });
     });
 }

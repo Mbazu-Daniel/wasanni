@@ -11,7 +11,7 @@ import type { SessionRouteDeps } from "./types.ts";
 
 export const createSessionRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: SessionRouteDeps,
+  { service, rateLimit }: SessionRouteDeps,
 ) =>
   api
     .post(
@@ -26,6 +26,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
       {
         platformAuth: PERMISSION.sessionCreate,
         body: CreateGameSessionBody,
+        ...(rateLimit === undefined ? {} : { beforeHandle: rateLimit("sessionCreate") }),
         response: { 201: CreatedGameSession },
         detail: { tags: ["sessions"], summary: "Open a game session for a player" },
       },

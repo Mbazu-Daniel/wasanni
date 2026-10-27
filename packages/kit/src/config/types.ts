@@ -46,4 +46,15 @@ export type Env = {
   readonly DB_POOL_MAX_WORKER: number;
   readonly DB_POOL_MAX_REALTIME: number;
   readonly FD_LIMIT_MINIMUM: number;
+  readonly SCORE_PARTITIONING_ENABLED: boolean;
+  readonly SCORE_PARTITION_PREMAKE_HOURS: number;
+  readonly SCORE_ARCHIVE_ENABLED: boolean;
+  readonly SCORE_ARCHIVE_CRON: string;
+  readonly SCORE_ARCHIVE_RETENTION_HOURS: number;
+  readonly SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN: number;
+  readonly SCORE_ARCHIVE_DRY_RUN: boolean;
+  readonly SCORE_RATE_LIMIT_PER_MINUTE: number;
+  readonly SESSION_RATE_LIMIT_PER_MINUTE: number;
+  readonly GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES: number;
+  readonly GAME_BUNDLE_MAX_FILES: number;
 };

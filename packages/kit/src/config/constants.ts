@@ -26,6 +26,30 @@ export const WS_IDLE_TIMEOUT_RANGE = { min: 10, max: 3600 } as const;
 export const WS_MAX_MESSAGE_BYTES_RANGE = { min: 256, max: 1_048_576 } as const;
 
 
+export const DEFAULT_SCORE_PARTITIONING_ENABLED = false;
+export const DEFAULT_SCORE_PARTITION_PREMAKE_HOURS = 24;
+export const DEFAULT_SCORE_ARCHIVE_ENABLED = false;
+export const DEFAULT_SCORE_ARCHIVE_CRON = "0 3 * * *";
+export const DEFAULT_SCORE_ARCHIVE_RETENTION_HOURS = 168;
+export const DEFAULT_SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN = 24;
+export const DEFAULT_SCORE_ARCHIVE_DRY_RUN = true;
+
+export const SCORE_PARTITION_PREMAKE_RANGE = { min: 1, max: 168 } as const;
+export const SCORE_ARCHIVE_RETENTION_RANGE = { min: 1, max: 8760 } as const;
+export const SCORE_ARCHIVE_MAX_PARTITIONS_RANGE = { min: 1, max: 168 } as const;
+
+export const DEFAULT_SCORE_RATE_LIMIT_PER_MINUTE = 120;
+export const DEFAULT_SESSION_RATE_LIMIT_PER_MINUTE = 600;
+export const RATE_LIMIT_RANGE = { min: 1, max: 100_000 } as const;
+
+export const DEFAULT_GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES = 1_073_741_824;
+export const DEFAULT_GAME_BUNDLE_MAX_FILES = 20_000;
+export const GAME_BUNDLE_MAX_UNCOMPRESSED_RANGE = {
+  min: 1_048_576,
+  max: 5_368_709_120,
+} as const;
+export const GAME_BUNDLE_MAX_FILES_RANGE = { min: 1, max: 100_000 } as const;
+
 export const DEFAULT_DB_POOL_MAX = 10;
 export const DEFAULT_DB_POOL_MAX_WORKER = 5;
 export const DEFAULT_DB_POOL_MAX_REALTIME = 5;

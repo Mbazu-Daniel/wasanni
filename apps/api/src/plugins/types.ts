@@ -24,6 +24,22 @@ export type SessionAuthResult = { sessionPrincipal: GameSessionPrincipal };
 
 export type PrincipalApi = ReturnType<typeof createPrincipalPlugin>;
 
+export type RateLimitRequest = {
+  readonly request: Request;
+  readonly principal?: UserPrincipal | PlatformPrincipal;
+  readonly sessionPrincipal?: GameSessionPrincipal;
+};
+
+export type RateLimitRule = {
+  readonly limit: number;
+  readonly windowMs: number;
+  readonly key: (request: RateLimitRequest) => string | null;
+};
+
+export type RateLimitRules = Record<string, RateLimitRule>;
+
+export type RateLimitHook = (name: string) => (request: RateLimitRequest) => Promise<void>;
+
 export type RequestContext = {
   readonly requestId: string;
   readonly startedAt: number;

@@ -10,6 +10,8 @@ export const JOB = {
   EMAIL_SEND: "email.send",
   SCORE_PACK: "score.pack",
   SCORE_RECHECK: "score.recheck",
+  SCORE_ARCHIVE_PARTITIONS: "score.archive_partitions",
+  SCORE_ENSURE_PARTITIONS: "score.ensure_partitions",
   SESSION_SWEEP: "session.sweep",
 } as const;
 

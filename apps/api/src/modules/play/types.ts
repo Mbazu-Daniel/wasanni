@@ -7,6 +7,7 @@ import type {
   SessionEvent,
   SessionEventStore,
 } from "@wasanni/kit";
+import type { RateLimitHook } from "../../plugins/types.ts";
 import type { WebhookDispatcher } from "../webhook/types.ts";
 import type { MatchRecorder } from "../competition/types.ts";
 import type { createLeaderboardService } from "./leaderboard.service.ts";
@@ -70,18 +71,22 @@ export type PlayDeps = {
   enqueuer: Enqueuer | null;
   realtimeBaseUrl: string;
   matchRecorder?: MatchRecorder;
+  rateLimit?: RateLimitHook;
 };
 
 export type SessionRouteDeps = {
   service: SessionService;
+  rateLimit?: RateLimitHook;
 };
 
 export type ScoreRouteDeps = {
   service: ScoreService;
+  rateLimit?: RateLimitHook;
 };
 
 export type LeaderboardRouteDeps = {
   service: LeaderboardService;
+  rateLimit?: RateLimitHook;
 };
 
 export type ReplayRouteDeps = {

@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -19,7 +20,7 @@ import type { ScoreFlag, ScoreSource, ScoreStatus } from "@wasanni/contracts";
 export const gameSessionScore = pgTable(
   "game_session_score",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: uuid("id").notNull().defaultRandom(),
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
@@ -46,9 +47,11 @@ export const gameSessionScore = pgTable(
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    hourBucket: timestamp("hour_bucket", { withTimezone: true }).notNull(),
   },
   (t) => [
-    uniqueIndex("game_session_score_session_ux").on(t.sessionId),
+    primaryKey({ columns: [t.id, t.hourBucket] }),
+    uniqueIndex("game_session_score_session_ux").on(t.sessionId, t.hourBucket),
     index("game_session_score_game_platform_score_ix").on(t.gameId, t.platformId, t.score),
     index("game_session_score_organization_ix").on(t.organizationId),
   ],

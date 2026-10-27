@@ -1,6 +1,13 @@
 import type { Db } from "@wasanni/db";
 import type { Enqueuer } from "@wasanni/jobs";
-import type { Env, Logger, ObjectStorage, SendEmail, SessionEventStore } from "@wasanni/kit";
+import type {
+  Env,
+  Logger,
+  ObjectStorage,
+  Redis,
+  SendEmail,
+  SessionEventStore,
+} from "@wasanni/kit";
 import type { ErrorSource } from "@wasanni/contracts";
 import type { AuditService } from "./modules/audit/service.ts";
 
@@ -14,6 +21,7 @@ export type AppDeps = {
   storage?: ObjectStorage;
   events?: SessionEventStore;
   enqueuer?: Enqueuer | null;
+  redis?: Redis | null;
   ready: () => Promise<{ database: boolean; redis: boolean }>;
 };
 

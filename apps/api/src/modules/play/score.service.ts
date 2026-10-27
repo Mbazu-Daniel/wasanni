@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
@@ -13,6 +13,13 @@ import type {
   ScoreServiceDeps,
   ScoreSubmitInput,
 } from "./types.ts";
+
+const HOUR_MS = 3_600_000;
+
+const HIDE_BATCH_SIZE = 5_000;
+
+const hourBucketOf = (date: Date): Date =>
+  new Date(Math.floor(date.getTime() / HOUR_MS) * HOUR_MS);
 
 const toView = (row: ScoreRow): ScoreView => ({
   id: row.id,
@@ -86,8 +93,11 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         flags,
         source,
         submittedAt,
+        hourBucket: hourBucketOf(session.startedAt),
       })
-      .onConflictDoNothing({ target: gameSessionScore.sessionId })
+      .onConflictDoNothing({
+        target: [gameSessionScore.sessionId, gameSessionScore.hourBucket],
+      })
       .returning();
 
     const row =
@@ -140,21 +150,46 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
     },
 
     async hideForPlayer(scope: Scope, input: HidePlayerScoresInput): Promise<number> {
-      const hidden = await db
-        .update(gameSessionScore)
-        .set({ status: "hidden", updatedAt: new Date() })
-        .where(
-          scopeTo(
-            scope,
-            gameSessionScore,
-            eq(gameSessionScore.platformId, input.platformId),
-            eq(gameSessionScore.externalUserId, input.externalUserId),
-            input.gameId === undefined ? undefined : eq(gameSessionScore.gameId, input.gameId),
-          ),
-        )
-        .returning({ id: gameSessionScore.id });
+      const conditions = scopeTo(
+        scope,
+        gameSessionScore,
+        eq(gameSessionScore.platformId, input.platformId),
+        eq(gameSessionScore.externalUserId, input.externalUserId),
+        eq(gameSessionScore.status, "accepted"),
+        input.gameId === undefined ? undefined : eq(gameSessionScore.gameId, input.gameId),
+      );
 
-      if (hidden.length > 0) {
+      let total = 0;
+
+      for (;;) {
+        const batch = await db
+          .select({ id: gameSessionScore.id })
+          .from(gameSessionScore)
+          .where(conditions)
+          .limit(HIDE_BATCH_SIZE);
+
+        if (batch.length === 0) break;
+
+        const updated = await db
+          .update(gameSessionScore)
+          .set({ status: "hidden", updatedAt: new Date() })
+          .where(
+            and(
+              conditions,
+              inArray(
+                gameSessionScore.id,
+                batch.map((row) => row.id),
+              ),
+            ),
+          )
+          .returning({ id: gameSessionScore.id });
+
+        total += updated.length;
+
+        if (batch.length < HIDE_BATCH_SIZE) break;
+      }
+
+      if (total > 0) {
         await deps.dispatcher
           .dispatch({
             organizationId: scope.organizationId,
@@ -163,13 +198,13 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
             payload: {
               externalUserId: input.externalUserId,
               gameId: input.gameId ?? null,
-              hiddenCount: hidden.length,
+              hiddenCount: total,
             },
           })
           .catch(() => 0);
       }
 
-      return hidden.length;
+      return total;
     },
   };
 }
