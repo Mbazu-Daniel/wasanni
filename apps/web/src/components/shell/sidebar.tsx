@@ -30,6 +30,8 @@ type NavItem = {
     | "/o/$orgSlug/overview"
     | "/o/$orgSlug/games"
     | "/o/$orgSlug/platforms"
+    | "/o/$orgSlug/assignments"
+    | "/o/$orgSlug/templates"
     | "/o/$orgSlug/keys"
     | "/o/$orgSlug/webhooks"
     | "/o/$orgSlug/settings/members"
@@ -45,14 +47,14 @@ const groups: { label: string | null; items: NavItem[] }[] = [
     label: "Build",
     items: [
       { label: "Games", to: "/o/$orgSlug/games", icon: IconDeviceGamepad2 },
-      { label: "Templates", icon: IconLayout },
+      { label: "Templates", to: "/o/$orgSlug/templates", icon: IconLayout },
     ],
   },
   {
     label: "Distribute",
     items: [
       { label: "Platforms", to: "/o/$orgSlug/platforms", icon: IconBroadcast },
-      { label: "Assignments", icon: IconLink },
+      { label: "Assignments", to: "/o/$orgSlug/assignments", icon: IconLink },
       { label: "API keys", to: "/o/$orgSlug/keys", icon: IconKey },
       { label: "Webhooks", to: "/o/$orgSlug/webhooks", icon: IconWebhook },
     ],

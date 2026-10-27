@@ -25,6 +25,7 @@ export function Tabs({
       {items.map((item) => (
         <button
           key={item.value}
+          type="button"
           role="tab"
           aria-selected={item.value === value}
           onClick={() => onValueChange(item.value)}

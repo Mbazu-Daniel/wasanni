@@ -19,6 +19,7 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
 import { Route as OOrgSlugRouteRouteImport } from './routes/o/$orgSlug/route'
 import { Route as OOrgSlugOverviewRouteImport } from './routes/o/$orgSlug/overview'
+import { Route as OOrgSlugAssignmentsIndexRouteImport } from './routes/o/$orgSlug/assignments/index'
 import { Route as OOrgSlugGamesIndexRouteImport } from './routes/o/$orgSlug/games/index'
 import { Route as OOrgSlugKeysIndexRouteImport } from './routes/o/$orgSlug/keys/index'
 import { Route as OOrgSlugPlatformsIndexRouteImport } from './routes/o/$orgSlug/platforms/index'
@@ -26,7 +27,11 @@ import { Route as OOrgSlugPlatformsPlatformSlugRouteImport } from './routes/o/$o
 import { Route as OOrgSlugPlatformsNewRouteImport } from './routes/o/$orgSlug/platforms/new'
 import { Route as OOrgSlugSettingsAccountRouteImport } from './routes/o/$orgSlug/settings/account'
 import { Route as OOrgSlugSettingsMembersRouteImport } from './routes/o/$orgSlug/settings/members'
+import { Route as OOrgSlugTemplatesIndexRouteImport } from './routes/o/$orgSlug/templates/index'
+import { Route as OOrgSlugTemplatesTemplateIdRouteImport } from './routes/o/$orgSlug/templates/$templateId'
+import { Route as OOrgSlugTemplatesNewRouteImport } from './routes/o/$orgSlug/templates/new'
 import { Route as OOrgSlugWebhooksIndexRouteImport } from './routes/o/$orgSlug/webhooks/index'
+import { Route as OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport } from './routes/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,6 +83,12 @@ const OOrgSlugOverviewRoute = OOrgSlugOverviewRouteImport.update({
   path: '/overview',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugAssignmentsIndexRoute =
+  OOrgSlugAssignmentsIndexRouteImport.update({
+    id: '/assignments/',
+    path: '/assignments/',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
 const OOrgSlugGamesIndexRoute = OOrgSlugGamesIndexRouteImport.update({
   id: '/games/',
   path: '/games/',
@@ -114,11 +125,33 @@ const OOrgSlugSettingsMembersRoute = OOrgSlugSettingsMembersRouteImport.update({
   path: '/settings/members',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugTemplatesIndexRoute = OOrgSlugTemplatesIndexRouteImport.update({
+  id: '/templates/',
+  path: '/templates/',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
+const OOrgSlugTemplatesTemplateIdRoute =
+  OOrgSlugTemplatesTemplateIdRouteImport.update({
+    id: '/templates/$templateId',
+    path: '/templates/$templateId',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
+const OOrgSlugTemplatesNewRoute = OOrgSlugTemplatesNewRouteImport.update({
+  id: '/templates/new',
+  path: '/templates/new',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
 const OOrgSlugWebhooksIndexRoute = OOrgSlugWebhooksIndexRouteImport.update({
   id: '/webhooks/',
   path: '/webhooks/',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute =
+  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport.update({
+    id: '/games/$gameSlug/assignments/$platformSlug',
+    path: '/games/$gameSlug/assignments/$platformSlug',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,10 +168,15 @@ export interface FileRoutesByFullPath {
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
+  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
+  '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
   '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
+  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,10 +193,15 @@ export interface FileRoutesByTo {
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
+  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/assignments': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms': typeof OOrgSlugPlatformsIndexRoute
+  '/o/$orgSlug/templates': typeof OOrgSlugTemplatesIndexRoute
   '/o/$orgSlug/webhooks': typeof OOrgSlugWebhooksIndexRoute
+  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,10 +219,15 @@ export interface FileRoutesById {
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
+  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
+  '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
   '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
+  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -198,10 +246,15 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/templates/$templateId'
+    | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/assignments/'
     | '/o/$orgSlug/games/'
     | '/o/$orgSlug/keys/'
     | '/o/$orgSlug/platforms/'
+    | '/o/$orgSlug/templates/'
     | '/o/$orgSlug/webhooks/'
+    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -218,10 +271,15 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/templates/$templateId'
+    | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/assignments'
     | '/o/$orgSlug/games'
     | '/o/$orgSlug/keys'
     | '/o/$orgSlug/platforms'
+    | '/o/$orgSlug/templates'
     | '/o/$orgSlug/webhooks'
+    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   id:
     | '__root__'
     | '/'
@@ -238,10 +296,15 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/templates/$templateId'
+    | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/assignments/'
     | '/o/$orgSlug/games/'
     | '/o/$orgSlug/keys/'
     | '/o/$orgSlug/platforms/'
+    | '/o/$orgSlug/templates/'
     | '/o/$orgSlug/webhooks/'
+    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -328,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OOrgSlugOverviewRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
+    '/o/$orgSlug/assignments/': {
+      id: '/o/$orgSlug/assignments/'
+      path: '/assignments'
+      fullPath: '/o/$orgSlug/assignments/'
+      preLoaderRoute: typeof OOrgSlugAssignmentsIndexRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
     '/o/$orgSlug/games/': {
       id: '/o/$orgSlug/games/'
       path: '/games'
@@ -377,11 +447,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OOrgSlugSettingsMembersRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
+    '/o/$orgSlug/templates/': {
+      id: '/o/$orgSlug/templates/'
+      path: '/templates'
+      fullPath: '/o/$orgSlug/templates/'
+      preLoaderRoute: typeof OOrgSlugTemplatesIndexRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/templates/$templateId': {
+      id: '/o/$orgSlug/templates/$templateId'
+      path: '/templates/$templateId'
+      fullPath: '/o/$orgSlug/templates/$templateId'
+      preLoaderRoute: typeof OOrgSlugTemplatesTemplateIdRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/templates/new': {
+      id: '/o/$orgSlug/templates/new'
+      path: '/templates/new'
+      fullPath: '/o/$orgSlug/templates/new'
+      preLoaderRoute: typeof OOrgSlugTemplatesNewRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
     '/o/$orgSlug/webhooks/': {
       id: '/o/$orgSlug/webhooks/'
       path: '/webhooks'
       fullPath: '/o/$orgSlug/webhooks/'
       preLoaderRoute: typeof OOrgSlugWebhooksIndexRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': {
+      id: '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+      path: '/games/$gameSlug/assignments/$platformSlug'
+      fullPath: '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+      preLoaderRoute: typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
   }
@@ -393,10 +491,15 @@ interface OOrgSlugRouteRouteChildren {
   OOrgSlugPlatformsNewRoute: typeof OOrgSlugPlatformsNewRoute
   OOrgSlugSettingsAccountRoute: typeof OOrgSlugSettingsAccountRoute
   OOrgSlugSettingsMembersRoute: typeof OOrgSlugSettingsMembersRoute
+  OOrgSlugTemplatesTemplateIdRoute: typeof OOrgSlugTemplatesTemplateIdRoute
+  OOrgSlugTemplatesNewRoute: typeof OOrgSlugTemplatesNewRoute
+  OOrgSlugAssignmentsIndexRoute: typeof OOrgSlugAssignmentsIndexRoute
   OOrgSlugGamesIndexRoute: typeof OOrgSlugGamesIndexRoute
   OOrgSlugKeysIndexRoute: typeof OOrgSlugKeysIndexRoute
   OOrgSlugPlatformsIndexRoute: typeof OOrgSlugPlatformsIndexRoute
+  OOrgSlugTemplatesIndexRoute: typeof OOrgSlugTemplatesIndexRoute
   OOrgSlugWebhooksIndexRoute: typeof OOrgSlugWebhooksIndexRoute
+  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute: typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 
 const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
@@ -405,10 +508,16 @@ const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
   OOrgSlugPlatformsNewRoute: OOrgSlugPlatformsNewRoute,
   OOrgSlugSettingsAccountRoute: OOrgSlugSettingsAccountRoute,
   OOrgSlugSettingsMembersRoute: OOrgSlugSettingsMembersRoute,
+  OOrgSlugTemplatesTemplateIdRoute: OOrgSlugTemplatesTemplateIdRoute,
+  OOrgSlugTemplatesNewRoute: OOrgSlugTemplatesNewRoute,
+  OOrgSlugAssignmentsIndexRoute: OOrgSlugAssignmentsIndexRoute,
   OOrgSlugGamesIndexRoute: OOrgSlugGamesIndexRoute,
   OOrgSlugKeysIndexRoute: OOrgSlugKeysIndexRoute,
   OOrgSlugPlatformsIndexRoute: OOrgSlugPlatformsIndexRoute,
+  OOrgSlugTemplatesIndexRoute: OOrgSlugTemplatesIndexRoute,
   OOrgSlugWebhooksIndexRoute: OOrgSlugWebhooksIndexRoute,
+  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute:
+    OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute,
 }
 
 const OOrgSlugRouteRouteWithChildren = OOrgSlugRouteRoute._addFileChildren(

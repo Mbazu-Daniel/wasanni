@@ -48,7 +48,8 @@ curl localhost:3001/readyz
 
 `apps/web` is the marketing site (`/landing`) and the dashboard
 (`/o/:orgSlug/...`): the overview, the games, the platforms with their keys
-and webhooks, the members, and the account settings. It runs on 5173 and talks to the api through
+and webhooks, the assignments matrix with its config editor, the templates,
+the members, and the account settings. It runs on 5173 and talks to the api through
 `VITE_API_URL` (the api's port, 9000 by default); the api trusts the web
 origin, so the session cookie crosses.
 
