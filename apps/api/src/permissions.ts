@@ -1,8 +1,9 @@
 import { createAccessControl } from "better-auth/plugins/access";
 import {
-  RESOURCES,
   ROLE_NAMES,
   ROLE_PERMISSIONS,
+  flattenPermissions,
+  rolesIn,
   type Action,
   type Resource,
 } from "@wasanni/contracts";
@@ -19,6 +20,8 @@ const statement: { [K in Resource]: Action[] } = {
   organization: actionsUsedBy("organization"),
   member: actionsUsedBy("member"),
   invitation: actionsUsedBy("invitation"),
+  platform: actionsUsedBy("platform"),
+  apiKey: actionsUsedBy("apiKey"),
 };
 
 export const ac = createAccessControl(statement);
@@ -32,13 +35,13 @@ export const roles = {
 const EMPTY: ReadonlySet<string> = new Set();
 
 export function permissionsForRole(role: string): ReadonlySet<string> {
-  const known = role as (typeof ROLE_NAMES)[number];
-  if (!(ROLE_NAMES as readonly string[]).includes(known)) return EMPTY;
+  const names = rolesIn(role);
+  if (names.length === 0) return EMPTY;
 
   const permissions = new Set<string>();
-  for (const resource of RESOURCES) {
-    for (const action of ROLE_PERMISSIONS[known][resource]) {
-      permissions.add(`${resource}:${action}`);
+  for (const name of names) {
+    for (const permission of flattenPermissions(ROLE_PERMISSIONS[name])) {
+      permissions.add(permission);
     }
   }
   return permissions;

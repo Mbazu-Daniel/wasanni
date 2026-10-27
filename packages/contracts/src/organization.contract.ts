@@ -74,11 +74,6 @@ export const SelfMemberBody = Type.Object({
 
 export type SelfMemberBody = Static<typeof SelfMemberBody>;
 
-export const OrganizationIdParams = Type.Object({
-  organizationId: Type.String(),
-});
-export type OrganizationIdParams = Static<typeof OrganizationIdParams>;
-
 export const MemberIdParams = Type.Object({
   organizationId: Type.String(),
   memberId: Type.String(),
