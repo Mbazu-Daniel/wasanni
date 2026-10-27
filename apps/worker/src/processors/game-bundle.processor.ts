@@ -8,7 +8,10 @@ import type { GameBundleJob } from "@wasanni/jobs";
 const IMMUTABLE = "public, max-age=31536000, immutable";
 
 const normalizePath = (raw: string): string | null => {
-  const cleaned = raw.replaceAll("\\", "/").replace(/^\/+/, "");
+  if (raw.includes("\\")) return null;
+  if (raw.startsWith("/")) return null;
+
+  const cleaned = raw.replace(/^\/+/, "");
 
   if (cleaned.length === 0) return null;
   if (cleaned.split("/").some((segment) => segment === "" || segment === "." || segment === "..")) {
