@@ -9,5 +9,5 @@ export function organizationScope(principal: Principal | null | undefined): Scop
     throw badRequest("organization scope requires a principal with an organization");
   }
 
-  return { organizationId };
+  return { scoped: true, organizationId };
 }

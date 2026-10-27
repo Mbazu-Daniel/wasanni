@@ -137,7 +137,7 @@ and security scheme. The startup log prints both URLs.
 - Runtime schemas come from `t` in `elysia`. `@sinclair/typebox` is a supported
   peer dependency of Elysia, so import it directly only when `t` lacks what you
   need — never as a rival schema dialect.
-- Secrets are hashed or HMAC'd. Plaintext is never stored and never logged.
+- Secrets are hashed. Plaintext is never stored and never logged.
 - Schema changes are generated SQL files, reviewed by hand, and applied against
   a real Postgres in CI.
 

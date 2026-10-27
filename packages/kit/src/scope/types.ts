@@ -1,1 +1,4 @@
-export type Scope = { readonly organizationId: string };
+export type Scope = {
+  readonly organizationId: string;
+  readonly scoped: true;
+};

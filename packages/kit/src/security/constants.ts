@@ -1,5 +1,5 @@
-export const ARGON = {
-  algorithm: "argon2id",
-  memoryCost: 19456,
-  timeCost: 2,
-} as const satisfies Bun.Password.Argon2Algorithm;
+export const API_KEY_PREFIX = "wsk_" as const;
+
+export const API_KEY_RANDOM_BYTES = 32 as const;
+
+export const API_KEY_DISPLAY_CHARS = 12 as const;

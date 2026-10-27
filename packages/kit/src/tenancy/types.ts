@@ -11,4 +11,10 @@ export type UserPrincipal = BasePrincipal & {
   role: string;
 };
 
-export type Principal = UserPrincipal;
+export type PlatformPrincipal = BasePrincipal & {
+  kind: "platform";
+  platformId: string;
+  apiKeyId: string;
+};
+
+export type Principal = UserPrincipal | PlatformPrincipal;

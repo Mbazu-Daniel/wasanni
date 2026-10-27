@@ -3,7 +3,7 @@ import type { ElysiaCustomStatusResponse } from "elysia";
 import type { Db } from "@wasanni/db";
 import { readMembership, type MembershipRow } from "@wasanni/db";
 import { toErrorBody } from "@wasanni/contracts";
-import type { Principal } from "@wasanni/kit";
+import type { UserPrincipal } from "@wasanni/kit";
 import { requestContextOf } from "./request-context.ts";
 import { permissionsForRole } from "../permissions.ts";
 import type { BetterAuth } from "../config/better-auth.ts";
@@ -23,7 +23,7 @@ type ElysiaStatus =
 
 type AuthResult = { user: Session["user"]; session: Session["session"] };
 
-type OrganizationAuthResult = { principal: Principal };
+type OrganizationAuthResult = { principal: UserPrincipal };
 
 export const findSession = (auth: BetterAuth, headers: Headers): Promise<Session | null> =>
   auth.api.getSession({ headers });
@@ -32,7 +32,7 @@ export const principalFor = async (
   db: Db,
   organizationId: string,
   session: Session,
-): Promise<Principal | null> => {
+): Promise<UserPrincipal | null> => {
   const membership: MembershipRow | null = await readMembership(
     db,
     organizationId,
