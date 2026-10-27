@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { template } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, internal, newId, notFound, type ObjectStorage } from "@wasanni/kit";
+import { ConflictError, InternalServerError, newId, NotFoundError, type ObjectStorage } from "@wasanni/kit";
 import type { TemplateKind, TemplateView } from "@wasanni/contracts";
 import type {
   TemplateCreateInput,
@@ -22,7 +22,7 @@ export async function readTemplateRow(
     .where(scopeTo(scope, template, eq(template.id, templateId)))
     .limit(1);
 
-  if (row === undefined) throw notFound("template not found");
+  if (row === undefined) throw new NotFoundError("template not found");
   return row;
 }
 
@@ -73,10 +73,10 @@ export function createTemplateService(db: Db, storage: ObjectStorage) {
           })
           .returning();
 
-        if (row === undefined) throw internal("template insert returned no row");
+        if (row === undefined) throw new InternalServerError("template insert returned no row");
         return toTemplateView(row);
       } catch (error) {
-        if (isUniqueViolation(error)) throw conflict("template slug already exists");
+        if (isUniqueViolation(error)) throw new ConflictError("template slug already exists");
         throw error;
       }
     },
@@ -96,10 +96,10 @@ export function createTemplateService(db: Db, storage: ObjectStorage) {
           .where(scopeTo(scope, template, eq(template.id, input.templateId)))
           .returning();
 
-        if (row === undefined) throw notFound("template not found");
+        if (row === undefined) throw new NotFoundError("template not found");
         return toTemplateView(row);
       } catch (error) {
-        if (isUniqueViolation(error)) throw conflict("template slug already exists");
+        if (isUniqueViolation(error)) throw new ConflictError("template slug already exists");
         throw error;
       }
     },
@@ -112,7 +112,7 @@ export function createTemplateService(db: Db, storage: ObjectStorage) {
         .where(scopeTo(scope, template, eq(template.id, row.id)))
         .returning({ id: template.id });
 
-      if (removed.length === 0) throw notFound("template not found");
+      if (removed.length === 0) throw new NotFoundError("template not found");
 
       const keys = [row.objectKey, row.pendingObjectKey].filter(
         (key): key is string => key !== null,

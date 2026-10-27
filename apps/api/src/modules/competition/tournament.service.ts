@@ -9,7 +9,7 @@ import {
   tournament,
   tournamentParticipant,
 } from "@wasanni/db/schema";
-import { conflict, internal, newId, notFound } from "@wasanni/kit";
+import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
 import type { ParticipantView, TournamentView } from "@wasanni/contracts";
 import type {
@@ -33,7 +33,7 @@ export async function readTournamentRow(
     .where(scopeTo(scope, tournament, eq(tournament.id, tournamentId)))
     .limit(1);
 
-  if (row === undefined) throw notFound("tournament not found");
+  if (row === undefined) throw new NotFoundError("tournament not found");
   return toTournamentView(row);
 }
 
@@ -56,7 +56,7 @@ async function requireScoped(
     .where(scopeTo(input.scope, input.table, eq(input.table.id, input.id)))
     .limit(1);
 
-  if (row === undefined) throw notFound(input.message);
+  if (row === undefined) throw new NotFoundError(input.message);
 }
 
 export function createTournamentService(db: Db) {
@@ -114,7 +114,7 @@ export function createTournamentService(db: Db) {
         .limit(1);
 
       if (existing !== undefined) {
-        throw conflict("tournament slug already exists");
+        throw new ConflictError("tournament slug already exists");
       }
 
       const [row] = await db
@@ -136,7 +136,7 @@ export function createTournamentService(db: Db) {
         })
         .returning();
 
-      if (row === undefined) throw internal("tournament insert returned no row");
+      if (row === undefined) throw new InternalServerError("tournament insert returned no row");
       return toTournamentView(row);
     },
 
@@ -179,7 +179,7 @@ export function createTournamentService(db: Db) {
       const { body } = input;
 
       if (current.status === "completed" || current.status === "cancelled") {
-        throw conflict("a finished tournament cannot be edited");
+        throw new ConflictError("a finished tournament cannot be edited");
       }
 
       if (body.slug !== undefined && body.slug !== current.slug) {
@@ -194,7 +194,7 @@ export function createTournamentService(db: Db) {
           )
           .limit(1);
 
-        if (clash !== undefined) throw conflict("tournament slug already exists");
+        if (clash !== undefined) throw new ConflictError("tournament slug already exists");
       }
 
       const patch: Partial<typeof tournament.$inferInsert> = {
@@ -222,7 +222,7 @@ export function createTournamentService(db: Db) {
         .where(eq(tournament.id, current.id))
         .returning();
 
-      if (row === undefined) throw notFound("tournament not found");
+      if (row === undefined) throw new NotFoundError("tournament not found");
       return toTournamentView(row);
     },
 
@@ -230,7 +230,7 @@ export function createTournamentService(db: Db) {
       const current = await readRow(scope, tournamentId);
 
       if (current.status !== "draft") {
-        throw conflict("only a draft tournament can be opened");
+        throw new ConflictError("only a draft tournament can be opened");
       }
 
       const [row] = await db
@@ -239,7 +239,7 @@ export function createTournamentService(db: Db) {
         .where(eq(tournament.id, current.id))
         .returning();
 
-      if (row === undefined) throw notFound("tournament not found");
+      if (row === undefined) throw new NotFoundError("tournament not found");
       return toTournamentView(row);
     },
 
@@ -247,7 +247,7 @@ export function createTournamentService(db: Db) {
       const current = await readRow(scope, tournamentId);
 
       if (current.status === "completed") {
-        throw conflict("a completed tournament cannot be cancelled");
+        throw new ConflictError("a completed tournament cannot be cancelled");
       }
 
       const [row] = await db
@@ -256,7 +256,7 @@ export function createTournamentService(db: Db) {
         .where(eq(tournament.id, current.id))
         .returning();
 
-      if (row === undefined) throw notFound("tournament not found");
+      if (row === undefined) throw new NotFoundError("tournament not found");
       return toTournamentView(row);
     },
 
@@ -267,7 +267,7 @@ export function createTournamentService(db: Db) {
       const current = await readRow(scope, input.tournamentId);
 
       if (current.status !== "open") {
-        throw conflict("registration is not open");
+        throw new ConflictError("registration is not open");
       }
 
       const [existing] = await db
@@ -295,7 +295,7 @@ export function createTournamentService(db: Db) {
           .where(eq(tournamentParticipant.id, existing.id))
           .returning();
 
-        if (revived === undefined) throw notFound("registration not found");
+        if (revived === undefined) throw new NotFoundError("registration not found");
         return toParticipantView(revived);
       }
 
@@ -311,7 +311,7 @@ export function createTournamentService(db: Db) {
           );
 
         if (registered.length >= current.maxParticipants) {
-          throw conflict("tournament is full");
+          throw new ConflictError("tournament is full");
         }
       }
 
@@ -328,7 +328,7 @@ export function createTournamentService(db: Db) {
         .returning();
 
       if (row === undefined) {
-        throw internal("tournament participant insert returned no row");
+        throw new InternalServerError("tournament participant insert returned no row");
       }
       return toParticipantView(row);
     },
@@ -341,7 +341,7 @@ export function createTournamentService(db: Db) {
       const current = await readRow(scope, tournamentId);
 
       if (current.status === "completed" || current.status === "cancelled") {
-        throw conflict("a finished tournament cannot be withdrawn from");
+        throw new ConflictError("a finished tournament cannot be withdrawn from");
       }
 
       const identity =
@@ -358,7 +358,7 @@ export function createTournamentService(db: Db) {
         .where(and(eq(tournamentParticipant.tournamentId, current.id), identity))
         .returning({ id: tournamentParticipant.id });
 
-      if (withdrawn.length === 0) throw notFound("registration not found");
+      if (withdrawn.length === 0) throw new NotFoundError("registration not found");
     },
 
     async listParticipants(

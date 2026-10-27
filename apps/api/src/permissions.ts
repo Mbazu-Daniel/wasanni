@@ -1,5 +1,5 @@
 import { ROLE_PERMISSIONS, flattenPermissions, rolesIn } from "@wasanni/contracts";
-import { forbidden, unauthenticated, type Principal } from "@wasanni/kit";
+import { ForbiddenError, UnauthorizedError, type Principal } from "@wasanni/kit";
 
 const EMPTY: ReadonlySet<string> = new Set();
 
@@ -20,9 +20,9 @@ export function requirePermission(
   principal: Principal | null | undefined,
   permission: string,
 ): Principal {
-  if (!principal) throw unauthenticated();
+  if (!principal) throw new UnauthorizedError();
   if (!principal.permissions.has(permission)) {
-    throw forbidden(`missing permission: ${permission}`);
+    throw new ForbiddenError(`missing permission: ${permission}`);
   }
   return principal;
 }

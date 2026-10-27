@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI, organization } from "better-auth/plugins";
 import * as schema from "@wasanni/db/schema";
 import { readMembership } from "@wasanni/db";
-import { internal, newId, sendDevEmail } from "@wasanni/kit";
+import { InternalServerError, newId, sendDevEmail } from "@wasanni/kit";
 import type { SendEmail } from "@wasanni/kit";
 import { AUTH_ROUTE_PREFIX } from "../constants.ts";
 import type { ModuleDeps } from "../types.ts";
@@ -37,7 +37,7 @@ export function createBetterAuth(deps: ModuleDeps) {
   const { db, env } = deps;
 
   if (env.NODE_ENV === "production" && deps.sendEmail === undefined) {
-    throw internal("better-auth refuses to boot in production without an email transport");
+    throw new InternalServerError("better-auth refuses to boot in production without an email transport");
   }
 
   const sendMail: SendEmail = deps.sendEmail ?? resolveSender(deps);

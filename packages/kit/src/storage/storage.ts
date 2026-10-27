@@ -1,5 +1,5 @@
 import { AwsClient } from "aws4fetch";
-import { badRequest, internal } from "../errors/errors.ts";
+import { BadRequestError, InternalServerError } from "../exceptions/index.ts";
 import type { Env } from "../config/types.ts";
 import { STORAGE_INTERNAL_UPLOAD_TTL_SECONDS } from "./constants.ts";
 import type {
@@ -53,7 +53,7 @@ function resolveSigningTimestamp(): string {
 
 function createUnconfiguredObjectStorage(): ObjectStorage {
   const reject = (): Promise<never> =>
-    Promise.reject(badRequest("object storage is not configured"));
+    Promise.reject(new BadRequestError("object storage is not configured"));
 
   return {
     createUploadTarget: reject,
@@ -61,7 +61,7 @@ function createUnconfiguredObjectStorage(): ObjectStorage {
     putObject: reject,
     getObjectRange: reject,
     publicUrl: () => {
-      throw badRequest("object storage is not configured");
+      throw new BadRequestError("object storage is not configured");
     },
     headObject: reject,
     deleteObject: reject,
@@ -134,7 +134,7 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
         body: input.body,
       });
 
-      if (!response.ok) throw internal("object storage could not store the object");
+      if (!response.ok) throw new InternalServerError("object storage could not store the object");
 
       return {
         key: input.key,
@@ -157,7 +157,7 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
         headers: { Range: `bytes=${input.offset}-${input.offset + input.length - 1}` },
       });
 
-      if (!response.ok) throw internal("object storage could not read the object");
+      if (!response.ok) throw new InternalServerError("object storage could not read the object");
 
       return new Uint8Array(await response.arrayBuffer());
     },
@@ -172,7 +172,7 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
       const response = await client.fetch(new Request(resolveObjectUrl(key), { method: "HEAD" }));
 
       if (response.status === 404) return null;
-      if (!response.ok) throw internal("object storage could not be reached");
+      if (!response.ok) throw new InternalServerError("object storage could not be reached");
 
       const length = response.headers.get("content-length");
       const modified = response.headers.get("last-modified");
@@ -189,7 +189,7 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
     async deleteObject(key: string): Promise<void> {
       const response = await client.fetch(new Request(resolveObjectUrl(key), { method: "DELETE" }));
 
-      if (!response.ok) throw internal("object storage could not delete the object");
+      if (!response.ok) throw new InternalServerError("object storage could not delete the object");
     },
   };
 }

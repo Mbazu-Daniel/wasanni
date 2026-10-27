@@ -9,7 +9,7 @@ import {
 } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { badRequest, internal, newId, newOpaqueToken, notFound, sha256Hex } from "@wasanni/kit";
+import { BadRequestError, InternalServerError, newId, newOpaqueToken, NotFoundError, sha256Hex } from "@wasanni/kit";
 import type { CreatedGameSession, GameSessionView } from "@wasanni/contracts";
 import { REALTIME_PATH } from "@wasanni/contracts";
 import {
@@ -80,7 +80,7 @@ export async function readGameSessionRow(
     )
     .limit(1);
 
-  if (row === undefined) throw notFound("game session not found");
+  if (row === undefined) throw new NotFoundError("game session not found");
   return row;
 }
 
@@ -102,12 +102,12 @@ async function assertCompetitionEntry(
       .where(scopeTo(scope, tournament, eq(tournament.id, input.tournamentId)))
       .limit(1);
 
-    if (current === undefined) throw notFound("tournament not found");
+    if (current === undefined) throw new NotFoundError("tournament not found");
     if (current.gameId !== input.gameId) {
-      throw badRequest("the tournament belongs to another game");
+      throw new BadRequestError("the tournament belongs to another game");
     }
     if (current.status !== "open" && current.status !== "running") {
-      throw badRequest("the tournament is not accepting sessions");
+      throw new BadRequestError("the tournament is not accepting sessions");
     }
 
     const [registration] = await db
@@ -123,10 +123,10 @@ async function assertCompetitionEntry(
       .limit(1);
 
     if (registration === undefined) {
-      throw badRequest("the player is not registered for this tournament");
+      throw new BadRequestError("the player is not registered for this tournament");
     }
     if (registration.status === "withdrawn") {
-      throw badRequest("the player has withdrawn from this tournament");
+      throw new BadRequestError("the player has withdrawn from this tournament");
     }
   }
 
@@ -137,12 +137,12 @@ async function assertCompetitionEntry(
       .where(scopeTo(scope, match, eq(match.id, input.matchId)))
       .limit(1);
 
-    if (current === undefined) throw notFound("match not found");
+    if (current === undefined) throw new NotFoundError("match not found");
     if (current.gameId !== input.gameId) {
-      throw badRequest("the match belongs to another game");
+      throw new BadRequestError("the match belongs to another game");
     }
     if (current.status === "completed" || current.status === "cancelled") {
-      throw badRequest("the match is closed");
+      throw new BadRequestError("the match is closed");
     }
 
     const [seated] = await db
@@ -158,7 +158,7 @@ async function assertCompetitionEntry(
       .limit(1);
 
     if (seated === undefined) {
-      throw badRequest("the player is not seated in this match");
+      throw new BadRequestError("the player is not seated in this match");
     }
   }
 }
@@ -199,14 +199,14 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         input.body.gameId,
       );
 
-      if (assignment === null) throw notFound("the game is not assigned to this platform");
+      if (assignment === null) throw new NotFoundError("the game is not assigned to this platform");
       if (assignment.status !== "active") {
-        throw badRequest("the game is not assigned to this platform");
+        throw new BadRequestError("the game is not assigned to this platform");
       }
 
       const game = await readGameState(db, scope, input.body.gameId);
-      if (game === null) throw notFound("game not found");
-      if (game.status !== "active") throw badRequest("the game is not published");
+      if (game === null) throw new NotFoundError("game not found");
+      if (game.status !== "active") throw new BadRequestError("the game is not published");
 
       const resolved = await readAssignmentConfig(
         db,
@@ -216,7 +216,7 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
       );
 
       if (input.body.configId !== undefined && resolved === null) {
-        throw notFound("game config not found");
+        throw new NotFoundError("game config not found");
       }
 
       const config = resolved ?? { id: null, config: {}, schemaVersion: 1 };
@@ -225,7 +225,7 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       if (game.hosting === "hosted") {
         const file = await readCurrentGameFile(db, scope, input.body.gameId);
-        if (file === null) throw badRequest("a hosted game needs a ready game file");
+        if (file === null) throw new BadRequestError("a hosted game needs a ready game file");
         gameFileId = file.id;
       }
 
@@ -267,7 +267,7 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         })
         .returning();
 
-      if (row === undefined) throw internal("game session insert returned no row");
+      if (row === undefined) throw new InternalServerError("game session insert returned no row");
 
       const session = toView(row);
 

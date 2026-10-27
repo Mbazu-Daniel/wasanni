@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { apiKey, platform } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { API_KEY_DISPLAY_CHARS, badRequest, hashApiKey, internal, newApiKeySecret, newId, notFound } from "@wasanni/kit";
+import { API_KEY_DISPLAY_CHARS, BadRequestError, hashApiKey, InternalServerError, newApiKeySecret, newId, NotFoundError } from "@wasanni/kit";
 import {
   listUnknownPermissions,
   type ApiKeyView,
@@ -46,7 +46,7 @@ export function createApiKeyService(db: Db) {
     ): Promise<CreatedApiKey> {
       const unknown = listUnknownPermissions(input.permissions);
       if (unknown.length > 0) {
-        throw badRequest(`unknown permission: ${unknown.join(", ")}`);
+        throw new BadRequestError(`unknown permission: ${unknown.join(", ")}`);
       }
 
       const [owned] = await db
@@ -55,7 +55,7 @@ export function createApiKeyService(db: Db) {
         .where(scopeTo(scope, platform, eq(platform.id, input.platformId)))
         .limit(1);
 
-      if (owned === undefined) throw notFound("platform not found");
+      if (owned === undefined) throw new NotFoundError("platform not found");
 
       const secret = newApiKeySecret();
       const expiresAt =
@@ -82,7 +82,7 @@ export function createApiKeyService(db: Db) {
           expiresAt: apiKey.expiresAt,
         });
 
-      if (row === undefined) throw internal("api key insert returned no row");
+      if (row === undefined) throw new InternalServerError("api key insert returned no row");
 
       return {
         id: row.id,
@@ -110,7 +110,7 @@ export function createApiKeyService(db: Db) {
         )
         .returning();
 
-      if (row === undefined) throw notFound("api key not found");
+      if (row === undefined) throw new NotFoundError("api key not found");
       return toView(row);
     },
 
@@ -122,7 +122,7 @@ export function createApiKeyService(db: Db) {
         )
         .returning({ id: apiKey.id });
 
-      if (removed.length === 0) throw notFound("api key not found");
+      if (removed.length === 0) throw new NotFoundError("api key not found");
     },
   };
 }

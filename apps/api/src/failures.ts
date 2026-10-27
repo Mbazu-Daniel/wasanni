@@ -1,6 +1,6 @@
 import { STATUS } from "@wasanni/contracts";
 import type { ErrorCode } from "@wasanni/contracts";
-import { AppError } from "@wasanni/kit";
+import { HttpError } from "@wasanni/kit";
 
 import type { DelegatedError, Failure } from "./types.ts";
 
@@ -27,7 +27,7 @@ const DELEGATED: Readonly<Record<string, ErrorCode>> = {
 };
 
 export function failureOf(error: unknown): Failure {
-  if (error instanceof AppError) {
+  if (error instanceof HttpError) {
     return { status: error.status, source: { code: error.code, message: error.message } };
   }
 

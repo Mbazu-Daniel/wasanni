@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { internal, type Env, type Logger } from "@wasanni/kit";
+import { InternalServerError, type Env, type Logger } from "@wasanni/kit";
 import { JOB, QUEUE, type EmailJob, type QueueConnection } from "@wasanni/jobs";
 import { createEmailProcessor } from "../processors/email.processor.ts";
 
@@ -14,7 +14,7 @@ export function createEmailWorker(
     QUEUE.EMAIL,
     async (job) => {
       if (job.name !== JOB.EMAIL_SEND) {
-        throw internal(`unexpected email job: ${job.name}`);
+        throw new InternalServerError(`unexpected email job: ${job.name}`);
       }
       return send(job.data);
     },

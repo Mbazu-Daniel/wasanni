@@ -3,7 +3,7 @@ import type { MatchParticipantView, MatchView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import { game, match, matchParticipant } from "@wasanni/db/schema";
-import { badRequest, conflict, newId, notFound } from "@wasanni/kit";
+import { BadRequestError, ConflictError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
 import {
   advanceWinner,
@@ -30,7 +30,7 @@ async function readMatchRow(
     .where(scopeTo(scope, match, eq(match.id, matchId)))
     .limit(1);
 
-  if (row === undefined) throw notFound("match not found");
+  if (row === undefined) throw new NotFoundError("match not found");
   return row;
 }
 
@@ -41,7 +41,7 @@ async function requireGame(db: Db, scope: Scope, gameId: string): Promise<void> 
     .where(scopeTo(scope, game, eq(game.id, gameId)))
     .limit(1);
 
-  if (row === undefined) throw notFound("game not found");
+  if (row === undefined) throw new NotFoundError("game not found");
 }
 
 export function createMatchService(db: Db) {
@@ -52,7 +52,7 @@ export function createMatchService(db: Db) {
     const current = await readMatchRow(db, scope, input.matchId);
 
     if (current.status === "cancelled") {
-      throw conflict("a cancelled match cannot be completed");
+      throw new ConflictError("a cancelled match cannot be completed");
     }
     if (current.status === "completed") return toMatchView(current);
 
@@ -74,7 +74,7 @@ export function createMatchService(db: Db) {
         )
         .limit(1);
 
-      if (seated === undefined) throw notFound("winning participant not found");
+      if (seated === undefined) throw new NotFoundError("winning participant not found");
       winnerId = seated.id;
     }
 
@@ -177,7 +177,7 @@ export function createMatchService(db: Db) {
         const current = await readTournamentRow(db, scope, body.tournamentId);
 
         if (current.gameId !== body.gameId) {
-          throw badRequest("the match and the tournament must share a game");
+          throw new BadRequestError("the match and the tournament must share a game");
         }
       }
 
@@ -185,7 +185,7 @@ export function createMatchService(db: Db) {
       for (const participant of body.participants) {
         const key = `${participant.platformId}:${participant.externalUserId}`;
         if (identities.has(key)) {
-          throw badRequest("a participant appears twice in the same match");
+          throw new BadRequestError("a participant appears twice in the same match");
         }
         identities.add(key);
       }
@@ -203,7 +203,7 @@ export function createMatchService(db: Db) {
           })
           .returning();
 
-        if (row === undefined) throw notFound("match not found");
+        if (row === undefined) throw new NotFoundError("match not found");
 
         for (const [index, participant] of body.participants.entries()) {
           await tx.insert(matchParticipant).values({

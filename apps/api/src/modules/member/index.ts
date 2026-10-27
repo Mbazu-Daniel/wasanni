@@ -5,7 +5,7 @@ import {
   SetMemberAvatar,
   UpdateMemberDisplayName,
 } from "@wasanni/contracts";
-import { notFound, organizationScope } from "@wasanni/kit";
+import { NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import { assertAvatarKey, createAvatarUploadTicket } from "./avatar.ts";
 import type { MemberDeps } from "./types.ts";
@@ -21,7 +21,7 @@ export const createMemberRoutes = <T extends PrincipalApi>(
         principal.memberId,
       );
 
-      if (member === null) throw notFound("member not found");
+      if (member === null) throw new NotFoundError("member not found");
       return { member };
     }, {
       organizationAuth: null,

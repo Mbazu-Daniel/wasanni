@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { forbidden, newId, notFound, isFlagged } from "@wasanni/kit";
+import { ForbiddenError, newId, NotFoundError, isFlagged } from "@wasanni/kit";
 import type { ScoreFlag, ScoreSource, ScoreView } from "@wasanni/contracts";
 import { readGameSessionRow } from "./session.service.ts";
 import { readScoreFlags } from "./score-flags.ts";
@@ -43,7 +43,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       .where(scopeTo(scope, gameSessionScore, eq(gameSessionScore.sessionId, sessionId)))
       .limit(1);
 
-    if (existing === undefined) throw notFound("score not found");
+    if (existing === undefined) throw new NotFoundError("score not found");
 
     const merged = [...new Set([...existing.flags, ...flags])];
 
@@ -53,7 +53,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       .where(scopeTo(scope, gameSessionScore, eq(gameSessionScore.id, existing.id)))
       .returning();
 
-    if (updated === undefined) throw notFound("score not found");
+    if (updated === undefined) throw new NotFoundError("score not found");
 
     return updated;
   };
@@ -65,7 +65,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
   ): Promise<ScoreView> => {
     const session = await readGameSessionRow(db, scope, input.platformId, input.sessionId);
 
-    if (session.status === "ended") throw forbidden("the game session has ended");
+    if (session.status === "ended") throw new ForbiddenError("the game session has ended");
 
     const submittedAt = new Date();
     const flags = readScoreFlags(session, input.body.score, source, submittedAt, false);

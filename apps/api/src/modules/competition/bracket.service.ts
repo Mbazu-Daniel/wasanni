@@ -7,7 +7,7 @@ import {
   tournament,
   tournamentParticipant,
 } from "@wasanni/db/schema";
-import { badRequest, conflict, newId } from "@wasanni/kit";
+import { BadRequestError, ConflictError, newId } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
 import { activateIfSeated, seatParticipant } from "./advancement.ts";
 import { buildBracket, bracketSize, nextSideOf, nextSlotOf } from "./bracket.ts";
@@ -62,7 +62,7 @@ export function createBracketService(db: Db) {
     const current = await readTournamentRow(db, scope, tournamentId);
 
     if (current.format !== "bracket") {
-      throw badRequest("only a bracket tournament has a bracket");
+      throw new BadRequestError("only a bracket tournament has a bracket");
     }
 
     const matches = await readBracketRows(db, tournamentId);
@@ -126,10 +126,10 @@ export function createBracketService(db: Db) {
     const current = await readTournamentRow(db, scope, tournamentId);
 
     if (current.format !== "bracket") {
-      throw badRequest("only a bracket tournament has a bracket");
+      throw new BadRequestError("only a bracket tournament has a bracket");
     }
     if (current.status !== "open") {
-      throw conflict("the tournament must be open before seeding");
+      throw new ConflictError("the tournament must be open before seeding");
     }
 
     const registered = await db
@@ -143,7 +143,7 @@ export function createBracketService(db: Db) {
       );
 
     if (registered.length < 2) {
-      throw badRequest("a bracket needs at least 2 registered participants");
+      throw new BadRequestError("a bracket needs at least 2 registered participants");
     }
 
     const ordered = [...registered].sort((left, right) => {

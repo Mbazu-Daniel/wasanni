@@ -4,10 +4,10 @@ import { webhookConfig } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
-  conflict,
+  ConflictError,
   encryptSecret,
   newId,
-  notFound,
+  NotFoundError,
   randomBytesBase64Url,
 } from "@wasanni/kit";
 import type { CreateWebhookBody } from "@wasanni/contracts";
@@ -53,11 +53,11 @@ export function createWebhookSecretService(db: Db, encryptionKey: string) {
           })
           .returning();
 
-        if (row === undefined) throw notFound("webhook not found");
+        if (row === undefined) throw new NotFoundError("webhook not found");
         return { webhook: toWebhookView(row), secret };
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw conflict("this platform already has a webhook for that url");
+          throw new ConflictError("this platform already has a webhook for that url");
         }
         throw error;
       }
@@ -77,7 +77,7 @@ export function createWebhookSecretService(db: Db, encryptionKey: string) {
         .where(scopeTo(scope, webhookConfig, eq(webhookConfig.id, current.id)))
         .returning();
 
-      if (row === undefined) throw notFound("webhook not found");
+      if (row === undefined) throw new NotFoundError("webhook not found");
       return { webhook: toWebhookView(row), secret };
     },
   };

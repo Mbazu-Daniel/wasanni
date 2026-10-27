@@ -7,7 +7,7 @@ import {
   type MembershipRow,
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
-import { hashApiKey, internal, sha256Hex, unauthenticated, forbidden } from "@wasanni/kit";
+import { hashApiKey, InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
 import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
 import { permissionsForRole, requirePermission } from "../permissions.ts";
 import type {
@@ -50,7 +50,7 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         async resolve({ request }): Promise<AuthResult> {
           const session = await auth.api.getSession({ headers: request.headers });
 
-          if (session === null) throw unauthenticated();
+          if (session === null) throw new UnauthorizedError();
 
           return { user: session.user, session: session.session };
         },
@@ -60,14 +60,14 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         async resolve({ params, request }): Promise<OrganizationAuthResult> {
           const organizationId = (params as { organizationId?: string }).organizationId;
           if (!organizationId) {
-            throw internal("organizationAuth route is missing an :organizationId param");
+            throw new InternalServerError("organizationAuth route is missing an :organizationId param");
           }
 
           const session = await auth.api.getSession({ headers: request.headers });
-          if (session === null) throw unauthenticated();
+          if (session === null) throw new UnauthorizedError();
 
           const resolved = await resolvePrincipal(db, organizationId, session);
-          if (resolved === null) throw forbidden("not an organization member");
+          if (resolved === null) throw new ForbiddenError("not an organization member");
 
           if (required !== null) requirePermission(resolved, required);
 
@@ -79,12 +79,12 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         async resolve({ request }): Promise<PlatformAuthResult> {
           const secret = request.headers.get("x-api-key");
           if (secret === null || secret === "") {
-            throw unauthenticated("an api key is required");
+            throw new UnauthorizedError("an api key is required");
           }
 
           const credential = await readActiveApiKey(db, hashApiKey(secret));
           if (credential === null) {
-            throw unauthenticated("the api key is not valid");
+            throw new UnauthorizedError("the api key is not valid");
           }
 
           const principal: PlatformPrincipal = {
@@ -106,10 +106,10 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
           const header = request.headers.get("authorization");
           const token = header === null ? "" : header.replace(/^Bearer\s+/i, "").trim();
 
-          if (token === "") throw unauthenticated("a session token is required");
+          if (token === "") throw new UnauthorizedError("a session token is required");
 
           const session = await readGameSessionByToken(db, sha256Hex(token));
-          if (session === null) throw unauthenticated("the session token is not valid");
+          if (session === null) throw new UnauthorizedError("the session token is not valid");
 
           return {
             sessionPrincipal: {

@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { platform } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, internal, newId, notFound } from "@wasanni/kit";
+import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 
 import type { PlatformView } from "@wasanni/contracts";
 
@@ -21,7 +21,7 @@ const toView = (row: PlatformRow): PlatformView => ({
 
 export function createPlatformService(db: Db) {
   const rethrowAsSlugConflict = (error: unknown): never => {
-    if (isUniqueViolation(error)) throw conflict("platform slug already exists");
+    if (isUniqueViolation(error)) throw new ConflictError("platform slug already exists");
     throw error;
   };
 
@@ -43,7 +43,7 @@ export function createPlatformService(db: Db) {
         .where(scopeTo(scope, platform, eq(platform.id, platformId)))
         .limit(1);
 
-      if (row === undefined) throw notFound("platform not found");
+      if (row === undefined) throw new NotFoundError("platform not found");
       return toView(row);
     },
 
@@ -63,7 +63,7 @@ export function createPlatformService(db: Db) {
           })
           .returning();
 
-        if (row === undefined) throw internal("platform insert returned no row");
+        if (row === undefined) throw new InternalServerError("platform insert returned no row");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -87,7 +87,7 @@ export function createPlatformService(db: Db) {
           .where(scopeTo(scope, platform, eq(platform.id, platformId)))
           .returning();
 
-        if (row === undefined) throw notFound("platform not found");
+        if (row === undefined) throw new NotFoundError("platform not found");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -100,7 +100,7 @@ export function createPlatformService(db: Db) {
         .where(scopeTo(scope, platform, eq(platform.id, platformId)))
         .returning({ id: platform.id });
 
-      if (removed.length === 0) throw notFound("platform not found");
+      if (removed.length === 0) throw new NotFoundError("platform not found");
     },
   };
 }

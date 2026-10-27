@@ -1,13 +1,13 @@
-import { badRequest } from "@wasanni/kit";
+import { BadRequestError } from "@wasanni/kit";
 import { MAX_BRACKET_SIZE } from "./constants.ts";
 import type { BracketNode } from "./types.ts";
 
 export function bracketSize(participantCount: number): number {
   if (!Number.isInteger(participantCount) || participantCount < 2) {
-    throw badRequest("a bracket needs at least 2 participants");
+    throw new BadRequestError("a bracket needs at least 2 participants");
   }
   if (participantCount > MAX_BRACKET_SIZE) {
-    throw badRequest(`a bracket supports at most ${MAX_BRACKET_SIZE} participants`);
+    throw new BadRequestError(`a bracket supports at most ${MAX_BRACKET_SIZE} participants`);
   }
   return 2 ** Math.ceil(Math.log2(participantCount));
 }

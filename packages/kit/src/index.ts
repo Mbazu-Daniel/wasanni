@@ -2,7 +2,7 @@ export * from "./config/types.ts";
 export * from "./config/constants.ts";
 export * from "./config/config.ts";
 
-export * from "./errors/errors.ts";
+export * from "./exceptions/index.ts";
 
 export * from "./email/types.ts";
 export * from "./email/constants.ts";

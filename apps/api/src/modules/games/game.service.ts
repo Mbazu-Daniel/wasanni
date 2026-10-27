@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { game, gameFile } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { badRequest, conflict, internal, newId, notFound, type ObjectStorage } from "@wasanni/kit";
+import { BadRequestError, ConflictError, InternalServerError, newId, NotFoundError, type ObjectStorage } from "@wasanni/kit";
 import type {
   CreateGameBody,
   GameView,
@@ -28,7 +28,7 @@ const toView = (row: GameRow): GameView => ({
 
 export function createGameService(db: Db, storage: ObjectStorage) {
   const rethrowAsSlugConflict = (error: unknown): never => {
-    if (isUniqueViolation(error)) throw conflict("game slug already exists");
+    if (isUniqueViolation(error)) throw new ConflictError("game slug already exists");
     throw error;
   };
 
@@ -57,7 +57,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
         .where(scopeTo(scope, game, eq(game.id, gameId)))
         .limit(1);
 
-      if (row === undefined) throw notFound("game not found");
+      if (row === undefined) throw new NotFoundError("game not found");
       return toView(row);
     },
 
@@ -76,7 +76,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
           })
           .returning();
 
-        if (row === undefined) throw internal("game insert returned no row");
+        if (row === undefined) throw new InternalServerError("game insert returned no row");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -99,7 +99,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
           .where(scopeTo(scope, game, eq(game.id, gameId)))
           .returning();
 
-        if (row === undefined) throw notFound("game not found");
+        if (row === undefined) throw new NotFoundError("game not found");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -110,7 +110,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
       const current = await this.get(scope, gameId);
 
       if (current.hosting === "hosted" && !(await hasReadyGameFile(db, scope, gameId))) {
-        throw badRequest("a hosted game needs a ready game file before it is published");
+        throw new BadRequestError("a hosted game needs a ready game file before it is published");
       }
 
       const [row] = await db
@@ -119,7 +119,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
         .where(scopeTo(scope, game, eq(game.id, gameId)))
         .returning();
 
-      if (row === undefined) throw notFound("game not found");
+      if (row === undefined) throw new NotFoundError("game not found");
       return toView(row);
     },
 
@@ -130,7 +130,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
         .where(scopeTo(scope, game, eq(game.id, gameId)))
         .returning();
 
-      if (row === undefined) throw notFound("game not found");
+      if (row === undefined) throw new NotFoundError("game not found");
       return toView(row);
     },
 
@@ -145,7 +145,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
         .where(scopeTo(scope, game, eq(game.id, gameId)))
         .returning({ id: game.id });
 
-      if (removed.length === 0) throw notFound("game not found");
+      if (removed.length === 0) throw new NotFoundError("game not found");
 
       await Promise.allSettled(
         files.map((file) => storage.deleteObject(file.objectKey)),

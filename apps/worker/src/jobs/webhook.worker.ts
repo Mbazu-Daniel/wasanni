@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import type { Db } from "@wasanni/db";
-import { internal, type Env, type Logger } from "@wasanni/kit";
+import { InternalServerError, type Env, type Logger } from "@wasanni/kit";
 import { JOB, QUEUE, type QueueConnection, type WebhookDeliveryJob } from "@wasanni/jobs";
 import { createWebhookProcessor } from "../processors/webhook.processor.ts";
 
@@ -16,7 +16,7 @@ export function createWebhookWorker(
     QUEUE.WEBHOOKS,
     async (job) => {
       if (job.name !== JOB.WEBHOOK_DELIVER) {
-        throw internal(`unexpected webhook job: ${job.name}`);
+        throw new InternalServerError(`unexpected webhook job: ${job.name}`);
       }
       return deliver(job.data);
     },

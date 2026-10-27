@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { webhookConfig } from "@wasanni/db/schema";
-import { decryptSecret, hmacSign, internal, type Env, type Logger } from "@wasanni/kit";
+import { decryptSecret, hmacSign, InternalServerError, type Env, type Logger } from "@wasanni/kit";
 import type { WebhookDeliveryJob } from "@wasanni/jobs";
 
 const TIMEOUT_MS = 10_000;
@@ -70,7 +70,7 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       await markFailure(row.id);
-      throw internal(`webhook responded ${response.status}: ${text.slice(0, 200)}`);
+      throw new InternalServerError(`webhook responded ${response.status}: ${text.slice(0, 200)}`);
     }
 
     await db
