@@ -37,7 +37,6 @@
       "name": "@wasanni/contracts",
       "version": "0.0.0",
       "dependencies": {
-        "@sinclair/typebox": "0.34.52",
         "elysia": "^1.3.0",
       },
     },

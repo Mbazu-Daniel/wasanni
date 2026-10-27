@@ -80,10 +80,6 @@ apps/api/src/modules/auth/
   model.ts       schemas, grouped, types derived from them
   openapi.ts     the Better Auth half of the OpenAPI document
 
-apps/api/src/modules/organization/
-  index.ts       controller — the caller's organizations and invitations
-  service.ts    reads backed by @wasanni/db's membership module
-
 apps/api/src/modules/member/
   index.ts       the signed-in member's own record under /members/me
   service.ts     the read, and the one write better-auth leaves us: displayName
@@ -101,9 +97,13 @@ apps/api/src/modules/api-key/
 plugin, outside the feature folders because three places read it.
 
 One Elysia instance is one controller. `Context` is never passed to a function.
-Schemas come from `t` in `elysia`. `auth`, `organization`, `member`, `platform`
-and `apiKey` are the features. Full conventions:
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+Schemas come from `t` in `elysia`. `auth`, `member`, `platform` and `apiKey` are
+the features. Full conventions: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+Organizations, members and invitations are served by the Better Auth
+organization plugin directly — `/api/v1/auth/*` carries `/organization/*`, so
+the frontend reaches them through the Better Auth client. No wrapper routes or
+service layer exist for them.
 
 The auth module mounts Better Auth at `/api/v1/auth` for sign-up, sign-in, password
 reset and the Google and GitHub callbacks, and answers
@@ -143,9 +143,8 @@ and security scheme. The startup log prints both URLs.
   that applies it.
 - Public IDs are uuid v7. Internal keys never leave the database.
 - Error responses are serialized by `toErrorBody(...)`. Never built by hand.
-- Runtime schemas come from `t` in `elysia`. `@sinclair/typebox` is a supported
-  peer dependency of Elysia, so import it directly only when `t` lacks what you
-  need — never as a rival schema dialect.
+- Runtime schemas come from `t` in `elysia`. `@sinclair/typebox` is not a
+  dependency of this repo; a schema `t` lacks is written by hand.
 - Secrets are hashed. Plaintext is never stored and never logged.
 - Schema changes are generated SQL files, reviewed by hand, and applied against
   a real Postgres in CI.

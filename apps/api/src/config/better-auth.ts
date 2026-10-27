@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI, organization } from "better-auth/plugins";
 import * as schema from "@wasanni/db/schema";
@@ -25,9 +25,6 @@ export function createBetterAuth(deps: ModuleDeps) {
   }
 
   const sendMail: SendEmail = deps.sendEmail ?? ((payload) => sendDevEmail(payload, deps.logger));
-
-  const sendConfirmationLink = (email: string, url: string): Promise<void> =>
-    sendMail({ to: email, subject: "Confirm your Wasanni email", url, purpose: "verify" });
 
   const sendPasswordResetLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Reset your Wasanni password", url, purpose: "reset" });
@@ -56,13 +53,11 @@ export function createBetterAuth(deps: ModuleDeps) {
 
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => sendPasswordResetLink(user.email, url),
     },
 
-    emailVerification: {
-      sendVerificationEmail: async ({ user, url }) => sendConfirmationLink(user.email, url),
-    },
+
 
     socialProviders: {
       ...(google ? { google } : {}),
@@ -84,11 +79,30 @@ export function createBetterAuth(deps: ModuleDeps) {
     },
 
     plugins: [
+      {
+        id: "default-name-from-email",
+        hooks: {
+          before: [
+            {
+              matcher: (ctx) => (ctx.path ?? "").endsWith("/sign-up/email"),
+              handler: async (ctx) => {
+                const body = ctx.body as { name?: string; email?: string } | undefined;
+                if (!body?.name && body?.email) {
+                  return {
+                    context: {
+                      body: { ...body, name: body.email.split("@")[0] },
+                    },
+                  };
+                }
+              },
+            },
+          ],
+        },
+      } satisfies BetterAuthPlugin,
       organization({
         ac,
         roles,
-        allowUserToCreateOrganization: (user) => user.emailVerified === true,
-        requireEmailVerificationOnInvitation: true,
+        requireEmailVerificationOnInvitation: false,
         invitationExpiresIn: 60 * 60 * 24 * 7,
         cancelPendingInvitationsOnReinvite: true,
         sendInvitationEmail: async ({ email, organization: invited, inviter, invitation }) => {

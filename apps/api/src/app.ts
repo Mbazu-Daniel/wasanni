@@ -1,19 +1,17 @@
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { AppError } from "@wasanni/kit";
-import { toErrorBody } from "@wasanni/contracts";
+import { STATUS, toErrorBody } from "@wasanni/contracts";
 import { authApiDocument, authRoutes } from "./modules/auth/index.ts";
-import { organizationRoutes } from "./modules/organization/index.ts";
-import { organizationService } from "./modules/organization/service.ts";
-import { memberRoutes } from "./modules/member/index.ts";
-import { memberService } from "./modules/member/service.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
 import { principal, type PrincipalDeps } from "./plugins/principal.ts";
 import { healthRoutes } from "./routes/health.ts";
+import { failureOf } from "./failures.ts";
 import { requestContext, requestContextOf } from "./plugins/request-context.ts";
 import { platformRoutes } from "./modules/platform/index.ts";
 import { platformService } from "./modules/platform/service.ts";
+import { memberRoutes } from "./modules/member/index.ts";
+import { memberService } from "./modules/member/service.ts";
 import { apiKeyRoutes } from "./modules/api-key/index.ts";
 import { apiKeyService } from "./modules/api-key/service.ts";
 import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
@@ -33,7 +31,12 @@ export async function createApp(deps: AppDeps) {
         origin: deps.corsOrigins,
         credentials: true,
         methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id", "X-API-Key"],
+        allowedHeaders: [
+          "Content-Type",
+          "Authorization",
+          "X-Request-Id",
+          "X-API-Key",
+        ],
         exposeHeaders: ["X-Request-Id", "Set-Cookie"],
       }),
     )
@@ -51,19 +54,8 @@ export async function createApp(deps: AppDeps) {
         },
       }),
     )
-    .use(authRoutes(base, betterAuth))
-    .use(memberRoutes(base, { service: memberService(deps.db), env: deps.env }))
-    .use(organizationRoutes(base, { auth: betterAuth, service: organizationService(deps.db) }))
-    .use(platformRoutes(base, { service: platformService(deps.db) }))
-    .use(apiKeyRoutes(base, { service: apiKeyService(deps.db) }))
-    .use(healthRoutes(deps))
     .onError(({ error, code: lifecycleCode, set, request }) => {
       const { requestId } = requestContextOf(request);
-
-      if (error instanceof AppError) {
-        set.status = error.status;
-        return toErrorBody(error, requestId);
-      }
 
       if (lifecycleCode === "VALIDATION") {
         set.status = 422;
@@ -82,10 +74,19 @@ export async function createApp(deps: AppDeps) {
         return toErrorBody({ code: "not_found", message: "route not found" }, requestId);
       }
 
-      deps.logger.error("unhandled error", { err: error, requestId });
-      set.status = 500;
-      return toErrorBody({ code: "internal", message: "internal error" }, requestId);
+      const failure = failureOf(error);
+      if (failure.status === STATUS.internal) {
+        deps.logger.error("unhandled error", { err: error, requestId });
+      }
+
+      set.status = failure.status;
+      return toErrorBody(failure.source, requestId);
     })
+    .use(authRoutes(base, betterAuth))
+    .use(memberRoutes(base, { service: memberService(deps.db), env: deps.env }))
+    .use(platformRoutes(base, { service: platformService(deps.db) }))
+    .use(apiKeyRoutes(base, { service: apiKeyService(deps.db) }))
+    .use(healthRoutes(deps))
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
       deps.logger.info("http", {
