@@ -5,12 +5,15 @@ import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { Breadcrumbs } from "./breadcrumbs";
 import { CommandPalette } from "./command-palette";
+import { ShortcutsHelp } from "./shortcuts-help";
+import { useDashboardShortcuts } from "./keyboard-shortcuts";
 
 const STORAGE_KEY = "wasanni:sidebar-collapsed";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [commandOpen, setCommandOpen] = React.useState(false);
+  const [helpOpen, setHelpOpen] = React.useState(false);
   const location = useLocation();
 
   React.useEffect(() => {
@@ -18,17 +21,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (saved !== null) setCollapsed(saved === "true");
   }, []);
 
-  React.useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        setCommandOpen((value) => !value);
-      }
-    };
+  const togglePalette = React.useCallback(
+    () => setCommandOpen((value) => !value),
+    [],
+  );
+  const openPalette = React.useCallback(() => setCommandOpen(true), []);
+  const openHelp = React.useCallback(() => setHelpOpen(true), []);
 
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  useDashboardShortcuts({ togglePalette, openPalette, openHelp });
 
   function toggle() {
     setCollapsed((value) => {
@@ -42,7 +42,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-screen overflow-hidden bg-ink">
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onOpenCommand={() => setCommandOpen(true)} />
+        <Topbar
+          onOpenCommand={() => setCommandOpen(true)}
+          onOpenHelp={openHelp}
+        />
         <main className="relative flex-1 overflow-y-auto">
           <motion.div
             key={location.pathname}
@@ -57,6 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <ShortcutsHelp open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }

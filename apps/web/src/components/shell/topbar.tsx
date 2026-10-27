@@ -1,8 +1,14 @@
-import { IconSearch } from "@tabler/icons-react";
+import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { OrgSwitcher } from "./org-switcher";
 import { UserMenu } from "./user-menu";
 
-export function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
+export function Topbar({
+  onOpenCommand,
+  onOpenHelp,
+}: {
+  onOpenCommand: () => void;
+  onOpenHelp: () => void;
+}) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-[#070915] px-4">
       <OrgSwitcher />
@@ -15,6 +21,14 @@ export function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
         <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px]">
           ⌘K
         </kbd>
+      </button>
+      <button
+        onClick={onOpenHelp}
+        aria-label="Keyboard shortcuts"
+        title="Keyboard shortcuts (?)"
+        className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-pink/30 hover:text-foreground"
+      >
+        <IconHelp className="size-4" />
       </button>
       <UserMenu />
     </header>

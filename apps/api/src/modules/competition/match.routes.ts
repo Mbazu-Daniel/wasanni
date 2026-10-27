@@ -2,6 +2,8 @@ import {
   CompleteMatchBody,
   CreateMatchBody,
   MatchIdParams,
+  MatchList,
+  MatchListQuery,
   MatchParticipants,
   MatchSingle,
   OrganizationIdParams,
@@ -32,6 +34,24 @@ export const createMatchRoutes = <T extends PrincipalApi>(
         body: CreateMatchBody,
         response: { 201: MatchSingle },
         detail: { tags: ["matches"], summary: "Create a standalone match" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/matches",
+      async ({ principal, query }) =>
+        deps.matches.listForOrganization(organizationScope(principal), {
+          gameId: query.gameId,
+          tournamentId: query.tournamentId,
+          status: query.status,
+          cursor: query.cursor,
+          limit: query.limit,
+        }),
+      {
+        organizationAuth: PERMISSION.matchRead,
+        params: OrganizationIdParams,
+        query: MatchListQuery,
+        response: { 200: MatchList },
+        detail: { tags: ["matches"], summary: "List the organization's matches" },
       },
     )
     .get(
