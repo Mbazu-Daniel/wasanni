@@ -4,6 +4,7 @@ import {
   readActiveApiKey,
   readGameSessionByToken,
   readMembership,
+  readOrganizationRoles,
   type MembershipRow,
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
@@ -32,6 +33,8 @@ const resolvePrincipal = async (
 
   if (membership === null) return null;
 
+  const grants = await readOrganizationRoles(db, organizationId);
+
   return {
     kind: "user",
     userId: session.user.id,
@@ -39,7 +42,7 @@ const resolvePrincipal = async (
     memberId: membership.memberId,
     organizationId,
     role: membership.role,
-    permissions: permissionsForRole(membership.role),
+    permissions: permissionsForRole(membership.role, grants),
   };
 };
 

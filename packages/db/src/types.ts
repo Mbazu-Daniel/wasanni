@@ -1,4 +1,4 @@
-import type { GameSessionStatus, RoleName } from "@wasanni/contracts";
+import type { GameSessionStatus } from "@wasanni/contracts";
 import type { createDb } from "./client.ts";
 
 export type Db = ReturnType<typeof createDb>["db"];
@@ -12,7 +12,7 @@ export type ApiKeyCredential = {
 
 export type MembershipRow = {
   memberId: string;
-  role: RoleName;
+  role: string;
   displayName: string | null;
 };
 

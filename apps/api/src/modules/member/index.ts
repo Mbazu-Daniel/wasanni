@@ -1,8 +1,11 @@
 import {
   AvatarUploadTicketSingle,
+  MemberIdParams,
   MemberSingle,
+  PERMISSION,
   RequestAvatarUpload,
   SetMemberAvatar,
+  SetMemberRole,
   UpdateMemberDisplayName,
 } from "@wasanni/contracts";
 import { NotFoundError, organizationScope } from "@wasanni/kit";
@@ -44,6 +47,25 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       body: UpdateMemberDisplayName,
       response: { 200: MemberSingle },
       detail: { tags: ["members"], summary: "Update the signed-in member display name" },
+    })
+    .put("/api/v1/organizations/:organizationId/members/:memberId/role", async ({
+      principal,
+      params,
+      body,
+    }) => {
+      const member = await service.setRole(
+        organizationScope(principal),
+        params.memberId,
+        body.role,
+      );
+
+      return { member };
+    }, {
+      organizationAuth: PERMISSION.memberUpdate,
+      params: MemberIdParams,
+      body: SetMemberRole,
+      response: { 200: MemberSingle },
+      detail: { tags: ["members"], summary: "Give a member a role" },
     })
     .post("/api/v1/organizations/:organizationId/members/me/avatar", async ({
       principal,

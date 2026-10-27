@@ -221,6 +221,30 @@ The game is then served from `/play/:gameId/:fileId/`:
 A `.zip` without `kind: "bundle"` is read as a bundle anyway; a bundle that is
 not a `.zip` filename, or a `.zip` declared `kind: "single"`, is refused.
 
+## Custom roles
+
+An organization can name its own roles. A role is a grant — the same shape an
+api key carries — and a member holding it gets exactly that grant:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/roles \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"role":"judge","permission":{"score":["read","hide"],"tournament":["read"]}}'
+```
+
+`owner` creates, changes and deletes roles; `POST` is a conflict when the name
+is taken, `PATCH /roles/:role` changes the grant, `DELETE /roles/:role` takes
+it away. A role named `owner` cannot be redefined, and the owner role always
+keeps its compiled permissions, so an organization cannot lock itself out.
+
+A member is given a role with
+`PUT /api/v1/organizations/$ORG/members/$MEMBER/role` and the body
+`{"role":"judge"}`. A role that the organization has not created is refused.
+
+A custom role replaces the compiled role of the same name inside that
+organization, and only there: the built-in `owner`, `admin` and `member` roles
+stay as they are until an organization overrides one.
+
 ## Secret rotation
 
 `bun scripts/rotate-secret.ts <old-key> <new-key>` re-encrypts every webhook

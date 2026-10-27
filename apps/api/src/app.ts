@@ -23,6 +23,8 @@ import { createMemberRoutes } from "./modules/member/index.ts";
 import { createMemberService } from "./modules/member/service.ts";
 import { createApiKeyRoutes } from "./modules/api-key/index.ts";
 import { createApiKeyService } from "./modules/api-key/service.ts";
+import { createRoleRoutes } from "./modules/role/index.ts";
+import { createRoleService } from "./modules/role/service.ts";
 import { createGamesRoutes } from "./modules/games/index.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes } from "./modules/play/index.ts";
@@ -161,6 +163,7 @@ export async function createApp(deps: AppDeps) {
     .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
     .use(createPlatformRoutes(base, { service: createPlatformService(deps.db) }))
     .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
+    .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
     .use(
       createGamesRoutes(base, {
         db: deps.db,
