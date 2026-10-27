@@ -12,9 +12,12 @@ const NAVIGATION_SHORTCUTS: [keys: string, label: string][] = [
   ["G O", "Tournaments"],
   ["G M", "Matches"],
   ["G U", "Audit"],
+  ["G V", "Usage"],
   ["G F", "Developer"],
   ["G E", "Members"],
+  ["G R", "Organization"],
   ["G C", "Account"],
+  ["G X", "Danger zone"],
 ];
 
 const ACTION_SHORTCUTS: [keys: string, label: string][] = [

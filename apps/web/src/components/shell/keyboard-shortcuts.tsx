@@ -16,9 +16,12 @@ export const PAGE_SHORTCUTS: Record<string, string> = {
   tournaments: "o",
   matches: "m",
   audit: "u",
+  usage: "v",
   developer: "f",
   members: "e",
+  organization: "r",
   account: "c",
+  danger: "x",
 };
 
 const GO_TARGETS: Record<string, string> = {
@@ -32,9 +35,12 @@ const GO_TARGETS: Record<string, string> = {
   o: "tournaments",
   m: "matches",
   u: "audit",
+  v: "usage",
   f: "developer",
   e: "settings/members",
+  r: "settings/organization",
   c: "settings/account",
+  x: "settings/danger",
 };
 
 const CREATE_TARGETS: Record<string, string> = {

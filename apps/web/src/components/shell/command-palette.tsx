@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   IconBook,
   IconBroadcast,
+  IconBuilding,
   IconCheck,
   IconCode,
   IconCopy,
@@ -59,13 +60,14 @@ const NAV: { id: string; label: string; icon: Icon }[] = [
   { id: "matches", label: "Matches", icon: IconSwords },
   { id: "audit", label: "Audit", icon: IconList },
   { id: "usage", label: "Usage", icon: IconChartBar },
-  { id: "danger", label: "Danger zone", icon: IconAlertTriangle },
   { id: "developer", label: "Developer", icon: IconCode },
   { id: "members", label: "Members", icon: IconUsers },
+  { id: "organization", label: "Organization", icon: IconBuilding },
   { id: "account", label: "Account", icon: IconUser },
+  { id: "danger", label: "Danger zone", icon: IconAlertTriangle },
 ];
 
-const SETTINGS = new Set(["members", "account"]);
+const SETTINGS = new Set(["members", "organization", "account", "danger"]);
 
 const CREATE: { id: string; label: string; to: string }[] = [
   { id: "new-game", label: "New game", to: "games/new" },
@@ -274,7 +276,12 @@ export function CommandPalette({
         </kbd>
       </div>
 
-      <div ref={listRef} className="max-h-[380px] overflow-y-auto p-2">
+      <div
+        ref={listRef}
+        className="max-h-[380px] overflow-y-auto p-2"
+        role="listbox"
+        aria-label="Commands"
+      >
         {commands.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
             No results for “{query}”.
@@ -294,6 +301,8 @@ export function CommandPalette({
                   <button
                     key={command.id}
                     data-index={localIndex}
+                    role="option"
+                    aria-selected={isActive}
                     onMouseEnter={() => setActive(localIndex)}
                     onClick={() => void execute(command)}
                     className={cn(

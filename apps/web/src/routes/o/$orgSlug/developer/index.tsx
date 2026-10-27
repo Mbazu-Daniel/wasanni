@@ -36,11 +36,11 @@ const TABS = [
     ),
   },
   {
-    value: "token",
+    value: "request",
     label: (
       <>
         <IconCode className="size-3.5" />
-        Session token
+        Score request
       </>
     ),
   },
@@ -66,7 +66,7 @@ function DeveloperPage() {
       <div className="mt-6">
         {tab === "score-hmac" && <ScoreHmacTool />}
         {tab === "webhook" && <WebhookVerifyTool />}
-        {tab === "token" && <TokenDecoderTool />}
+        {tab === "request" && <ScoreRequestTool />}
       </div>
     </div>
   );
@@ -297,103 +297,94 @@ function WebhookVerifyTool() {
   );
 }
 
-function TokenDecoderTool() {
-  const [token, setToken] = React.useState("");
-  const [decoded, setDecoded] = React.useState<{
-    header: unknown;
-    payload: unknown;
-  } | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+function ScoreRequestTool() {
+  const [sessionId, setSessionId] = React.useState("gsx_7QH2M9XK4C8B");
+  const [score, setScore] = React.useState("940");
+  const [apiKey, setApiKey] = React.useState("");
+  const [endSession, setEndSession] = React.useState(false);
 
-  function decode() {
-    setError(null);
-    setDecoded(null);
-
-    const parts = token.trim().split(".");
-    if (parts.length !== 3) {
-      setError("A JWT has three dot-separated parts.");
-      return;
-    }
-
-    try {
-      setDecoded({
-        header: JSON.parse(base64UrlDecode(parts[0]!)),
-        payload: JSON.parse(base64UrlDecode(parts[1]!)),
-      });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not decode");
-    }
-  }
-
-  const payload = decoded?.payload as Record<string, unknown> | undefined;
-  const expiresAt = typeof payload?.exp === "number" ? payload.exp : null;
-  const expired = expiresAt !== null && expiresAt * 1000 < Date.now();
+  const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
+  const body = JSON.stringify(
+    {
+      score: Number(score) || 0,
+      ...(endSession ? { endSession: true } : {}),
+    },
+    null,
+    2,
+  );
+  const curl = [
+    `curl -XPOST ${apiUrl}/api/v1/platform/sessions/${sessionId}/score \\`,
+    `  -H 'x-api-key: ${apiKey === "" ? "<your api key>" : apiKey}' \\`,
+    `  -H 'content-type: application/json' \\`,
+    `  -d '${body}'`,
+  ].join("\n");
 
   return (
     <div className="space-y-5">
       <Explanation>
-        Decode a session token to see the session, organization, platform, game,
-        player and expiry it carries. This does not verify the signature — the
-        API does that on every request.
+        A platform submits a score to{" "}
+        <Code>POST /api/v1/platform/sessions/:sessionId/score</Code> with its
+        api key. The body carries the score, and the signature from the Score
+        HMAC tab when the game asks for one.
       </Explanation>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="tok-input">Session token</Label>
-        <Textarea
-          id="tok-input"
-          value={token}
-          onChange={(event) => setToken(event.target.value)}
-          placeholder="eyJhbGciOiJIUzI1NiIs…"
-          className="min-h-[100px] font-mono text-[11px]"
-          spellCheck={false}
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={decode} disabled={token.trim() === ""}>
-          Decode
-        </Button>
-        {decoded !== null && (
-          <Badge variant={expired ? "muted" : "success"} className="text-[10px]">
-            {expired ? "expired" : "not expired"}
-          </Badge>
-        )}
-      </div>
-
-      {error !== null && (
-        <p className="flex items-center gap-1.5 text-xs text-rose-300">
-          <IconX className="size-3.5" />
-          {error}
-        </p>
-      )}
-
-      {decoded !== null && (
-        <div className="space-y-3">
-          <JsonBlock label="Header" value={decoded.header} />
-          <JsonBlock label="Payload" value={decoded.payload} />
-          {expiresAt !== null && (
-            <p className="text-xs text-muted-foreground">
-              Expires{" "}
-              <span className="font-mono text-foreground">
-                {new Date(expiresAt * 1000).toISOString()}
-              </span>
-            </p>
-          )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="req-session">Session ID</Label>
+          <Input
+            id="req-session"
+            value={sessionId}
+            onChange={(event) => setSessionId(event.target.value)}
+            className="font-mono text-xs"
+          />
         </div>
-      )}
-    </div>
-  );
-}
+        <div className="space-y-1.5">
+          <Label htmlFor="req-score">Score</Label>
+          <Input
+            id="req-score"
+            type="number"
+            min={0}
+            value={score}
+            onChange={(event) => setScore(event.target.value)}
+            className="font-mono text-xs"
+          />
+        </div>
+      </div>
 
-function JsonBlock({ label, value }: { label: string; value: unknown }) {
-  return (
-    <div>
-      <Label className="font-mono text-[10px] uppercase tracking-[0.22em]">
-        {label}
-      </Label>
-      <pre className="mt-1 max-h-60 overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-border bg-black/20 p-2 font-mono text-[10px] text-muted-foreground">
-        {JSON.stringify(value, null, 2)}
-      </pre>
+      <div className="space-y-1.5">
+        <Label htmlFor="req-key">Api key</Label>
+        <Input
+          id="req-key"
+          type="password"
+          value={apiKey}
+          onChange={(event) => setApiKey(event.target.value)}
+          placeholder="wsk_…"
+          className="font-mono text-xs"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          This never leaves your browser.
+        </p>
+      </div>
+
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={endSession}
+          onChange={(event) => setEndSession(event.target.checked)}
+          className="size-3.5 accent-pink"
+        />
+        End the session with this score
+      </label>
+
+      <div className="space-y-1.5">
+        <Label>Request body</Label>
+        <CopyField value={body} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>curl</Label>
+        <CopyField value={curl} />
+      </div>
     </div>
   );
 }
@@ -446,12 +437,4 @@ async function sign(
   for (const byte of signature) binary += String.fromCharCode(byte);
 
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function base64UrlDecode(value: string): string {
-  const padded =
-    value.replace(/-/g, "+").replace(/_/g, "/") +
-    "=".repeat((4 - (value.length % 4)) % 4);
-
-  return atob(padded);
 }
