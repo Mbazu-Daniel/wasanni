@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { IconChevronRight } from "@tabler/icons-react";
 
 const LABELS: Record<string, string> = {
@@ -27,6 +27,7 @@ const shortId = (segment: string): string =>
   `${segment.slice(0, 4)}…${segment.slice(-4)}`;
 
 export function Breadcrumbs() {
+  const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const segments = pathname.split("/").filter(Boolean);
 
@@ -52,9 +53,17 @@ export function Breadcrumbs() {
           {crumb.isLast ? (
             <span className="text-foreground">{crumb.label}</span>
           ) : (
-            <Link to={crumb.href as never} className="transition-colors hover:text-foreground">
+            <a
+              href={crumb.href}
+              className="transition-colors hover:text-foreground"
+              onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+                event.preventDefault();
+                router.navigate({ href: crumb.href });
+              }}
+            >
               {crumb.label}
-            </Link>
+            </a>
           )}
         </div>
       ))}
