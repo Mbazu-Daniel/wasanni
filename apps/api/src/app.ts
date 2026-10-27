@@ -201,6 +201,7 @@ export async function createApp(deps: AppDeps) {
       createWebhooksRoutes(base, {
         db: deps.db,
         encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        dispatcher,
       }),
     )
     .use(competition.mount(base))

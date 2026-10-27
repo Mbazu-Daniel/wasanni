@@ -26,9 +26,11 @@ export type WebhookSecretService = ReturnType<typeof createWebhookSecretService>
 export type WebhookModuleDeps = {
   db: Db;
   encryptionKey: string;
+  dispatcher: WebhookDispatcher;
 };
 
 export type WebhookRouteDeps = {
   service: WebhookService;
   secrets: WebhookSecretService;
+  dispatcher: WebhookDispatcher;
 };

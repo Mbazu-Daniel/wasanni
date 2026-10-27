@@ -1,10 +1,14 @@
 import {
   CreateWebhookBody,
   CreatedWebhook,
+  OrganizationIdParams,
+  OrganizationWebhookIdParams,
+  OrgWebhookList,
   PERMISSION,
   UpdateWebhookBody,
   WebhookConfigList,
   WebhookConfigSingle,
+  WebhookDeliveryList,
   WebhookIdParams,
   WebhookParams,
 } from "@wasanni/contracts";
@@ -14,9 +18,36 @@ import type { WebhookRouteDeps } from "./types.ts";
 
 export const createWebhookRoutes = <T extends PrincipalApi>(
   api: T,
-  { service, secrets }: WebhookRouteDeps,
+  { service, secrets, dispatcher }: WebhookRouteDeps,
 ) =>
   api
+    .get(
+      "/api/v1/organizations/:organizationId/webhooks",
+      async ({ principal }) => ({
+        webhooks: await service.listForOrganization(organizationScope(principal)),
+      }),
+      {
+        organizationAuth: PERMISSION.webhookRead,
+        params: OrganizationIdParams,
+        response: { 200: OrgWebhookList },
+        detail: { tags: ["webhooks"], summary: "List every webhook of an organization" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/webhooks/:webhookId/deliveries",
+      async ({ principal, params }) => ({
+        deliveries: await service.listDeliveries(
+          organizationScope(principal),
+          params.webhookId,
+        ),
+      }),
+      {
+        organizationAuth: PERMISSION.webhookRead,
+        params: OrganizationWebhookIdParams,
+        response: { 200: WebhookDeliveryList },
+        detail: { tags: ["webhooks"], summary: "List the recent deliveries of a webhook" },
+      },
+    )
     .get(
       "/api/v1/organizations/:organizationId/platforms/:platformId/webhooks",
       async ({ principal, params }) => ({
@@ -48,6 +79,28 @@ export const createWebhookRoutes = <T extends PrincipalApi>(
         body: CreateWebhookBody,
         response: { 201: CreatedWebhook },
         detail: { tags: ["webhooks"], summary: "Create a webhook" },
+      },
+    )
+    .post(
+      "/api/v1/organizations/:organizationId/platforms/:platformId/webhooks/:webhookId/test",
+      async ({ principal, params, status }) => {
+        const scope = organizationScope(principal);
+
+        await service.get(scope, params.platformId, params.webhookId);
+
+        const queued = await dispatcher.dispatch({
+          organizationId: scope.organizationId,
+          platformId: params.platformId,
+          eventType: "webhook.test",
+          payload: { webhookId: params.webhookId },
+        });
+
+        return status(202, { queued });
+      },
+      {
+        organizationAuth: PERMISSION.webhookRead,
+        params: WebhookIdParams,
+        detail: { tags: ["webhooks"], summary: "Send a test event to a webhook" },
       },
     )
     .get(

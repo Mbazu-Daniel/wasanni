@@ -29,6 +29,9 @@ type NavItem = {
   to?:
     | "/o/$orgSlug/overview"
     | "/o/$orgSlug/games"
+    | "/o/$orgSlug/platforms"
+    | "/o/$orgSlug/keys"
+    | "/o/$orgSlug/webhooks"
     | "/o/$orgSlug/settings/members"
     | "/o/$orgSlug/settings/account";
 };
@@ -48,10 +51,10 @@ const groups: { label: string | null; items: NavItem[] }[] = [
   {
     label: "Distribute",
     items: [
-      { label: "Platforms", icon: IconBroadcast },
+      { label: "Platforms", to: "/o/$orgSlug/platforms", icon: IconBroadcast },
       { label: "Assignments", icon: IconLink },
-      { label: "API keys", icon: IconKey },
-      { label: "Webhooks", icon: IconWebhook },
+      { label: "API keys", to: "/o/$orgSlug/keys", icon: IconKey },
+      { label: "Webhooks", to: "/o/$orgSlug/webhooks", icon: IconWebhook },
     ],
   },
   {

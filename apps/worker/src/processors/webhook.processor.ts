@@ -1,10 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { webhookConfig } from "@wasanni/db/schema";
+import { webhookConfig, webhookDelivery } from "@wasanni/db/schema";
 import {
   decryptSecret,
   hmacSign,
   InternalServerError,
+  newId,
   type Env,
   type Logger,
 } from "@wasanni/kit";
@@ -13,34 +14,60 @@ import type { WebhookDeliveryJob } from "@wasanni/jobs";
 const TIMEOUT_MS = 10_000;
 
 export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
-  const markFailure = async (webhookId: string): Promise<void> => {
-    await db
-      .update(webhookConfig)
-      .set({ lastFailureAt: new Date() })
-      .where(eq(webhookConfig.id, webhookId));
-  };
-
-  return async function deliver(job: WebhookDeliveryJob): Promise<unknown> {
-    const [row] = await db
-      .select()
-      .from(webhookConfig)
-      .where(
-        and(
-          eq(webhookConfig.id, job.webhookId),
-          eq(webhookConfig.organizationId, job.organizationId),
-          eq(webhookConfig.platformId, job.platformId),
-        ),
-      )
-      .limit(1);
+  return async function deliver(
+    job: WebhookDeliveryJob,
+    attempt: number,
+    isFinalAttempt: boolean,
+  ): Promise<unknown> {
+    const row = await db.query.webhookConfig.findFirst({
+      where: and(
+        eq(webhookConfig.id, job.webhookId),
+        eq(webhookConfig.organizationId, job.organizationId),
+        eq(webhookConfig.platformId, job.platformId),
+      ),
+    });
 
     if (row === undefined) {
       logger.warn("webhook.missing", { webhookId: job.webhookId });
       return { skipped: "missing" };
     }
 
-    if (!row.enabled) return { skipped: "disabled" };
+    if (!row.enabled) {
+      return { skipped: "disabled" };
+    }
 
-    const secret = decryptSecret(row.secretCiphertext, env.WEBHOOK_SECRET_ENCRYPTION_KEY);
+    const record = async (input: {
+      status: "delivered" | "failed" | "retrying";
+      statusCode?: number;
+      responseBody?: string;
+      error?: string;
+      durationMs: number;
+    }) => {
+      await db
+        .insert(webhookDelivery)
+        .values({
+          id: newId(),
+          organizationId: job.organizationId,
+          platformId: job.platformId,
+          webhookId: job.webhookId,
+          eventId: job.eventId,
+          eventType: job.eventType,
+          attempt,
+          status: input.status,
+          statusCode: input.statusCode ?? null,
+          responseBody: input.responseBody?.slice(0, 1000) ?? null,
+          error: input.error?.slice(0, 1000) ?? null,
+          durationMs: input.durationMs,
+        })
+        .catch((error: unknown) =>
+          logger.warn("webhook.delivery_log_failed", { err: error }),
+        );
+    };
+
+    const secret = decryptSecret(
+      row.secretCiphertext,
+      env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+    );
 
     const body = JSON.stringify({
       id: job.eventId,
@@ -51,6 +78,7 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const signature = hmacSign(secret, body, timestamp);
+    const startedAt = Date.now();
 
     let response: Response;
 
@@ -71,16 +99,37 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      await markFailure(row.id);
+      await db
+        .update(webhookConfig)
+        .set({ lastFailureAt: new Date() })
+        .where(eq(webhookConfig.id, row.id));
+
+      await record({
+        status: isFinalAttempt ? "failed" : "retrying",
+        error: message,
+        durationMs: Date.now() - startedAt,
+      });
 
       throw error instanceof Error ? error : new Error(message);
     }
+
+    const durationMs = Date.now() - startedAt;
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       const message = `webhook responded ${response.status}: ${text.slice(0, 200)}`;
 
-      await markFailure(row.id);
+      await db
+        .update(webhookConfig)
+        .set({ lastFailureAt: new Date() })
+        .where(eq(webhookConfig.id, row.id));
+
+      await record({
+        status: isFinalAttempt ? "failed" : "retrying",
+        statusCode: response.status,
+        responseBody: text,
+        durationMs,
+      });
 
       throw new InternalServerError(message);
     }
@@ -89,6 +138,13 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
       .update(webhookConfig)
       .set({ lastDeliveryAt: new Date() })
       .where(eq(webhookConfig.id, row.id));
+
+    await record({
+      status: "delivered",
+      statusCode: response.status,
+      responseBody: await response.text().catch(() => ""),
+      durationMs,
+    });
 
     return { status: response.status };
   };
