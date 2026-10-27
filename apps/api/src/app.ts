@@ -12,6 +12,10 @@ import { createBetterAuth } from "./config/better-auth.ts";
 import { principal, type PrincipalDeps } from "./plugins/principal.ts";
 import { healthRoutes } from "./routes/health.ts";
 import { requestContext, requestContextOf } from "./plugins/request-context.ts";
+import { platformRoutes } from "./modules/platform/index.ts";
+import { platformService } from "./modules/platform/service.ts";
+import { apiKeyRoutes } from "./modules/api-key/index.ts";
+import { apiKeyService } from "./modules/api-key/service.ts";
 import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
 
@@ -29,7 +33,7 @@ export async function createApp(deps: AppDeps) {
         origin: deps.corsOrigins,
         credentials: true,
         methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id", "X-API-Key"],
         exposeHeaders: ["X-Request-Id", "Set-Cookie"],
       }),
     )
@@ -50,6 +54,8 @@ export async function createApp(deps: AppDeps) {
     .use(authRoutes(base, betterAuth))
     .use(memberRoutes(base, { auth: betterAuth, service: memberService(deps.db) }))
     .use(organizationRoutes(base, { auth: betterAuth, service: organizationService(deps.db) }))
+    .use(platformRoutes(base, { service: platformService(deps.db) }))
+    .use(apiKeyRoutes(base, { service: apiKeyService(deps.db) }))
     .use(healthRoutes(deps))
     .onError(({ error, code: lifecycleCode, set, request }) => {
       const { requestId } = requestContextOf(request);

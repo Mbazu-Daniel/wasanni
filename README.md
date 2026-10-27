@@ -87,13 +87,22 @@ apps/api/src/modules/organization/
 apps/api/src/modules/members/
   index.ts       the member lifecycle under /organizations/:organizationId/members
   service.ts     member reads and the display-name write
+
+apps/api/src/modules/platform/
+  index.ts       controller — platforms under /organizations/:organizationId
+  service.ts     platform reads and writes
+
+apps/api/src/modules/api-key/
+  index.ts       controller — api keys under /organizations/:organizationId/platforms
+  service.ts     api key reads and writes
 ```
 
 `apps/api/src/config/better-auth.ts` holds the Better Auth instance and every
 plugin, outside the feature folders because three places read it.
 
 One Elysia instance is one controller. `Context` is never passed to a function.
-Schemas come from `t` in `elysia`. `auth`, `organization` and `members` are the features. Full conventions:
+Schemas come from `t` in `elysia`. `auth`, `organization`, `members`, `platform`
+and `apiKey` are the features. Full conventions:
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 The auth module mounts Better Auth at `/api/v1/auth` for sign-up, sign-in, password

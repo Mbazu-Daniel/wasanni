@@ -1,9 +1,10 @@
 import { Elysia } from "elysia";
 import type { ElysiaCustomStatusResponse } from "elysia";
 import type { Db } from "@wasanni/db";
-import { readMembership, type MembershipRow } from "@wasanni/db";
-import { toErrorBody } from "@wasanni/contracts";
-import type { UserPrincipal } from "@wasanni/kit";
+import { readActiveApiKey, readMembership, type MembershipRow } from "@wasanni/db";
+import { flattenPermissions, parsePermissionGrant, toErrorBody } from "@wasanni/contracts";
+import { hashApiKey, requirePermission } from "@wasanni/kit";
+import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
 import { requestContextOf } from "./request-context.ts";
 import { permissionsForRole } from "../permissions.ts";
 import type { BetterAuth } from "../config/better-auth.ts";
@@ -25,10 +26,9 @@ type AuthResult = { user: Session["user"]; session: Session["session"] };
 
 type OrganizationAuthResult = { principal: UserPrincipal };
 
-export const findSession = (auth: BetterAuth, headers: Headers): Promise<Session | null> =>
-  auth.api.getSession({ headers });
+type PlatformAuthResult = { principal: PlatformPrincipal };
 
-export const principalFor = async (
+const principalFor = async (
   db: Db,
   organizationId: string,
   session: Session,
@@ -58,7 +58,7 @@ export const principal = ({ db, auth }: PrincipalDeps) =>
       auth: {
         async resolve({ request, status }): Promise<AuthResult | ElysiaStatus> {
           const { requestId } = requestContextOf(request);
-          const session = await findSession(auth, request.headers);
+          const session = await auth.api.getSession({ headers: request.headers });
 
           if (session === null) {
             return status(
@@ -80,7 +80,7 @@ export const principal = ({ db, auth }: PrincipalDeps) =>
             throw new Error("organizationAuth route is missing an :organizationId param");
           }
 
-          const session = await findSession(auth, request.headers);
+          const session = await auth.api.getSession({ headers: request.headers });
           if (session === null) {
             return status(
               401,
@@ -96,17 +96,49 @@ export const principal = ({ db, auth }: PrincipalDeps) =>
             );
           }
 
-          if (required !== null && !resolved.permissions.has(required)) {
+          if (required !== null) requirePermission(resolved, required);
+
+          return { principal: resolved };
+        },
+      }),
+
+      platformAuth: (required: string | null) => ({
+        async resolve({ request, status }): Promise<PlatformAuthResult | ElysiaStatus> {
+          const { requestId } = requestContextOf(request);
+
+          const secret = request.headers.get("x-api-key");
+          if (secret === null || secret === "") {
             return status(
-              403,
+              401,
               toErrorBody(
-                { code: "forbidden", message: `missing permission: ${required}` },
+                { code: "unauthenticated", message: "an api key is required" },
                 requestId,
               ),
             );
           }
 
-          return { principal: resolved };
+          const credential = await readActiveApiKey(db, hashApiKey(secret));
+          if (credential === null) {
+            return status(
+              401,
+              toErrorBody(
+                { code: "unauthenticated", message: "the api key is not valid" },
+                requestId,
+              ),
+            );
+          }
+
+          const principal: PlatformPrincipal = {
+            kind: "platform",
+            platformId: credential.platformId,
+            apiKeyId: credential.id,
+            organizationId: credential.organizationId,
+            permissions: flattenPermissions(parsePermissionGrant(credential.permissions)),
+          };
+
+          if (required !== null) requirePermission(principal, required);
+
+          return { principal };
         },
       }),
     });
