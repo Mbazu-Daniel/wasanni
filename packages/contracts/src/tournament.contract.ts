@@ -43,6 +43,21 @@ export const ParticipantStatus = t.Union([
 ]);
 export type ParticipantStatus = UnwrapSchema<typeof ParticipantStatus>;
 
+export const TournamentGame = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+  hosting: t.String(),
+});
+export type TournamentGame = UnwrapSchema<typeof TournamentGame>;
+
+export const TournamentPlatform = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+});
+export type TournamentPlatform = UnwrapSchema<typeof TournamentPlatform>;
+
 export const TournamentView = t.Object({
   id: t.String(),
   organizationId: t.String(),
@@ -62,6 +77,8 @@ export const TournamentView = t.Object({
   completedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
   createdAt: t.String({ format: "date-time" }),
   updatedAt: t.String({ format: "date-time" }),
+  game: t.Optional(t.Union([TournamentGame, t.Null()])),
+  platform: t.Optional(t.Union([TournamentPlatform, t.Null()])),
 });
 export type TournamentView = UnwrapSchema<typeof TournamentView>;
 
@@ -189,10 +206,15 @@ export type PlatformTournamentParams = UnwrapSchema<
 
 export const StandingsRow = t.Object({
   position: t.Number(),
+  participantId: t.Optional(t.String()),
   externalUserId: t.String(),
   displayName: t.Union([t.String(), t.Null()]),
-  score: t.Number(),
+  seed: t.Optional(t.Union([t.Number(), t.Null()])),
+  status: t.Optional(t.String()),
+  score: t.Union([t.Number(), t.Null()]),
   flagged: t.Boolean(),
+  flags: t.Optional(t.Array(t.String())),
+  submittedAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Null()])),
 });
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
 

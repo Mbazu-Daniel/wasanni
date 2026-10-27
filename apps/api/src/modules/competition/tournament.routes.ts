@@ -1,5 +1,6 @@
 import {
   BracketSingle,
+  Standings,
   CreateTournamentBody,
   OrganizationIdParams,
   PERMISSION,
@@ -184,6 +185,32 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
         organizationAuth: PERMISSION.tournamentRegister,
         params: ParticipantParams,
         detail: { tags: ["tournaments"], summary: "Withdraw a participant" },
+      },
+    )
+    .post(
+      "/api/v1/organizations/:organizationId/tournaments/:tournamentId/complete",
+      async ({ principal, params }) => ({
+        tournament: await deps.tournaments.complete(
+          organizationScope(principal),
+          params.tournamentId,
+        ),
+      }),
+      {
+        organizationAuth: PERMISSION.tournamentUpdate,
+        params: TournamentIdParams,
+        response: { 200: TournamentSingle },
+        detail: { tags: ["tournaments"], summary: "Mark a leaderboard tournament complete" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/tournaments/:tournamentId/standings",
+      async ({ principal, params }) =>
+        deps.standings.read(organizationScope(principal), params.tournamentId),
+      {
+        organizationAuth: PERMISSION.tournamentRead,
+        params: TournamentIdParams,
+        response: { 200: Standings },
+        detail: { tags: ["tournaments"], summary: "Standings for a tournament" },
       },
     )
     .get(

@@ -1,62 +1,75 @@
 import * as React from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
 import {
-  IconSearch,
-  IconLayoutDashboard,
-  IconDeviceGamepad2,
+  useNavigate,
+  useParams,
+  useRouterState,
+} from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  IconBook,
   IconBroadcast,
+  IconCheck,
+  IconCode,
+  IconCopy,
+  IconDeviceGamepad2,
   IconKey,
-  IconWebhook,
-  IconPlayerPlay,
-  IconTrophy,
-  IconMedal,
-  IconSwords,
-  IconList,
-  IconChartBar,
-  IconUsers,
-  IconBuilding,
-  IconUser,
-  IconLink,
   IconLayout,
+  IconLayoutDashboard,
+  IconLink,
+  IconList,
+  IconLogout,
+  IconMedal,
   IconPlus,
+  IconRefresh,
+  IconSearch,
+  IconSwords,
+  IconUser,
+  IconUsers,
+  IconWebhook,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
+import { PAGE_SHORTCUTS } from "./keyboard-shortcuts";
+
+type Icon = React.ComponentType<{ className?: string }>;
 
 type Command = {
   id: string;
   label: string;
-  section: string;
-  icon: React.ComponentType<{ className?: string }>;
-  to: string;
+  section: "Go to" | "Create" | "Actions";
+  icon: Icon;
+  to?: string;
+  action?: () => void | Promise<void>;
+  shortcut?: string;
 };
 
-const NAV: { id: string; label: string; section: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "overview", label: "Overview", section: "Go to", icon: IconLayoutDashboard },
-  { id: "games", label: "Games", section: "Go to", icon: IconDeviceGamepad2 },
-  { id: "templates", label: "Templates", section: "Go to", icon: IconLayout },
-  { id: "platforms", label: "Platforms", section: "Go to", icon: IconBroadcast },
-  { id: "assignments", label: "Assignments", section: "Go to", icon: IconLink },
-  { id: "keys", label: "API keys", section: "Go to", icon: IconKey },
-  { id: "webhooks", label: "Webhooks", section: "Go to", icon: IconWebhook },
-  { id: "sessions", label: "Sessions", section: "Go to", icon: IconPlayerPlay },
-  { id: "leaderboards", label: "Leaderboards", section: "Go to", icon: IconTrophy },
-  { id: "tournaments", label: "Tournaments", section: "Go to", icon: IconMedal },
-  { id: "matches", label: "Matches", section: "Go to", icon: IconSwords },
-  { id: "audit", label: "Audit", section: "Go to", icon: IconList },
-  { id: "usage", label: "Usage", section: "Go to", icon: IconChartBar },
-  { id: "members", label: "Members", section: "Go to", icon: IconUsers },
-  { id: "organization", label: "Organization", section: "Go to", icon: IconBuilding },
-  { id: "account", label: "Account", section: "Go to", icon: IconUser },
+const NAV: { id: string; label: string; icon: Icon }[] = [
+  { id: "overview", label: "Overview", icon: IconLayoutDashboard },
+  { id: "games", label: "Games", icon: IconDeviceGamepad2 },
+  { id: "templates", label: "Templates", icon: IconLayout },
+  { id: "platforms", label: "Platforms", icon: IconBroadcast },
+  { id: "assignments", label: "Assignments", icon: IconLink },
+  { id: "keys", label: "API keys", icon: IconKey },
+  { id: "webhooks", label: "Webhooks", icon: IconWebhook },
+  { id: "tournaments", label: "Tournaments", icon: IconMedal },
+  { id: "matches", label: "Matches", icon: IconSwords },
+  { id: "audit", label: "Audit", icon: IconList },
+  { id: "developer", label: "Developer", icon: IconCode },
+  { id: "members", label: "Members", icon: IconUsers },
+  { id: "account", label: "Account", icon: IconUser },
 ];
 
-const CREATE: { id: string; label: string; section: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "new-game", label: "Create game", section: "Create", icon: IconPlus },
-  { id: "new-platform", label: "Create platform", section: "Create", icon: IconPlus },
-  { id: "new-tournament", label: "Create tournament", section: "Create", icon: IconPlus },
-];
+const SETTINGS = new Set(["members", "account"]);
 
-const SETTINGS = new Set(["members", "organization", "account"]);
+const CREATE: { id: string; label: string; to: string }[] = [
+  { id: "new-game", label: "New game", to: "games/new" },
+  { id: "new-template", label: "New template", to: "templates/new" },
+  { id: "new-platform", label: "New platform", to: "platforms/new" },
+  { id: "new-tournament", label: "New tournament", to: "tournaments/new" },
+  { id: "new-match", label: "New match", to: "matches/new" },
+];
 
 export function CommandPalette({
   open,
@@ -67,33 +80,102 @@ export function CommandPalette({
 }) {
   const navigate = useNavigate();
   const { orgSlug } = useParams({ from: "/o/$orgSlug" });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const queryClient = useQueryClient();
+
   const [query, setQuery] = React.useState("");
   const [active, setActive] = React.useState(0);
+  const [copied, setCopied] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const listRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!open) {
       setQuery("");
       setActive(0);
+      setCopied(false);
       return;
     }
+
     const timer = setTimeout(() => inputRef.current?.focus(), 20);
     return () => clearTimeout(timer);
   }, [open]);
 
-  const commands: Command[] = React.useMemo(() => {
+  const commands = React.useMemo<Command[]>(() => {
     const goTo: Command[] = NAV.map((item) => ({
-      ...item,
+      id: item.id,
+      label: item.label,
+      section: "Go to",
+      icon: item.icon,
       to: `/o/$orgSlug/${SETTINGS.has(item.id) ? `settings/${item.id}` : item.id}`,
+      shortcut:
+        PAGE_SHORTCUTS[item.id] === undefined
+          ? undefined
+          : `g ${PAGE_SHORTCUTS[item.id]}`,
     }));
 
     const create: Command[] = CREATE.map((item) => ({
-      ...item,
-      to: `/o/$orgSlug/${item.id.replace("new-", "")}/new`,
+      id: item.id,
+      label: item.label,
+      section: "Create",
+      icon: IconPlus,
+      to: `/o/$orgSlug/${item.to}`,
     }));
 
-    const all = [...goTo, ...create];
+    const actions: Command[] = [
+      {
+        id: "copy-url",
+        label: copied ? "Copied current URL" : "Copy current URL",
+        section: "Actions",
+        icon: copied ? IconCheck : IconCopy,
+        action: async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            toast.success("URL copied");
+            setTimeout(() => setCopied(false), 1600);
+          } catch {
+            toast.error("Could not copy");
+          }
+        },
+      },
+      {
+        id: "refresh",
+        label: "Refresh data",
+        section: "Actions",
+        icon: IconRefresh,
+        action: async () => {
+          await queryClient.invalidateQueries();
+          onOpenChange(false);
+        },
+      },
+      {
+        id: "docs",
+        label: "Open API docs",
+        section: "Actions",
+        icon: IconBook,
+        action: () => {
+          const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:9000";
+          window.open(`${apiUrl}/docs`, "_blank", "noopener,noreferrer");
+          onOpenChange(false);
+        },
+      },
+      {
+        id: "sign-out",
+        label: "Sign out",
+        section: "Actions",
+        icon: IconLogout,
+        action: async () => {
+          await authClient.signOut();
+          queryClient.clear();
+          navigate({ to: "/sign-in", search: { returnTo: undefined } });
+        },
+      },
+    ];
 
+    const all = [...goTo, ...create, ...actions];
     if (!query.trim()) return all;
 
     const needle = query.toLowerCase();
@@ -103,34 +185,58 @@ export function CommandPalette({
         item.label.toLowerCase().includes(needle) ||
         item.section.toLowerCase().includes(needle),
     );
-  }, [query]);
+  }, [query, copied, navigate, queryClient, onOpenChange]);
 
   React.useEffect(() => {
     setActive(0);
   }, [query]);
 
-  const go = (command: Command) => {
-    const path = command.to.replace("$orgSlug", orgSlug);
-    navigate({ to: path as never, params: { orgSlug } as never });
-    onOpenChange(false);
-  };
+  React.useEffect(() => {
+    if (!open) return;
+
+    const container = listRef.current;
+    const item = container?.querySelector<HTMLElement>(
+      `[data-index="${active}"]`,
+    );
+
+    item?.scrollIntoView({ block: "nearest" });
+  }, [active, open]);
+
+  async function execute(command: Command) {
+    if (command.action !== undefined) {
+      await command.action();
+      return;
+    }
+
+    if (command.to !== undefined) {
+      const path = command.to.replace("$orgSlug", orgSlug);
+      navigate({ to: path as never, params: { orgSlug } as never });
+      onOpenChange(false);
+    }
+  }
 
   React.useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (!open) return;
+    if (!open) return;
 
+    function onKey(event: KeyboardEvent) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setActive((index) => Math.min(index + 1, commands.length - 1));
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
         setActive((index) => Math.max(index - 1, 0));
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        setActive(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        setActive(commands.length - 1);
       } else if (event.key === "Enter") {
         event.preventDefault();
         const chosen = commands[active];
-        if (chosen !== undefined) go(chosen);
+        if (chosen !== undefined) void execute(chosen);
       }
-    };
+    }
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -148,7 +254,7 @@ export function CommandPalette({
       open={open}
       onOpenChange={onOpenChange}
       label="Search pages and actions"
-      className="top-[15vh] w-[min(92vw,560px)] translate-y-0 overflow-hidden p-0"
+      className="top-[15vh] w-[min(92vw,600px)] translate-y-0 overflow-hidden p-0"
     >
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <IconSearch className="size-4 text-muted-foreground" />
@@ -156,7 +262,7 @@ export function CommandPalette({
           ref={inputRef}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search pages and actions…"
+          placeholder="Search pages, create actions, or commands…"
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
         />
         <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
@@ -164,10 +270,10 @@ export function CommandPalette({
         </kbd>
       </div>
 
-      <div className="max-h-[380px] overflow-y-auto p-2">
+      <div ref={listRef} className="max-h-[380px] overflow-y-auto p-2">
         {commands.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            No results.
+            No results for “{query}”.
           </p>
         ) : (
           Object.entries(grouped).map(([section, list]) => (
@@ -177,13 +283,15 @@ export function CommandPalette({
               </p>
               {list.map((command) => {
                 index += 1;
-                const isActive = index === active;
+                const localIndex = index;
+                const isActive = localIndex === active;
 
                 return (
                   <button
                     key={command.id}
-                    onMouseEnter={() => setActive(index)}
-                    onClick={() => go(command)}
+                    data-index={localIndex}
+                    onMouseEnter={() => setActive(localIndex)}
+                    onClick={() => void execute(command)}
                     className={cn(
                       "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
                       isActive
@@ -191,14 +299,37 @@ export function CommandPalette({
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <command.icon className="size-4" />
-                    <span>{command.label}</span>
+                    <command.icon className="size-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {command.label}
+                    </span>
+                    {command.shortcut !== undefined && (
+                      <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        {command.shortcut}
+                      </kbd>
+                    )}
                   </button>
                 );
               })}
             </div>
           ))
         )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border px-4 py-2 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-2">
+          <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono">
+            ↑↓
+          </kbd>
+          navigate
+          <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono">
+            ↵
+          </kbd>
+          run
+        </span>
+        <span className="truncate pl-2">
+          <span className="font-mono">{pathname}</span>
+        </span>
       </div>
     </Dialog>
   );

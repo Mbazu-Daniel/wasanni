@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   matches: "Matches",
   audit: "Audit",
   usage: "Usage",
+  developer: "Developer",
   settings: "Settings",
   members: "Members",
   organization: "Organization",

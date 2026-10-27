@@ -13,6 +13,7 @@ import {
   IconSwords,
   IconList,
   IconChartBar,
+  IconCode,
   IconUsers,
   IconBuilding,
   IconUser,
@@ -32,8 +33,12 @@ type NavItem = {
     | "/o/$orgSlug/platforms"
     | "/o/$orgSlug/assignments"
     | "/o/$orgSlug/templates"
+    | "/o/$orgSlug/tournaments"
     | "/o/$orgSlug/keys"
     | "/o/$orgSlug/webhooks"
+    | "/o/$orgSlug/matches"
+    | "/o/$orgSlug/audit"
+    | "/o/$orgSlug/developer"
     | "/o/$orgSlug/settings/members"
     | "/o/$orgSlug/settings/account";
 };
@@ -69,15 +74,16 @@ const groups: { label: string | null; items: NavItem[] }[] = [
   {
     label: "Compete",
     items: [
-      { label: "Tournaments", icon: IconMedal },
-      { label: "Matches", icon: IconSwords },
+      { label: "Tournaments", to: "/o/$orgSlug/tournaments", icon: IconMedal },
+      { label: "Matches", to: "/o/$orgSlug/matches", icon: IconSwords },
     ],
   },
   {
     label: "Observe",
     items: [
-      { label: "Audit", icon: IconList },
+      { label: "Audit", to: "/o/$orgSlug/audit", icon: IconList },
       { label: "Usage", icon: IconChartBar },
+      { label: "Developer", to: "/o/$orgSlug/developer", icon: IconCode },
     ],
   },
   {

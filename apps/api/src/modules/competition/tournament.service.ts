@@ -1,10 +1,11 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import {
   game,
   gameConfig,
   gamePlatformAssignment,
+  platform,
   template,
   tournament,
   tournamentParticipant,
@@ -63,6 +64,47 @@ async function requireScoped(
 export function createTournamentService(db: Db, usage: UsageService | null) {
   const readRow = (scope: Scope, tournamentId: string) =>
     readTournamentRow(db, scope, tournamentId);
+
+  const enrich = async (rows: TournamentView[]): Promise<TournamentView[]> => {
+    if (rows.length === 0) return [];
+
+    const gameIds = [...new Set(rows.map((row) => row.gameId))];
+    const assignmentIds = [
+      ...new Set(rows.map((row) => row.assignmentId).filter((id): id is string => id !== null)),
+    ];
+
+    const games = await db
+      .select({ id: game.id, name: game.name, slug: game.slug, hosting: game.hosting })
+      .from(game)
+      .where(inArray(game.id, gameIds));
+
+    const assignments = await db
+      .select({ id: gamePlatformAssignment.id, platformId: gamePlatformAssignment.platformId })
+      .from(gamePlatformAssignment)
+      .where(inArray(gamePlatformAssignment.id, assignmentIds));
+
+    const platformIds = [...new Set(assignments.map((row) => row.platformId))];
+
+    const platforms = await db
+      .select({ id: platform.id, name: platform.name, slug: platform.slug })
+      .from(platform)
+      .where(inArray(platform.id, platformIds));
+
+    const gameById = new Map(games.map((row) => [row.id, row]));
+    const assignmentById = new Map(assignments.map((row) => [row.id, row]));
+    const platformById = new Map(platforms.map((row) => [row.id, row]));
+
+    return rows.map((row) => {
+      const assignment = row.assignmentId === null ? undefined : assignmentById.get(row.assignmentId);
+      const owner = assignment === undefined ? undefined : platformById.get(assignment.platformId);
+
+      return {
+        ...row,
+        game: gameById.get(row.gameId) ?? null,
+        platform: owner ?? null,
+      };
+    });
+  };
 
   return {
     async create(
@@ -174,11 +216,41 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
         )
         .orderBy(desc(tournament.createdAt));
 
-      return rows.map(toTournamentView);
+      return enrich(rows.map(toTournamentView));
     },
 
     async get(scope: Scope, tournamentId: string): Promise<TournamentView> {
-      return readRow(scope, tournamentId);
+      const [enriched] = await enrich([await readRow(scope, tournamentId)]);
+      return enriched ?? (await readRow(scope, tournamentId));
+    },
+
+    async complete(scope: Scope, tournamentId: string): Promise<TournamentView> {
+      const current = await readRow(scope, tournamentId);
+
+      if (current.format !== "leaderboard") {
+        throw new ConflictError("only a leaderboard tournament can be completed directly");
+      }
+
+      if (current.status === "completed") return current;
+
+      if (current.status === "cancelled") {
+        throw new ConflictError("a cancelled tournament cannot be completed");
+      }
+
+      if (current.status !== "open") {
+        throw new ConflictError("only an open tournament can be completed");
+      }
+
+      const [row] = await db
+        .update(tournament)
+        .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
+        .where(eq(tournament.id, current.id))
+        .returning();
+
+      if (row === undefined) throw new NotFoundError("tournament not found");
+
+      const [enriched] = await enrich([toTournamentView(row)]);
+      return enriched ?? toTournamentView(row);
     },
 
     async update(
