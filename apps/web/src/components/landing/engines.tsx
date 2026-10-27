@@ -7,7 +7,7 @@ import {
   IconDeviceGamepad,
 } from "@tabler/icons-react";
 import { Marquee } from "@/components/motion-kit";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/marketing/badge";
 
 const engines = [
   { name: "Godot 4", icon: IconBox },

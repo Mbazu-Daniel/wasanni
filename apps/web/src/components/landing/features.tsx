@@ -11,8 +11,8 @@ import {
   IconGauge,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/marketing/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/marketing/card";
 import { Reveal, ShimmerText, TiltCard } from "@/components/motion-kit";
 
 const features = [

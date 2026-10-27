@@ -10,7 +10,7 @@ import {
   IconRotateClockwise,
 } from "@tabler/icons-react";
 import { motion, useScroll, useSpring, useTransform } from "motion/react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/marketing/badge";
 import { Reveal } from "@/components/motion-kit";
 
 const steps = [

@@ -10,33 +10,126 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LandingRouteImport } from './routes/landing'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as OOrgSlugRouteRouteImport } from './routes/o/$orgSlug/route'
+import { Route as OOrgSlugOverviewRouteImport } from './routes/o/$orgSlug/overview'
+import { Route as OOrgSlugGamesIndexRouteImport } from './routes/o/$orgSlug/games/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OOrgSlugRouteRoute = OOrgSlugRouteRouteImport.update({
+  id: '/o/$orgSlug',
+  path: '/o/$orgSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OOrgSlugOverviewRoute = OOrgSlugOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
+const OOrgSlugGamesIndexRoute = OOrgSlugGamesIndexRouteImport.update({
+  id: '/games/',
+  path: '/games/',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/landing': typeof LandingRoute
+  '/onboarding': typeof OnboardingRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/landing': typeof LandingRoute
+  '/onboarding': typeof OnboardingRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/games': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/landing': typeof LandingRoute
+  '/onboarding': typeof OnboardingRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/landing'
+    | '/onboarding'
+    | '/sign-in'
+    | '/sign-up'
+    | '/o/$orgSlug'
+    | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/games/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/landing'
+    | '/onboarding'
+    | '/sign-in'
+    | '/sign-up'
+    | '/o/$orgSlug'
+    | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/games'
+  id:
+    | '__root__'
+    | '/'
+    | '/landing'
+    | '/onboarding'
+    | '/sign-in'
+    | '/sign-up'
+    | '/o/$orgSlug'
+    | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LandingRoute: typeof LandingRoute
+  OnboardingRoute: typeof OnboardingRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
+  OOrgSlugRouteRoute: typeof OOrgSlugRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +141,79 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/o/$orgSlug': {
+      id: '/o/$orgSlug'
+      path: '/o/$orgSlug'
+      fullPath: '/o/$orgSlug'
+      preLoaderRoute: typeof OOrgSlugRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/o/$orgSlug/overview': {
+      id: '/o/$orgSlug/overview'
+      path: '/overview'
+      fullPath: '/o/$orgSlug/overview'
+      preLoaderRoute: typeof OOrgSlugOverviewRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/games/': {
+      id: '/o/$orgSlug/games/'
+      path: '/games'
+      fullPath: '/o/$orgSlug/games/'
+      preLoaderRoute: typeof OOrgSlugGamesIndexRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
   }
 }
 
+interface OOrgSlugRouteRouteChildren {
+  OOrgSlugOverviewRoute: typeof OOrgSlugOverviewRoute
+  OOrgSlugGamesIndexRoute: typeof OOrgSlugGamesIndexRoute
+}
+
+const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
+  OOrgSlugOverviewRoute: OOrgSlugOverviewRoute,
+  OOrgSlugGamesIndexRoute: OOrgSlugGamesIndexRoute,
+}
+
+const OOrgSlugRouteRouteWithChildren = OOrgSlugRouteRoute._addFileChildren(
+  OOrgSlugRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LandingRoute: LandingRoute,
+  OnboardingRoute: OnboardingRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
+  OOrgSlugRouteRoute: OOrgSlugRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

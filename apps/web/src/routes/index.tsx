@@ -1,36 +1,33 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Nav } from "@/components/landing/nav";
-import { Hero } from "@/components/landing/hero";
-import { Engines } from "@/components/landing/engines";
-import { Features } from "@/components/landing/features";
-import { Flow } from "@/components/landing/flow";
-import { Leaderboard } from "@/components/landing/leaderboard";
-import { Bracket } from "@/components/landing/bracket";
-import { Replay } from "@/components/landing/replay";
-import { Api } from "@/components/landing/api";
-import { CTA } from "@/components/landing/cta";
-import { Footer } from "@/components/landing/footer";
-import { ScrollProgress } from "@/components/motion-kit";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { fetchOrganizations, requireSession } from "@/lib/session";
 
-export const Route = createFileRoute("/")({ component: Landing });
+export const Route = createFileRoute("/")({
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    if (typeof window === "undefined") return;
 
-function Landing() {
-  return (
-    <div className="relative min-h-screen bg-ink text-foreground">
-      <ScrollProgress />
-      <Nav />
-      <main>
-        <Hero />
-        <Engines />
-        <Features />
-        <Flow />
-        <Leaderboard />
-        <Bracket />
-        <Replay />
-        <Api />
-        <CTA />
-      </main>
-      <Footer />
-    </div>
-  );
-}
+    await requireSession();
+
+    const organizations = await context.queryClient.ensureQueryData({
+      queryKey: ["organizations"],
+      queryFn: fetchOrganizations,
+      staleTime: 30_000,
+    });
+
+    if (organizations.length === 0) {
+      throw redirect({ to: "/onboarding" });
+    }
+
+    const lastSlug = localStorage.getItem("wasanni:last-org");
+    const target = organizations.find((org) => org.slug === lastSlug) ?? organizations[0];
+
+    if (target === undefined) throw redirect({ to: "/onboarding" });
+
+    localStorage.setItem("wasanni:last-org", target.slug);
+
+    throw redirect({
+      to: "/o/$orgSlug/overview",
+      params: { orgSlug: target.slug },
+    });
+  },
+});

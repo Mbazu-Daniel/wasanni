@@ -8,8 +8,8 @@ import {
   IconDeviceGamepad2,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/marketing/badge";
+import { Button } from "@/components/marketing/button";
 import { Magnetic, Marquee, Reveal } from "@/components/motion-kit";
 
 const icons = [IconTrophy, IconBolt, IconDeviceGamepad2, IconSparkles];

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { IconMenu2, IconX, IconBrandGithub, IconArrowUpRight } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/marketing/button";
 import { cn } from "@/lib/utils";
 
 const links = [
