@@ -11,6 +11,7 @@ import {
 } from "@wasanni/db/schema";
 import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
+import type { UsageService } from "../usage/types.ts";
 import type { ParticipantView, TournamentView } from "@wasanni/contracts";
 import type {
   CreateTournamentInput,
@@ -59,7 +60,7 @@ async function requireScoped(
   if (row === undefined) throw new NotFoundError(input.message);
 }
 
-export function createTournamentService(db: Db) {
+export function createTournamentService(db: Db, usage: UsageService | null) {
   const readRow = (scope: Scope, tournamentId: string) =>
     readTournamentRow(db, scope, tournamentId);
 
@@ -137,6 +138,15 @@ export function createTournamentService(db: Db) {
         .returning();
 
       if (row === undefined) throw new InternalServerError("tournament insert returned no row");
+
+      if (usage !== null) {
+        await usage.incr({
+          organizationId: scope.organizationId,
+          platformId: null,
+          metric: "tournaments_created",
+        });
+      }
+
       return toTournamentView(row);
     },
 

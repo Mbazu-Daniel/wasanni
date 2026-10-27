@@ -10,10 +10,12 @@ import type {
 import type { RateLimitHook } from "../../plugins/types.ts";
 import type { WebhookDispatcher } from "../webhook/types.ts";
 import type { MatchRecorder } from "../competition/types.ts";
+import type { UsageService } from "../usage/types.ts";
 import type { createLeaderboardService } from "./leaderboard.service.ts";
 import type { createReplayService } from "./replay.service.ts";
 import type { createScoreService } from "./score.service.ts";
 import type { createSessionService } from "./session.service.ts";
+import type { ScoreVerifier } from "./score-verifier.ts";
 
 export type GameSessionRow = (typeof gameSession.$inferSelect);
 
@@ -47,11 +49,15 @@ export type SessionServiceDeps = {
   dispatcher: WebhookDispatcher;
   enqueuer: Enqueuer | null;
   realtimeBaseUrl: string;
+  verifier: ScoreVerifier | null;
+  usage: UsageService | null;
 };
 
 export type ScoreServiceDeps = {
   dispatcher: WebhookDispatcher;
   sessions: SessionService;
+  verifier: ScoreVerifier | null;
+  usage: UsageService | null;
   matchRecorder?: MatchRecorder;
 };
 
@@ -72,6 +78,8 @@ export type PlayDeps = {
   realtimeBaseUrl: string;
   matchRecorder?: MatchRecorder;
   rateLimit?: RateLimitHook;
+  verifier: ScoreVerifier | null;
+  usage: UsageService | null;
 };
 
 export type SessionRouteDeps = {

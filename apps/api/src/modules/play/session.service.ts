@@ -10,7 +10,11 @@ import {
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { BadRequestError, InternalServerError, newId, newOpaqueToken, NotFoundError, sha256Hex } from "@wasanni/kit";
-import type { CreatedGameSession, GameSessionView } from "@wasanni/contracts";
+import type {
+  CreatedGameSession,
+  GameSessionView,
+  ScoreVerificationMode,
+} from "@wasanni/contracts";
 import { REALTIME_PATH } from "@wasanni/contracts";
 import {
   readAssignmentConfig,
@@ -46,6 +50,18 @@ const toView = (row: GameSessionRow): GameSessionView => ({
   endedAt: row.endedAt === null ? null : row.endedAt.toISOString(),
   createdAt: row.createdAt.toISOString(),
 });
+
+const readVerificationMode = (config: Record<string, unknown>): ScoreVerificationMode => {
+  const block = config.scoreVerification;
+
+  if (typeof block !== "object" || block === null) return "none";
+
+  const mode = (block as Record<string, unknown>).mode;
+
+  if (mode === "hmac" || mode === "callback" || mode === "both") return mode;
+
+  return "none";
+};
 
 const readSessionDuration = (config: Record<string, unknown>): number => {
   const value = config.sessionDurationSeconds;
@@ -229,6 +245,25 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         gameFileId = file.id;
       }
 
+      const mode = deps.verifier === null ? "none" : readVerificationMode(config.config);
+
+      let signingKeyCiphertext: string | null = null;
+      let signingKeyPlaintext: string | null = null;
+
+      if (mode === "hmac" || mode === "both") {
+        const key = deps.verifier!.createSigningKey();
+
+        signingKeyCiphertext = key.ciphertext;
+        signingKeyPlaintext = key.plaintext;
+      }
+
+      if (deps.usage !== null) {
+        await deps.usage.checkQuota({
+          organizationId: scope.organizationId,
+          metric: "sessions_created",
+        });
+      }
+
       const durationSeconds = readSessionDuration(config.config);
       const expiresAt = new Date(Date.now() + durationSeconds * 1000);
       const sessionToken = newOpaqueToken(32);
@@ -260,6 +295,8 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
           mode: input.body.mode ?? null,
           status: "active",
           tokenHash: sha256Hex(sessionToken),
+          scoreVerificationMode: mode,
+          scoreSigningKeyCiphertext: signingKeyCiphertext,
           configSnapshot: config.config,
           configSchemaVersion: config.schemaVersion,
           metadata: input.body.metadata ?? {},
@@ -268,6 +305,14 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         .returning();
 
       if (row === undefined) throw new InternalServerError("game session insert returned no row");
+
+      if (deps.usage !== null) {
+        await deps.usage.incr({
+          organizationId: scope.organizationId,
+          platformId: input.platformId,
+          metric: "sessions_created",
+        });
+      }
 
       const session = toView(row);
 
@@ -283,7 +328,12 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
       const realtimeBase = deps.realtimeBaseUrl.replace(/\/+$/, "");
       const realtimeUrl = `${realtimeBase}${REALTIME_PATH}/${row.id}?token=${encodeURIComponent(sessionToken)}`;
 
-      return { session, sessionToken, realtimeUrl };
+      return {
+        session,
+        sessionToken,
+        realtimeUrl,
+        ...(signingKeyPlaintext === null ? {} : { scoreSigningKey: signingKeyPlaintext }),
+      };
     },
 
     async get(scope: Scope, platformId: string, sessionId: string): Promise<GameSessionView> {

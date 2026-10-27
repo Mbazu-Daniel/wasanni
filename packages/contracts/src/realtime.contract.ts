@@ -17,7 +17,7 @@ export type RealtimeErrorCode = (typeof REALTIME_ERROR_CODES)[number];
 
 export type RealtimeClientMessage =
   | { type: "ping" }
-  | { type: "score"; score: number; endSession?: boolean }
+  | { type: "score"; score: number; signature?: string; endSession?: boolean }
   | { type: "event"; data: unknown };
 
 export type RealtimeServerMessage =

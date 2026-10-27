@@ -57,4 +57,6 @@ export type Env = {
   readonly SESSION_RATE_LIMIT_PER_MINUTE: number;
   readonly GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES: number;
   readonly GAME_BUNDLE_MAX_FILES: number;
+  readonly USAGE_METERING_ENABLED: boolean;
+  readonly SCORE_VERIFICATION_ENABLED: boolean;
 };

@@ -14,10 +14,14 @@ export const createPlayRoutes = <T extends PrincipalApi>(api: T, deps: PlayDeps)
     dispatcher: deps.dispatcher,
     enqueuer: deps.enqueuer,
     realtimeBaseUrl: deps.realtimeBaseUrl,
+    verifier: deps.verifier,
+    usage: deps.usage,
   });
   const scores = createScoreService(deps.db, {
     dispatcher: deps.dispatcher,
     sessions,
+    verifier: deps.verifier,
+    usage: deps.usage,
     ...(deps.matchRecorder === undefined
       ? {}
       : { matchRecorder: deps.matchRecorder }),

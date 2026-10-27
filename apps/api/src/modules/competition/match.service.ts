@@ -5,6 +5,7 @@ import { scopeTo } from "@wasanni/db";
 import { game, match, matchParticipant } from "@wasanni/db/schema";
 import { BadRequestError, ConflictError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
+import type { UsageService } from "../usage/types.ts";
 import {
   advanceWinner,
   activateIfSeated,
@@ -44,7 +45,7 @@ async function requireGame(db: Db, scope: Scope, gameId: string): Promise<void> 
   if (row === undefined) throw new NotFoundError("game not found");
 }
 
-export function createMatchService(db: Db) {
+export function createMatchService(db: Db, usage: UsageService | null) {
   const complete = async (
     scope: Scope,
     input: CompleteMatchInput,
@@ -225,6 +226,16 @@ export function createMatchService(db: Db) {
           .limit(1);
 
         return toMatchView(created ?? row);
+      }).then(async (view) => {
+        if (usage !== null) {
+          await usage.incr({
+            organizationId: scope.organizationId,
+            platformId: null,
+            metric: "matches_created",
+          });
+        }
+
+        return view;
       });
     },
 

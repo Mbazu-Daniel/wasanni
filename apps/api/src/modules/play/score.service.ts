@@ -3,8 +3,19 @@ import type { Db } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { ForbiddenError, newId, NotFoundError, isFlagged } from "@wasanni/kit";
-import type { ScoreFlag, ScoreSource, ScoreView } from "@wasanni/contracts";
+import {
+  ForbiddenError,
+  newId,
+  NotFoundError,
+  isFlagged,
+  UnprocessableError,
+} from "@wasanni/kit";
+import type {
+  ScoreFlag,
+  ScoreSource,
+  ScoreVerificationStatus,
+  ScoreView,
+} from "@wasanni/contracts";
 import { readGameSessionRow } from "./session.service.ts";
 import { readScoreFlags } from "./score-flags.ts";
 import type {
@@ -34,6 +45,7 @@ const toView = (row: ScoreRow): ScoreView => ({
   flagged: row.flagged,
   flags: row.flags,
   source: row.source,
+  verificationStatus: row.verificationStatus,
   submittedAt: row.submittedAt.toISOString(),
 });
 
@@ -77,6 +89,50 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
     const submittedAt = new Date();
     const flags = readScoreFlags(session, input.body.score, source, submittedAt, false);
 
+    let verificationFlags: ScoreFlag[] = [];
+    let verificationStatus: ScoreVerificationStatus = "not_required";
+
+    if (source === "client" && session.scoreVerificationMode !== "none" && deps.verifier !== null) {
+      const verdict = await deps.verifier.verify({
+        sessionId: session.id,
+        organizationId: session.organizationId,
+        externalUserId: session.externalUserId,
+        score: input.body.score,
+        mode: session.scoreVerificationMode,
+        submittedAt,
+        signingKeyCiphertext: session.scoreSigningKeyCiphertext,
+        signature: input.body.signature ?? null,
+        config: session.configSnapshot,
+      });
+
+      if (verdict.kind === "failed") {
+        await deps.dispatcher
+          .dispatch({
+            organizationId: session.organizationId,
+            platformId: session.platformId,
+            eventType: "score.rejected",
+            payload: {
+              sessionId: session.id,
+              externalUserId: session.externalUserId,
+              score: input.body.score,
+              mode: session.scoreVerificationMode,
+              code: verdict.code,
+              reason: verdict.reason,
+            },
+          })
+          .catch(() => 0);
+
+        throw new UnprocessableError(verdict.reason, {
+          details: { code: verdict.code },
+        });
+      }
+
+      verificationFlags = verdict.flags as ScoreFlag[];
+      verificationStatus = verdict.kind === "passed" ? "passed" : "unavailable";
+    }
+
+    const allFlags = [...new Set([...flags, ...verificationFlags])];
+
     const [inserted] = await db
       .insert(gameSessionScore)
       .values({
@@ -89,9 +145,10 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         mode: session.mode,
         score: input.body.score,
         status: "accepted",
-        flagged: isFlagged(flags),
-        flags,
+        flagged: isFlagged(allFlags),
+        flags: allFlags,
         source,
+        verificationStatus,
         submittedAt,
         hourBucket: hourBucketOf(session.startedAt),
       })
@@ -105,9 +162,20 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       (await mergeIntoExisting(
         scope,
         session.id,
-        readScoreFlags(session, input.body.score, source, submittedAt, true),
+        [
+          ...readScoreFlags(session, input.body.score, source, submittedAt, true),
+          ...verificationFlags,
+        ],
         submittedAt,
       ));
+
+    if (inserted !== undefined && deps.usage !== null) {
+      await deps.usage.incr({
+        organizationId: session.organizationId,
+        platformId: session.platformId,
+        metric: "scores_submitted",
+      });
+    }
 
     if (input.body.endSession === true) {
       await deps.sessions.endSession(scope, session, submittedAt);

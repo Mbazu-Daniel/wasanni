@@ -40,6 +40,7 @@ export type ScoreForwardInput = {
   token: string;
   score: number;
   endSession: boolean;
+  signature?: string;
 };
 
 export type ScoreForwardResult =

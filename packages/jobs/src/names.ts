@@ -13,6 +13,7 @@ export const JOB = {
   SCORE_ARCHIVE_PARTITIONS: "score.archive_partitions",
   SCORE_ENSURE_PARTITIONS: "score.ensure_partitions",
   GAME_BUNDLE_EXTRACT: "game.bundle.extract",
+  USAGE_FLUSH: "usage.flush",
   SESSION_SWEEP: "session.sweep",
 } as const;
 

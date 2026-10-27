@@ -20,8 +20,12 @@ export function createScoreForwarder(deps: ScoreForwarderDeps): ScoreForwarder {
   const send = deps.fetch ?? fetch;
 
   return {
-    async forward({ sessionId, token, score, endSession }): Promise<ScoreForwardResult> {
-      const body: SubmitScoreBody = endSession ? { score, endSession } : { score };
+    async forward({ sessionId, token, score, endSession, signature }): Promise<ScoreForwardResult> {
+      const body: SubmitScoreBody = {
+        score,
+        ...(endSession ? { endSession } : {}),
+        ...(signature === undefined ? {} : { signature }),
+      };
       const url = `${base}/api/v1/play/sessions/${encodeURIComponent(sessionId)}/score`;
 
       try {

@@ -5,6 +5,7 @@ export const ERROR_CODES = [
   "not_found",
   "conflict",
   "rate_limited",
+  "unprocessable",
   "internal",
 ] as const;
 
@@ -17,6 +18,7 @@ export const STATUS: Record<ErrorCode, number> = {
   not_found: 404,
   conflict: 409,
   rate_limited: 429,
+  unprocessable: 422,
   internal: 500,
 };
 

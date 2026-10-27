@@ -44,6 +44,9 @@ export const RATE_LIMIT_RANGE = { min: 1, max: 100_000 } as const;
 
 export const DEFAULT_GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES = 1_073_741_824;
 export const DEFAULT_GAME_BUNDLE_MAX_FILES = 20_000;
+
+export const DEFAULT_USAGE_METERING_ENABLED = true;
+export const DEFAULT_SCORE_VERIFICATION_ENABLED = true;
 export const GAME_BUNDLE_MAX_UNCOMPRESSED_RANGE = {
   min: 1_048_576,
   max: 5_368_709_120,

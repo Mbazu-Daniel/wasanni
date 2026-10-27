@@ -63,6 +63,7 @@ export function createGateway(deps: GatewayDeps): Gateway {
             token: session.token,
             score: message.score,
             endSession: message.endSession === true,
+            ...(message.signature === undefined ? {} : { signature: message.signature }),
           });
 
           if (!result.ok) {
