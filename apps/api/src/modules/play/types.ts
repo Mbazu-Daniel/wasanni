@@ -20,7 +20,9 @@ import type { createLeaderboardService } from "./leaderboard.service.ts";
 import type { createReplayService } from "./replay.service.ts";
 import type { createScoreService } from "./score.service.ts";
 import type { createSessionService } from "./session.service.ts";
-import type { ScoreVerifier } from "./score-verifier.ts";
+import type { createScoreVerifier } from "./score-verifier.ts";
+
+export type ScoreVerifier = ReturnType<typeof createScoreVerifier>;
 
 export type ScoreVerificationInput = {
   sessionId: string;

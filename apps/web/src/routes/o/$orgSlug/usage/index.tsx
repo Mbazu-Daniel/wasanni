@@ -6,13 +6,14 @@ import { apiFetch } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/primitives/page-header";
-import { DailyActivity, type DailyMetric } from "@/components/usage/daily-chart";
+import { DailyActivity } from "@/components/usage/daily-chart";
 import { UsageMetrics } from "@/components/usage/metrics-panel";
 import { PlatformUsage } from "@/components/usage/platform-table";
 import { QuotaEditor } from "@/components/usage/quotas-panel";
 import { StorageBreakdown } from "@/components/usage/storage-panel";
 import type { PlatformView } from "@/lib/platform-types";
 import type {
+  DailyMetric,
   UsageDailyView,
   UsageQuotaView,
   UsageStorageView,

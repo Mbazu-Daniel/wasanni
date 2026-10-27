@@ -5,6 +5,8 @@ import {
   game,
   gameConfig,
   gamePlatformAssignment,
+  match,
+  matchParticipant,
   platform,
   template,
   tournament,
@@ -23,6 +25,7 @@ import type {
   WithdrawTarget,
 } from "./types.ts";
 import { toParticipantView, toTournamentView } from "./views.ts";
+import { settleMatch } from "./result.ts";
 
 export async function readTournamentRow(
   db: Db,
@@ -332,13 +335,31 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
         throw new ConflictError("a completed tournament cannot be cancelled");
       }
 
-      const [row] = await db
-        .update(tournament)
-        .set({ status: "cancelled", updatedAt: new Date() })
-        .where(eq(tournament.id, current.id))
-        .returning();
+      const now = new Date();
 
-      if (row === undefined) throw new NotFoundError("tournament not found");
+      const row = await db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(tournament)
+          .set({ status: "cancelled", updatedAt: now })
+          .where(eq(tournament.id, current.id))
+          .returning();
+
+        if (updated === undefined) return null;
+
+        await tx
+          .update(match)
+          .set({ status: "cancelled", updatedAt: now })
+          .where(
+            and(
+              eq(match.tournamentId, current.id),
+              inArray(match.status, ["pending", "active"]),
+            ),
+          );
+
+        return updated;
+      });
+
+      if (row === null) throw new NotFoundError("tournament not found");
       return toTournamentView(row);
     },
 
@@ -438,9 +459,72 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
         .update(tournamentParticipant)
         .set({ status: "withdrawn", withdrawnAt: new Date() })
         .where(and(eq(tournamentParticipant.tournamentId, current.id), identity))
-        .returning({ id: tournamentParticipant.id });
+        .returning({
+          id: tournamentParticipant.id,
+          platformId: tournamentParticipant.platformId,
+          externalUserId: tournamentParticipant.externalUserId,
+        });
 
-      if (withdrawn.length === 0) throw new NotFoundError("registration not found");
+      const seat = withdrawn[0];
+      if (seat === undefined) throw new NotFoundError("registration not found");
+
+      if (current.status !== "running") return;
+
+      const seats = await db
+        .select({ id: matchParticipant.id, matchId: matchParticipant.matchId })
+        .from(matchParticipant)
+        .innerJoin(match, eq(matchParticipant.matchId, match.id))
+        .where(
+          and(
+            eq(match.tournamentId, current.id),
+            inArray(match.status, ["pending", "active"]),
+            eq(matchParticipant.platformId, seat.platformId),
+            eq(matchParticipant.externalUserId, seat.externalUserId),
+          ),
+        );
+
+      if (seats.length === 0) return;
+
+      await db
+        .update(matchParticipant)
+        .set({ outcome: "disqualified", placement: null, updatedAt: new Date() })
+        .where(
+          inArray(
+            matchParticipant.id,
+            seats.map((row) => row.id),
+          ),
+        );
+
+      for (const matchId of new Set(seats.map((row) => row.matchId))) {
+        const [currentMatch] = await db
+          .select()
+          .from(match)
+          .where(eq(match.id, matchId))
+          .limit(1);
+
+        if (currentMatch === undefined) continue;
+
+        const participants = await db
+          .select()
+          .from(matchParticipant)
+          .where(eq(matchParticipant.matchId, matchId));
+
+        const remaining = participants.filter(
+          (row) => row.outcome !== "disqualified",
+        );
+
+        if (remaining.length !== 1) continue;
+
+        const winner = remaining[0];
+        if (winner === undefined || winner.outcome !== "pending") continue;
+
+        await settleMatch(db, currentMatch, {
+          winnerId: winner.id,
+          outcomes: [
+            { participantId: winner.id, outcome: "won", placement: 1 },
+          ],
+        });
+      }
     },
 
     async listParticipants(

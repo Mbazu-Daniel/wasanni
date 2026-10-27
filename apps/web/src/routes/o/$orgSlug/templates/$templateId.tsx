@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { formatBytes, formatDateTime } from "@/lib/format";
+import { uploadWithProgress } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/primitives/page-header";
@@ -277,26 +278,13 @@ function TemplateUploadModal({
         }),
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open(upload.method, upload.url, true);
-
-        for (const [key, value] of Object.entries(upload.headers)) {
-          xhr.setRequestHeader(key, value);
-        }
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) setProgress((event.loaded / event.total) * 100);
-        };
-        xhr.onload = () =>
-          xhr.status >= 200 && xhr.status < 300
-            ? resolve()
-            : reject(new Error(`Storage rejected the upload (${xhr.status})`));
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.timeout = 5 * 60 * 1000;
-        xhr.ontimeout = () => reject(new Error("Upload timed out"));
-        xhr.send(picked.file);
-      });
+      await uploadWithProgress(
+        upload.url,
+        upload.method,
+        upload.headers,
+        picked.file,
+        setProgress,
+      );
 
       setPhase("confirming");
 

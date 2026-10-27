@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { UsageDailyRow } from "@/lib/usage-types";
+import type { DailyMetric, UsageDailyRow } from "@/lib/usage-types";
 
 const METRICS = [
   "sessions_created",
@@ -15,8 +15,6 @@ const LABELS: Record<(typeof METRICS)[number], string> = {
   matches_created: "Matches",
   tournaments_created: "Tournaments",
 };
-
-export type DailyMetric = (typeof METRICS)[number];
 
 export function DailyActivity({
   rows,

@@ -21,7 +21,7 @@ export const createAssignmentRoutes = <T extends PrincipalApi>(
     .get(
       "/api/v1/organizations/:organizationId/assignments",
       async ({ principal }) => ({
-        assignments: await service.listForOrganization(principal.organizationId),
+        assignments: await service.listForOrganization(organizationScope(principal)),
       }),
       {
         organizationAuth: PERMISSION.assignmentRead,

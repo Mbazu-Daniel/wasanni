@@ -3,8 +3,8 @@ import type { Db } from "@wasanni/db";
 import { activeMember, member, user } from "@wasanni/db/schema";
 import { readOrganizationRoles, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { BadRequestError, NotFoundError } from "@wasanni/kit";
-import { OWNER_ROLE, ROLE_NAMES, type MemberView } from "@wasanni/contracts";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@wasanni/kit";
+import { OWNER_ROLE, ROLE_NAMES, rolesIn, type MemberView } from "@wasanni/contracts";
 
 import type { MemberRow } from "./types.ts";
 
@@ -23,6 +23,12 @@ const toView = (row: MemberRow): MemberView => ({
   ...row,
   joinedAt: row.joinedAt.toISOString(),
 });
+
+const mayAssignRole = (actorRole: string, targetRole: string): boolean => {
+  if (targetRole === OWNER_ROLE) return false;
+
+  return rolesIn(actorRole).includes(OWNER_ROLE) || targetRole === "member";
+}
 
 export function createMemberService(db: Db) {
   return {
@@ -60,11 +66,20 @@ export function createMemberService(db: Db) {
       return this.write(scope, memberId, { avatar });
     },
 
-    async setRole(scope: Scope, memberId: string, role: string): Promise<MemberView> {
+    async setRole(
+      scope: Scope,
+      memberId: string,
+      role: string,
+      actorRole: string,
+    ): Promise<MemberView> {
       const name = role.trim().toLowerCase();
 
       if (name === OWNER_ROLE) {
         throw new BadRequestError("the owner role is not assigned here");
+      }
+
+      if (!mayAssignRole(actorRole, name)) {
+        throw new ForbiddenError(`you may not assign the role: ${name}`);
       }
 
       const grants = await readOrganizationRoles(db, scope.organizationId);

@@ -7,6 +7,14 @@ import type {
 } from "@wasanni/kit";
 import type { AuditService } from "../../api/src/modules/audit/types.ts";
 
+export type ArchivePartitionsDeps = {
+  db: Db;
+  storage: ObjectStorage;
+  audit: AuditService;
+  env: Env;
+  logger: Logger;
+};
+
 export type SweepResult = {
   expiredSessions: number;
   purgedAuthSessions: number;

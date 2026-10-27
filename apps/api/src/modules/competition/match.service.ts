@@ -1,17 +1,15 @@
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
-import type { MatchList, MatchParticipantView, MatchView } from "@wasanni/contracts";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import type { MatchList, MatchOutcome, MatchParticipantView, MatchView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import { game, match, matchParticipant } from "@wasanni/db/schema";
 import { BadRequestError, ConflictError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
+import { afterCursor, decodeCursor, paginate } from "../../pagination.ts";
 import type { UsageService } from "../usage/types.ts";
-import {
-  advanceWinner,
-  activateIfSeated,
-  settleTournament,
-} from "./advancement.ts";
+import { activateIfSeated } from "./advancement.ts";
 import { readTournamentRow } from "./tournament.service.ts";
+import { settleMatch } from "./result.ts";
 import type {
   CompleteMatchInput,
   CreateMatchInput,
@@ -45,24 +43,6 @@ async function requireGame(db: Db, scope: Scope, gameId: string): Promise<void> 
 
   if (row === undefined) throw new NotFoundError("game not found");
 }
-
-const encodeCursor = (row: MatchRow): string =>
-  Buffer.from(`${row.createdAt.toISOString()}|${row.id}`, "utf8").toString(
-    "base64url",
-  );
-
-const decodeCursor = (cursor: string): { createdAt: Date; id: string } | null => {
-  const [createdAt, id] = Buffer.from(cursor, "base64url")
-    .toString("utf8")
-    .split("|");
-
-  if (createdAt === undefined || id === undefined) return null;
-
-  const parsed = new Date(createdAt);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  return { createdAt: parsed, id };
-};
 
 export function createMatchService(db: Db, usage: UsageService | null) {
   const complete = async (
@@ -98,65 +78,46 @@ export function createMatchService(db: Db, usage: UsageService | null) {
       winnerId = seated.id;
     }
 
-    const completedAt = new Date();
-
-    const [updated] = await db
-      .update(match)
-      .set({
-        status: "completed",
-        winnerParticipantId: winnerId,
-        completedAt,
-        updatedAt: completedAt,
-      })
-      .where(
-        and(
-          eq(match.id, current.id),
-          inArray(match.status, ["pending", "active"]),
-        ),
-      )
-      .returning();
-
-    if (updated === undefined) {
-      return toMatchView(await readMatchRow(db, scope, input.matchId));
-    }
-
-    if (winnerId !== null) {
-      await db
-        .update(matchParticipant)
-        .set({ outcome: "won", placement: 1, updatedAt: completedAt })
-        .where(eq(matchParticipant.id, winnerId));
-
-      await db
-        .update(matchParticipant)
-        .set({ outcome: "lost", updatedAt: completedAt })
-        .where(
-          and(
-            eq(matchParticipant.matchId, current.id),
-            ne(matchParticipant.id, winnerId),
-            eq(matchParticipant.outcome, "pending"),
-          ),
-        );
-
-      await advanceWinner(db, updated, winnerId);
-    }
-
-    if (updated.tournamentId !== null) {
-      await settleTournament(db, updated.tournamentId);
-    }
-
-    return toMatchView(updated);
-  };
-
-  const autoComplete = async (scope: Scope, current: MatchRow): Promise<void> => {
     const seated = await db
       .select()
       .from(matchParticipant)
       .where(eq(matchParticipant.matchId, current.id));
 
-    if (seated.length < 2) return;
-    if (seated.some((row) => row.score === null)) return;
+    const outcomes =
+      winnerId === null
+        ? []
+        : [
+            { participantId: winnerId, outcome: "won" as const, placement: 1 },
+            ...seated
+              .filter((row) => row.id !== winnerId && row.outcome === "pending")
+              .map((row) => ({
+                participantId: row.id,
+                outcome: "lost" as const,
+                placement: row.placement,
+              })),
+          ];
 
-    const ranked = [...seated].sort((left, right) => {
+    const updated = await settleMatch(db, current, { winnerId, outcomes });
+
+    if (updated === null) {
+      return toMatchView(await readMatchRow(db, scope, input.matchId));
+    }
+
+    return toMatchView(updated);
+  };
+
+  const autoComplete = async (current: MatchRow): Promise<void> => {
+    const seated = await db
+      .select()
+      .from(matchParticipant)
+      .where(eq(matchParticipant.matchId, current.id));
+
+    const eligible = seated.filter((row) => row.outcome !== "disqualified");
+
+    if (eligible.length < 2) return;
+    if (eligible.some((row) => row.score === null)) return;
+
+    const ranked = [...eligible].sort((left, right) => {
       const difference = (right.score ?? 0) - (left.score ?? 0);
       return difference === 0 ? left.id.localeCompare(right.id) : difference;
     });
@@ -166,25 +127,14 @@ export function createMatchService(db: Db, usage: UsageService | null) {
 
     const tied =
       ranked.filter((row) => (row.score ?? 0) === (top.score ?? 0)).length > 1;
-    const now = new Date();
 
-    await db.transaction(async (tx) => {
-      for (const [index, row] of ranked.entries()) {
-        await tx
-          .update(matchParticipant)
-          .set({
-            placement: tied ? null : index + 1,
-            outcome: tied ? "draw" : index === 0 ? "won" : "lost",
-            updatedAt: now,
-          })
-          .where(eq(matchParticipant.id, row.id));
-      }
-    });
+    const outcomes = ranked.map((row, index) => ({
+      participantId: row.id,
+      outcome: (tied ? "draw" : index === 0 ? "won" : "lost") as MatchOutcome,
+      placement: tied ? null : index + 1,
+    }));
 
-    await complete(scope, {
-      matchId: current.id,
-      ...(tied ? {} : { winnerParticipantId: top.id }),
-    });
+    await settleMatch(db, current, { winnerId: tied ? null : top.id, outcomes });
   };
 
   return {
@@ -194,6 +144,10 @@ export function createMatchService(db: Db, usage: UsageService | null) {
       await requireGame(db, scope, body.gameId);
 
       if (body.tournamentId !== undefined) {
+        if (body.participants.length !== 2) {
+          throw new BadRequestError("a tournament match has exactly two sides");
+        }
+
         const current = await readTournamentRow(db, scope, body.tournamentId);
 
         if (current.gameId !== body.gameId) {
@@ -279,9 +233,7 @@ export function createMatchService(db: Db, usage: UsageService | null) {
       ];
 
       if (cursor !== null) {
-        conditions.push(
-          sql`(${match.createdAt}, ${match.id}) < (${cursor.createdAt.toISOString()}::timestamptz, ${cursor.id}::uuid)`,
-        );
+        conditions.push(afterCursor(match.createdAt, match.id, cursor));
       }
 
       const rows = await db
@@ -291,9 +243,8 @@ export function createMatchService(db: Db, usage: UsageService | null) {
         .orderBy(desc(match.createdAt), desc(match.id))
         .limit(limit + 1);
 
-      const hasMore = rows.length > limit;
-      const page = hasMore ? rows.slice(0, limit) : rows;
-      const matchIds = page.map((row) => row.id);
+      const { items, page } = paginate(rows, limit);
+      const matchIds = items.map((row) => row.id);
 
       const seated =
         matchIds.length === 0
@@ -311,18 +262,12 @@ export function createMatchService(db: Db, usage: UsageService | null) {
         byMatch.set(participant.matchId, list);
       }
 
-      const last = page[page.length - 1];
-
       return {
-        data: page.map((row) => ({
+        data: items.map((row) => ({
           match: toMatchView(row),
           participants: (byMatch.get(row.id) ?? []).map(toMatchParticipantView),
         })),
-        page: {
-          limit,
-          hasMore,
-          cursor: hasMore && last !== undefined ? encodeCursor(last) : null,
-        },
+        page,
       };
     },
 
@@ -376,7 +321,7 @@ export function createMatchService(db: Db, usage: UsageService | null) {
 
       if (updated.length === 0) return;
 
-      await autoComplete(scope, current);
+      await autoComplete(current);
     },
   };
 }

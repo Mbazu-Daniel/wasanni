@@ -50,7 +50,7 @@ export function createAssignmentService(db: Db) {
       return rows.map(toView);
     },
 
-    async listForOrganization(organizationId: string): Promise<OrgAssignmentView[]> {
+    async listForOrganization(scope: Scope): Promise<OrgAssignmentView[]> {
       const rows = await db
         .select({
           id: gamePlatformAssignment.id,
@@ -70,7 +70,7 @@ export function createAssignmentService(db: Db) {
         .from(gamePlatformAssignment)
         .innerJoin(game, eq(gamePlatformAssignment.gameId, game.id))
         .innerJoin(platform, eq(gamePlatformAssignment.platformId, platform.id))
-        .where(eq(gamePlatformAssignment.organizationId, organizationId))
+        .where(scopeTo(scope, gamePlatformAssignment))
         .orderBy(desc(gamePlatformAssignment.createdAt));
 
       return rows.map((row) => ({
