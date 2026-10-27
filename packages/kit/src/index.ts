@@ -16,6 +16,8 @@ export * from "./logger/types.ts";
 export * from "./logger/constants.ts";
 export * from "./logger/logger.ts";
 
+export * from "./preflight/preflight.ts";
+
 export * from "./publicid/constants.ts";
 export * from "./publicid/publicid.ts";
 

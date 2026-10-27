@@ -9,7 +9,7 @@ vocabulary: [`GLOSSARY.md`](GLOSSARY.md). Binding rules for agents:
 ## Requirements
 
 - Bun ≥ 1.1
-- Docker (for Postgres and Redis)
+- Docker (for Postgres, PgBouncer and Redis)
 
 ## First run
 
@@ -20,6 +20,12 @@ bun run infra:up
 bun run db:migrate
 bun run dev
 ```
+
+`docker-compose.yml` runs Postgres on 5432, PgBouncer in transaction mode on
+6432 and Redis on 6379. `DATABASE_URL` decides which one the api talks to, and
+`createDb` turns prepared statements off when it points at the pooler. Deploying,
+file descriptor limits and why Redis must keep `noeviction`:
+[`deploy/README.md`](deploy/README.md).
 
 Then:
 

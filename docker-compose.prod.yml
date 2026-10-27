@@ -1,0 +1,117 @@
+x-ulimits: &ulimits
+  nofile:
+    soft: 1048576
+    hard: 1048576
+  nproc: 65536
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=512MB
+    environment:
+      POSTGRES_USER: wasanni
+      POSTGRES_PASSWORD: wasanni
+      POSTGRES_DB: wasanni
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    ulimits: *ulimits
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wasanni -d wasanni"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    restart: always
+    environment:
+      DB_USER: wasanni
+      DB_PASSWORD: wasanni
+      DB_HOST: postgres
+      DB_NAME: wasanni
+      POOL_MODE: transaction
+      LISTEN_PORT: "6432"
+      AUTH_TYPE: scram-sha-256
+      MAX_CLIENT_CONN: 10000
+      DEFAULT_POOL_SIZE: 50
+      RESERVE_POOL_SIZE: 10
+    ulimits: *ulimits
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory-policy
+      - noeviction
+    volumes: ["redisdata:/data"]
+    ulimits: *ulimits
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    restart: always
+    ulimits: *ulimits
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      REDIS_URL: redis://redis:6379
+    ports: ["3000:3000"]
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    restart: always
+    command: ["bun", "run", "apps/worker/src/index.ts"]
+    ulimits: *ulimits
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  realtime:
+    build: .
+    restart: always
+    command: ["bun", "run", "apps/realtime/src/index.ts"]
+    ulimits: *ulimits
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      REDIS_URL: redis://redis:6379
+      REALTIME_PORT: 3001
+      REALTIME_PUBLIC_URL: ws://localhost:3001
+    ports: ["3001:3001"]
+    depends_on:
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

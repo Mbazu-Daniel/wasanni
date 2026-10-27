@@ -25,3 +25,11 @@ export const DEFAULT_WS_MAX_MESSAGE_BYTES = 65_536;
 export const WS_IDLE_TIMEOUT_RANGE = { min: 10, max: 3600 } as const;
 export const WS_MAX_MESSAGE_BYTES_RANGE = { min: 256, max: 1_048_576 } as const;
 
+
+export const DEFAULT_DB_POOL_MAX = 10;
+export const DEFAULT_DB_POOL_MAX_WORKER = 5;
+export const DEFAULT_DB_POOL_MAX_REALTIME = 5;
+export const DEFAULT_FD_LIMIT_MINIMUM = 65_535;
+
+export const DB_POOL_RANGE = { min: 1, max: 50 } as const;
+export const FD_LIMIT_RANGE = { min: 1024, max: 1_048_576 } as const;

@@ -42,4 +42,8 @@ export type Env = {
   readonly API_INTERNAL_URL: string;
   readonly WS_IDLE_TIMEOUT_SECONDS: number;
   readonly WS_MAX_MESSAGE_BYTES: number;
+  readonly DB_POOL_MAX: number;
+  readonly DB_POOL_MAX_WORKER: number;
+  readonly DB_POOL_MAX_REALTIME: number;
+  readonly FD_LIMIT_MINIMUM: number;
 };

@@ -1,6 +1,12 @@
 services:
   postgres:
     image: postgres:16-alpine
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
     environment:
       POSTGRES_USER: wasanni
       POSTGRES_PASSWORD: wasanni
@@ -13,9 +19,36 @@ services:
       timeout: 3s
       retries: 10
 
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      DB_USER: wasanni
+      DB_PASSWORD: wasanni
+      DB_HOST: postgres
+      DB_NAME: wasanni
+      POOL_MODE: transaction
+      LISTEN_PORT: "6432"
+      MAX_CLIENT_CONN: 10000
+      DEFAULT_POOL_SIZE: 50
+      RESERVE_POOL_SIZE: 10
+      AUTH_TYPE: scram-sha-256
+    ports: ["6432:6432"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - noeviction
     ports: ["6379:6379"]
     volumes: ["redisdata:/data"]
     healthcheck:

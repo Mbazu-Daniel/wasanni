@@ -1,6 +1,6 @@
 import { REALTIME_CLOSE } from "@wasanni/contracts";
 import { createDb, pingDatabase } from "@wasanni/db";
-import { createLogger, createRedis, isRedisReady, readEnv } from "@wasanni/kit";
+import { createLogger, createRedis, isRedisReady, preflight, readEnv } from "@wasanni/kit";
 import { createRealtimeApp } from "./app.ts";
 import { createRoomBridge } from "./bridge.ts";
 import { createRoomRegistry } from "./rooms.ts";
@@ -15,7 +15,10 @@ const logger = createLogger({
   bindings: { service: "realtime" },
 });
 
-const { db, sql } = createDb(cfg.DATABASE_URL, { max: 5 });
+const checks = await preflight(cfg, logger);
+logger.info("preflight ready", checks);
+
+const { db, sql } = createDb(cfg.DATABASE_URL, { max: cfg.DB_POOL_MAX_REALTIME });
 const redis = createRedis(cfg.REDIS_URL);
 const rooms = createRoomRegistry();
 const bridge = createRoomBridge({ redis, rooms, logger });
