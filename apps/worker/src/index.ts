@@ -50,6 +50,7 @@ const workers = [
 
 for (const worker of workers) {
   worker.on("completed", (job) => {
+    if (job.repeatJobKey !== undefined) return;
     logger.debug("job.completed", { queue: worker.name, job: job.name, id: job.id });
   });
 
