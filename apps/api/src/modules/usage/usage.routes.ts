@@ -164,7 +164,7 @@ export const createUsageRoutes = <T extends PrincipalApi>(
       async ({ principal, params, status }) => {
         await service.removeQuota(
           organizationScope(principal).organizationId,
-          params.metric as never,
+          params.metric,
         );
         return status(204);
       },

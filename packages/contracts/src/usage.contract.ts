@@ -84,7 +84,7 @@ export type UsageQuery = UnwrapSchema<typeof UsageQuery>;
 
 export const UsageQuotaParams = t.Object({
   organizationId: t.String(),
-  metric: t.String(),
+  metric: UsageMetricModel,
 });
 export type UsageQuotaParams = UnwrapSchema<typeof UsageQuotaParams>;
 
