@@ -1,8 +1,17 @@
 import { t, type UnwrapSchema } from "elysia";
 
+export const ErrorCodeModel = t.Union([
+  t.Literal("bad_request"),
+  t.Literal("unauthenticated"),
+  t.Literal("forbidden"),
+  t.Literal("not_found"),
+  t.Literal("conflict"),
+  t.Literal("internal"),
+]);
+
 export const ErrorBodyModel = t.Object({
   error: t.Object({
-    code: t.String(),
+    code: ErrorCodeModel,
     message: t.String(),
     details: t.Optional(t.Unknown()),
     requestId: t.String(),

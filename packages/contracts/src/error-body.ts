@@ -1,5 +1,5 @@
 import type { ErrorBodyModel } from "./model.ts";
-import type { ErrorSource } from "./types.ts";
+import type { ErrorSource } from "./errors.ts";
 
 export function toErrorBody(error: ErrorSource, requestId: string): ErrorBodyModel {
   return {
