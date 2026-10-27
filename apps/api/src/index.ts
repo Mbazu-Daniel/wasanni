@@ -57,7 +57,7 @@ const deps: AppDeps = {
   logger,
   version: pkg.version,
   startedAt: Date.now(),
-  corsOrigins: [cfg.PUBLIC_WEB_ORIGIN],
+  corsOrigins: [...cfg.WEB_ORIGINS],
   db,
   env: cfg,
   events,

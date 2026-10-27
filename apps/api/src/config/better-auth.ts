@@ -68,7 +68,7 @@ export function createBetterAuth(deps: ModuleDeps) {
     appName: "Wasanni",
     basePath: AUTH_ROUTE_PREFIX,
     baseURL: env.BETTER_AUTH_URL,
-    trustedOrigins: [env.PUBLIC_WEB_ORIGIN],
+    trustedOrigins: [...env.WEB_ORIGINS],
     secret: env.SESSION_SECRET,
 
     database: drizzleAdapter(db, {
