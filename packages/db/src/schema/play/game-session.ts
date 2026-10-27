@@ -14,6 +14,8 @@ import { game } from "../game/game.ts";
 import { gameFile } from "../game/game-file.ts";
 import { gameConfig } from "../game/game-config.ts";
 import { gamePlatformAssignment } from "../game/game-platform-assignment.ts";
+import { tournament } from "../competition/tournament.ts";
+import { match } from "../competition/match.ts";
 import type { GameSessionStatus } from "@wasanni/contracts";
 
 export const gameSession = pgTable(
@@ -38,6 +40,12 @@ export const gameSession = pgTable(
     gameConfigId: uuid("game_config_id").references(() => gameConfig.id, {
       onDelete: "set null",
     }),
+    tournamentId: uuid("tournament_id").references(() => tournament.id, {
+      onDelete: "set null",
+    }),
+    matchId: uuid("match_id").references(() => match.id, {
+      onDelete: "set null",
+    }),
     externalUserId: text("external_user_id").notNull(),
     externalUserName: text("external_user_name"),
     mode: text("mode"),
@@ -58,6 +66,7 @@ export const gameSession = pgTable(
     uniqueIndex("game_session_token_hash_ux").on(t.tokenHash),
     index("game_session_platform_user_ix").on(t.platformId, t.externalUserId),
     index("game_session_game_platform_ix").on(t.gameId, t.platformId),
+    index("game_session_tournament_ix").on(t.tournamentId),
     index("game_session_organization_ix").on(t.organizationId),
   ],
 );

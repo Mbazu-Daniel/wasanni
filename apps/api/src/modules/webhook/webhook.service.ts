@@ -76,5 +76,3 @@ export function createWebhookService(db: Db) {
     },
   };
 }
-
-export type WebhookService = ReturnType<typeof createWebhookService>;

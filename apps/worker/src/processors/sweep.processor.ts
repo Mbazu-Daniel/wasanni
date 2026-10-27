@@ -1,12 +1,7 @@
 import { and, eq, lt } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { gameSession, session, verification } from "@wasanni/db/schema";
-
-export type SweepResult = {
-  expiredSessions: number;
-  purgedAuthSessions: number;
-  purgedVerifications: number;
-};
+import type { SweepResult } from "../types.ts";
 
 export function createSweepProcessor(db: Db) {
   return async function sweep(): Promise<SweepResult> {

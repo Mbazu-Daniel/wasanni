@@ -4,13 +4,7 @@ import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { notFound, type ObjectStorage, type SessionEvent, type SessionEventStore } from "@wasanni/kit";
-
-export type ReplaySource = "redis" | "r2";
-
-export type ReplayView = {
-  source: ReplaySource;
-  events: SessionEvent[];
-};
+import type { ReplayView } from "./types.ts";
 
 export function createReplayService(
   db: Db,
@@ -67,5 +61,3 @@ export function createReplayService(
     },
   };
 }
-
-export type ReplayService = ReturnType<typeof createReplayService>;

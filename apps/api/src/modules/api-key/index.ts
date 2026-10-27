@@ -9,12 +9,8 @@ import {
   UpdateApiKeyBody,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { ApiKeyService } from "./service.ts";
-
-type ApiKeyDeps = {
-  service: ApiKeyService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { ApiKeyDeps } from "./types.ts";
 
 export const createApiKeyRoutes = <T extends PrincipalApi>(api: T, { service }: ApiKeyDeps) =>
   api

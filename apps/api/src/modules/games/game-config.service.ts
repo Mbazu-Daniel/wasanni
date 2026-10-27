@@ -3,11 +3,9 @@ import type { Db } from "@wasanni/db";
 import { gameConfig, gamePlatformAssignment } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, newId, notFound } from "@wasanni/kit";
+import { conflict, internal, newId, notFound } from "@wasanni/kit";
 import type { GameConfigView } from "@wasanni/contracts";
-import type { GameConfigCreateInput, GameConfigUpdateInput } from "./types.ts";
-
-type GameConfigRow = (typeof gameConfig.$inferSelect);
+import type { GameConfigCreateInput, GameConfigRow, GameConfigUpdateInput } from "./types.ts";
 
 const toView = (row: GameConfigRow): GameConfigView => ({
   id: row.id,
@@ -121,7 +119,7 @@ export function createGameConfigService(
             })
             .returning();
 
-          if (row === undefined) throw new Error("game config insert returned no row");
+          if (row === undefined) throw internal("game config insert returned no row");
           return toView(row);
         });
       } catch (error) {
@@ -198,5 +196,3 @@ export function createGameConfigService(
     },
   };
 }
-
-export type GameConfigService = ReturnType<typeof createGameConfigService>;

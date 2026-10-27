@@ -1,6 +1,4 @@
-import type { Db } from "@wasanni/db";
-import type { ObjectStorage, StorageLimits } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { createAssignmentRoutes } from "./assignment.routes.ts";
 import { createAssignmentService } from "./assignment.service.ts";
 import { createGameConfigRoutes } from "./game-config.routes.ts";
@@ -9,16 +7,7 @@ import { createGameFileRoutes } from "./game-file.routes.ts";
 import { createGameFileService } from "./game-file.service.ts";
 import { createGameRoutes } from "./game.routes.ts";
 import { createGameService } from "./game.service.ts";
-
-type GamesDeps = {
-  db: Db;
-  storage: ObjectStorage;
-  config: StorageLimits;
-  onConfigChanged?: (input: {
-    organizationId: string;
-    configId: string;
-  }) => Promise<void>;
-};
+import type { GamesDeps } from "./types.ts";
 
 export const createGamesRoutes = <T extends PrincipalApi>(api: T, deps: GamesDeps) => {
   const games = createGameService(deps.db, deps.storage);

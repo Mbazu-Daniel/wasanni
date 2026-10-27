@@ -1,8 +1,4 @@
-import type { Db } from "@wasanni/db";
-import type { Enqueuer } from "@wasanni/jobs";
-import type { ObjectStorage, SessionEventStore } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { WebhookDispatcher } from "../webhook/webhook-dispatcher.ts";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { createLeaderboardRoutes } from "./leaderboard.routes.ts";
 import { createLeaderboardService } from "./leaderboard.service.ts";
 import { createReplayRoutes } from "./replay.routes.ts";
@@ -11,15 +7,7 @@ import { createScoreRoutes } from "./score.routes.ts";
 import { createScoreService } from "./score.service.ts";
 import { createSessionRoutes } from "./session.routes.ts";
 import { createSessionService } from "./session.service.ts";
-
-export type PlayDeps = {
-  db: Db;
-  storage: ObjectStorage;
-  events: SessionEventStore;
-  dispatcher: WebhookDispatcher;
-  enqueuer: Enqueuer | null;
-  realtimeBaseUrl: string;
-};
+import type { PlayDeps } from "./types.ts";
 
 export const createPlayRoutes = <T extends PrincipalApi>(api: T, deps: PlayDeps) => {
   const sessions = createSessionService(deps.db, {
@@ -30,6 +18,9 @@ export const createPlayRoutes = <T extends PrincipalApi>(api: T, deps: PlayDeps)
   const scores = createScoreService(deps.db, {
     dispatcher: deps.dispatcher,
     sessions,
+    ...(deps.matchRecorder === undefined
+      ? {}
+      : { matchRecorder: deps.matchRecorder }),
   });
   const leaderboard = createLeaderboardService(deps.db);
   const replay = createReplayService(deps.db, deps.storage, deps.events);

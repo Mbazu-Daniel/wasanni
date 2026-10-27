@@ -3,11 +3,9 @@ import type { Db } from "@wasanni/db";
 import { game, gamePlatformAssignment, platform } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, newId, notFound } from "@wasanni/kit";
+import { conflict, internal, newId, notFound } from "@wasanni/kit";
 import type { AssignmentView } from "@wasanni/contracts";
-import type { AssignmentCreateInput } from "./types.ts";
-
-type AssignmentRow = (typeof gamePlatformAssignment.$inferSelect);
+import type { AssignmentCreateInput, AssignmentRow } from "./types.ts";
 
 const toView = (row: AssignmentRow): AssignmentView => ({
   id: row.id,
@@ -83,7 +81,7 @@ export function createAssignmentService(db: Db) {
           .returning();
 
         if (row === undefined) {
-          throw new Error("game platform assignment insert returned no row");
+          throw internal("game platform assignment insert returned no row");
         }
 
         return toView(row);
@@ -116,5 +114,3 @@ export function createAssignmentService(db: Db) {
     },
   };
 }
-
-export type AssignmentService = ReturnType<typeof createAssignmentService>;

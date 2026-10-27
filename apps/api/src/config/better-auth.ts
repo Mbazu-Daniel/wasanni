@@ -7,7 +7,7 @@ import { internal, newId, sendDevEmail } from "@wasanni/kit";
 import type { SendEmail } from "@wasanni/kit";
 import { AUTH_ROUTE_PREFIX } from "../constants.ts";
 import type { ModuleDeps } from "../types.ts";
-import { ac, roles } from "../permissions.ts";
+import { ac, roles } from "../access.ts";
 
 function credentialsFor(
   clientId: string | undefined,
@@ -150,4 +150,3 @@ export function createBetterAuth(deps: ModuleDeps) {
   });
 }
 
-export type BetterAuth = ReturnType<typeof createBetterAuth>;

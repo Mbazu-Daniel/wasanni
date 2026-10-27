@@ -5,15 +5,10 @@ import {
   SetMemberAvatar,
   UpdateMemberDisplayName,
 } from "@wasanni/contracts";
-import { notFound, organizationScope, type ObjectStorage } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
+import { notFound, organizationScope } from "@wasanni/kit";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { assertAvatarKey, createAvatarUploadTicket } from "./avatar.ts";
-import type { MemberService } from "./service.ts";
-
-type MemberDeps = {
-  service: MemberService;
-  storage: ObjectStorage;
-};
+import type { MemberDeps } from "./types.ts";
 
 export const createMemberRoutes = <T extends PrincipalApi>(
   api: T,

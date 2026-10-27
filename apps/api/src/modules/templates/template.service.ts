@@ -3,11 +3,13 @@ import type { Db } from "@wasanni/db";
 import { template } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, newId, notFound, type ObjectStorage } from "@wasanni/kit";
+import { conflict, internal, newId, notFound, type ObjectStorage } from "@wasanni/kit";
 import type { TemplateKind, TemplateView } from "@wasanni/contracts";
-import type { TemplateCreateInput, TemplateUpdateInput } from "./types.ts";
-
-export type TemplateRow = (typeof template.$inferSelect);
+import type {
+  TemplateCreateInput,
+  TemplateRow,
+  TemplateUpdateInput,
+} from "./types.ts";
 
 export async function readTemplateRow(
   db: Db,
@@ -71,7 +73,7 @@ export function createTemplateService(db: Db, storage: ObjectStorage) {
           })
           .returning();
 
-        if (row === undefined) throw new Error("template insert returned no row");
+        if (row === undefined) throw internal("template insert returned no row");
         return toTemplateView(row);
       } catch (error) {
         if (isUniqueViolation(error)) throw conflict("template slug already exists");
@@ -120,5 +122,3 @@ export function createTemplateService(db: Db, storage: ObjectStorage) {
     },
   };
 }
-
-export type TemplateService = ReturnType<typeof createTemplateService>;

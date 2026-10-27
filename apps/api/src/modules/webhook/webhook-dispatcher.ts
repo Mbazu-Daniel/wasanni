@@ -2,18 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { webhookConfig } from "@wasanni/db/schema";
 import type { Enqueuer } from "@wasanni/jobs";
-import type { WebhookEvent } from "@wasanni/contracts";
-
-export type WebhookDispatchInput = {
-  organizationId: string;
-  platformId: string;
-  eventType: WebhookEvent;
-  payload: unknown;
-};
-
-export type WebhookDispatcher = {
-  dispatch(input: WebhookDispatchInput): Promise<number>;
-};
+import type { WebhookDispatcher } from "./types.ts";
 
 export function createWebhookDispatcher(
   db: Db,

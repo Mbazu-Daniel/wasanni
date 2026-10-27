@@ -9,16 +9,12 @@ import {
   PERMISSION,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { GameFileService } from "./game-file.service.ts";
-
-type GameFileDeps = {
-  service: GameFileService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { GameFileRouteDeps } from "./types.ts";
 
 export const createGameFileRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: GameFileDeps,
+  { service }: GameFileRouteDeps,
 ) =>
   api
     .get(

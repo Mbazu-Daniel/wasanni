@@ -7,6 +7,7 @@ import {
   badRequest,
   buildObjectKey,
   conflict,
+  internal,
   newId,
   notFound,
   type ObjectStorage,
@@ -15,9 +16,7 @@ import {
 import type { GameFileUpload, GameFileView } from "@wasanni/contracts";
 import { GAME_FILE_CONTENT_TYPES } from "./constants.ts";
 import { readGameState } from "./game-state.ts";
-import type { GameFileUploadInput } from "./types.ts";
-
-type GameFileRow = (typeof gameFile.$inferSelect);
+import type { GameFileRow, GameFileUploadInput } from "./types.ts";
 
 const toView = (row: GameFileRow): GameFileView => ({
   id: row.id,
@@ -126,7 +125,7 @@ export function createGameFileService(
         })
         .returning();
 
-      if (row === undefined) throw new Error("game file insert returned no row");
+      if (row === undefined) throw internal("game file insert returned no row");
 
       return { file: toView(row), upload };
     },
@@ -227,5 +226,3 @@ export function createGameFileService(
     },
   };
 }
-
-export type GameFileService = ReturnType<typeof createGameFileService>;

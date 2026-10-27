@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import type { Db } from "@wasanni/db";
-import type { ObjectStorage, SessionEventStore } from "@wasanni/kit";
+import { internal, type ObjectStorage, type SessionEventStore } from "@wasanni/kit";
 import {
   JOB,
   QUEUE,
@@ -29,7 +29,7 @@ export function createArchiveWorker(
       if (job.name === JOB.SCORE_RECHECK) {
         return recheck(job.data as ScoreRecheckJob);
       }
-      throw new Error(`unexpected archive job: ${job.name}`);
+      throw internal(`unexpected archive job: ${job.name}`);
     },
     { connection, concurrency: 2 },
   );

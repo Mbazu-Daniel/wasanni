@@ -1,13 +1,8 @@
 import { STATUS } from "@wasanni/contracts";
-import type { ErrorCode, ErrorSource } from "@wasanni/contracts";
+import type { ErrorCode } from "@wasanni/contracts";
 import { AppError } from "@wasanni/kit";
 
-export type Failure = { status: number; source: ErrorSource };
-
-type DelegatedError = {
-  name?: string;
-  body?: { code?: string; message?: string };
-};
+import type { DelegatedError, Failure } from "./types.ts";
 
 const DELEGATED: Readonly<Record<string, ErrorCode>> = {
   EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION: "conflict",

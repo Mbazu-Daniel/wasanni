@@ -1,17 +1,12 @@
-import type { Db } from "@wasanni/db";
-import type { PrincipalApi } from "../../plugins/principal.ts";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { createWebhookRoutes } from "./webhook.routes.ts";
 import { createWebhookSecretService } from "./webhook-secret.service.ts";
 import { createWebhookService } from "./webhook.service.ts";
-
-type WebhookDeps = {
-  db: Db;
-  encryptionKey: string;
-};
+import type { WebhookModuleDeps } from "./types.ts";
 
 export const createWebhooksRoutes = <T extends PrincipalApi>(
   api: T,
-  deps: WebhookDeps,
+  deps: WebhookModuleDeps,
 ) => {
   const service = createWebhookService(deps.db);
   const secrets = createWebhookSecretService(deps.db, deps.encryptionKey);

@@ -1,4 +1,13 @@
+import type IORedis from "ioredis";
 import type { EmailPurpose } from "@wasanni/kit";
+import type { createEnqueuer } from "./enqueue.ts";
+import type { createQueues } from "./queues.ts";
+
+export type QueueConnection = IORedis;
+
+export type Queues = ReturnType<typeof createQueues>;
+
+export type Enqueuer = ReturnType<typeof createEnqueuer>;
 
 export type WebhookDeliveryJob = {
   webhookId: string;

@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { game, gameFile } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { badRequest, conflict, newId, notFound, type ObjectStorage } from "@wasanni/kit";
+import { badRequest, conflict, internal, newId, notFound, type ObjectStorage } from "@wasanni/kit";
 import type {
   CreateGameBody,
   GameView,
@@ -11,8 +11,7 @@ import type {
   UpdateGameBody,
 } from "@wasanni/contracts";
 import { hasReadyGameFile } from "./game-state.ts";
-
-type GameRow = (typeof game.$inferSelect);
+import type { GameRow } from "./types.ts";
 
 const toView = (row: GameRow): GameView => ({
   id: row.id,
@@ -77,7 +76,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
           })
           .returning();
 
-        if (row === undefined) throw new Error("game insert returned no row");
+        if (row === undefined) throw internal("game insert returned no row");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -154,5 +153,3 @@ export function createGameService(db: Db, storage: ObjectStorage) {
     },
   };
 }
-
-export type GameService = ReturnType<typeof createGameService>;

@@ -1,14 +1,6 @@
 import type { ScoreFlag } from "@wasanni/contracts";
-
-export const SCORE_RULE_FLAGS: readonly ScoreFlag[] = [
-  "max_score_exceeded",
-  "score_rate_exceeded",
-];
-
-type ScoreRules = {
-  maxScore?: number;
-  maxScorePerSecond?: number;
-};
+import { SCORE_RULE_FLAGS } from "./constants.ts";
+import type { ScoreRules } from "./types.ts";
 
 function readScoreRules(config: Record<string, unknown>): ScoreRules {
   const rules = config.rules;

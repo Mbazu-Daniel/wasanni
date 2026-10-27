@@ -7,25 +7,17 @@ import {
   type MembershipRow,
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
-import { hashApiKey, sha256Hex, unauthenticated, forbidden } from "@wasanni/kit";
-import type { GameSessionPrincipal, PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
+import { hashApiKey, internal, sha256Hex, unauthenticated, forbidden } from "@wasanni/kit";
+import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
 import { permissionsForRole, requirePermission } from "../permissions.ts";
-import type { BetterAuth } from "../config/better-auth.ts";
-
-export type PrincipalDeps = {
-  db: Db;
-  auth: BetterAuth;
-};
-
-type Session = NonNullable<Awaited<ReturnType<BetterAuth["api"]["getSession"]>>>;
-
-type AuthResult = { user: Session["user"]; session: Session["session"] };
-
-type OrganizationAuthResult = { principal: UserPrincipal };
-
-type PlatformAuthResult = { principal: PlatformPrincipal };
-
-type SessionAuthResult = { sessionPrincipal: GameSessionPrincipal };
+import type {
+  AuthResult,
+  OrganizationAuthResult,
+  PlatformAuthResult,
+  PrincipalDeps,
+  Session,
+  SessionAuthResult,
+} from "./types.ts";
 
 const resolvePrincipal = async (
   db: Db,
@@ -68,7 +60,7 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         async resolve({ params, request }): Promise<OrganizationAuthResult> {
           const organizationId = (params as { organizationId?: string }).organizationId;
           if (!organizationId) {
-            throw new Error("organizationAuth route is missing an :organizationId param");
+            throw internal("organizationAuth route is missing an :organizationId param");
           }
 
           const session = await auth.api.getSession({ headers: request.headers });
@@ -133,5 +125,3 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         },
       },
     });
-
-export type PrincipalApi = ReturnType<typeof createPrincipalPlugin>;

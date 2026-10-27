@@ -1,4 +1,4 @@
-export const UNIQUE_VIOLATION = "23505";
+import { UNIQUE_VIOLATION } from "./constants.ts";
 
 export function isUniqueViolation(error: unknown): boolean {
   let current: unknown = error;

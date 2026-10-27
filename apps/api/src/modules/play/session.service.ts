@@ -1,31 +1,29 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { gameSession } from "@wasanni/db/schema";
+import {
+  gameSession,
+  match,
+  matchParticipant,
+  tournament,
+  tournamentParticipant,
+} from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { badRequest, newId, newOpaqueToken, notFound, sha256Hex } from "@wasanni/kit";
+import { badRequest, internal, newId, newOpaqueToken, notFound, sha256Hex } from "@wasanni/kit";
 import type { CreatedGameSession, GameSessionView } from "@wasanni/contracts";
 import { REALTIME_PATH } from "@wasanni/contracts";
-import type { Enqueuer } from "@wasanni/jobs";
 import {
   readAssignmentConfig,
   readAssignmentState,
   readCurrentGameFile,
   readGameState,
 } from "../games/game-state.ts";
-import type { WebhookDispatcher } from "../webhook/webhook-dispatcher.ts";
 import {
   DEFAULT_SESSION_DURATION_SECONDS,
   MAX_SESSION_DURATION_SECONDS,
   MIN_SESSION_DURATION_SECONDS,
 } from "./constants.ts";
-import type { GameSessionRow, SessionCreateInput } from "./types.ts";
-
-export type SessionDeps = {
-  dispatcher: WebhookDispatcher;
-  enqueuer: Enqueuer | null;
-  realtimeBaseUrl: string;
-};
+import type { GameSessionRow, SessionCreateInput, SessionServiceDeps } from "./types.ts";
 
 const toView = (row: GameSessionRow): GameSessionView => ({
   id: row.id,
@@ -35,6 +33,8 @@ const toView = (row: GameSessionRow): GameSessionView => ({
   assignmentId: row.assignmentId,
   gameFileId: row.gameFileId,
   gameConfigId: row.gameConfigId,
+  tournamentId: row.tournamentId,
+  matchId: row.matchId,
   externalUserId: row.externalUserId,
   externalUserName: row.externalUserName,
   mode: row.mode,
@@ -84,8 +84,86 @@ export async function readGameSessionRow(
   return row;
 }
 
-export function createSessionService(db: Db, deps: SessionDeps) {
-  const endSession = async (
+async function assertCompetitionEntry(
+  db: Db,
+  scope: Scope,
+  input: {
+    platformId: string;
+    gameId: string;
+    externalUserId: string;
+    tournamentId: string | null;
+    matchId: string | null;
+  },
+): Promise<void> {
+  if (input.tournamentId !== null) {
+    const [current] = await db
+      .select()
+      .from(tournament)
+      .where(scopeTo(scope, tournament, eq(tournament.id, input.tournamentId)))
+      .limit(1);
+
+    if (current === undefined) throw notFound("tournament not found");
+    if (current.gameId !== input.gameId) {
+      throw badRequest("the tournament belongs to another game");
+    }
+    if (current.status !== "open" && current.status !== "running") {
+      throw badRequest("the tournament is not accepting sessions");
+    }
+
+    const [registration] = await db
+      .select({ status: tournamentParticipant.status })
+      .from(tournamentParticipant)
+      .where(
+        and(
+          eq(tournamentParticipant.tournamentId, input.tournamentId),
+          eq(tournamentParticipant.platformId, input.platformId),
+          eq(tournamentParticipant.externalUserId, input.externalUserId),
+        ),
+      )
+      .limit(1);
+
+    if (registration === undefined) {
+      throw badRequest("the player is not registered for this tournament");
+    }
+    if (registration.status === "withdrawn") {
+      throw badRequest("the player has withdrawn from this tournament");
+    }
+  }
+
+  if (input.matchId !== null) {
+    const [current] = await db
+      .select()
+      .from(match)
+      .where(scopeTo(scope, match, eq(match.id, input.matchId)))
+      .limit(1);
+
+    if (current === undefined) throw notFound("match not found");
+    if (current.gameId !== input.gameId) {
+      throw badRequest("the match belongs to another game");
+    }
+    if (current.status === "completed" || current.status === "cancelled") {
+      throw badRequest("the match is closed");
+    }
+
+    const [seated] = await db
+      .select({ id: matchParticipant.id })
+      .from(matchParticipant)
+      .where(
+        and(
+          eq(matchParticipant.matchId, input.matchId),
+          eq(matchParticipant.platformId, input.platformId),
+          eq(matchParticipant.externalUserId, input.externalUserId),
+        ),
+      )
+      .limit(1);
+
+    if (seated === undefined) {
+      throw badRequest("the player is not seated in this match");
+    }
+  }
+}
+
+export function createSessionService(db: Db, deps: SessionServiceDeps) {  const endSession = async (
     scope: Scope,
     session: GameSessionRow,
     at: Date,
@@ -154,6 +232,16 @@ export function createSessionService(db: Db, deps: SessionDeps) {
       const durationSeconds = readSessionDuration(config.config);
       const expiresAt = new Date(Date.now() + durationSeconds * 1000);
       const sessionToken = newOpaqueToken(32);
+      const tournamentId = input.body.tournamentId ?? null;
+      const matchId = input.body.matchId ?? null;
+
+      await assertCompetitionEntry(db, scope, {
+        platformId: input.platformId,
+        gameId: input.body.gameId,
+        externalUserId: input.body.externalUserId,
+        tournamentId,
+        matchId,
+      });
 
       const [row] = await db
         .insert(gameSession)
@@ -165,6 +253,8 @@ export function createSessionService(db: Db, deps: SessionDeps) {
           assignmentId: assignment.id,
           gameFileId,
           gameConfigId: config.id,
+          tournamentId,
+          matchId,
           externalUserId: input.body.externalUserId,
           externalUserName: input.body.externalUserName ?? null,
           mode: input.body.mode ?? null,
@@ -177,7 +267,7 @@ export function createSessionService(db: Db, deps: SessionDeps) {
         })
         .returning();
 
-      if (row === undefined) throw new Error("game session insert returned no row");
+      if (row === undefined) throw internal("game session insert returned no row");
 
       const session = toView(row);
 
@@ -213,5 +303,3 @@ export function createSessionService(db: Db, deps: SessionDeps) {
     endSession,
   };
 }
-
-export type SessionService = ReturnType<typeof createSessionService>;

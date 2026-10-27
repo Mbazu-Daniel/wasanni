@@ -10,11 +10,10 @@ import {
   notFound,
   randomBytesBase64Url,
 } from "@wasanni/kit";
-import type { CreateWebhookBody, WebhookConfigView } from "@wasanni/contracts";
+import type { CreateWebhookBody } from "@wasanni/contracts";
 import { WEBHOOK_SECRET_BYTES, WEBHOOK_SECRET_PREFIX } from "./constants.ts";
 import { assertPlatform, assertUrlFree, readWebhook, toWebhookView } from "./webhook-state.ts";
-
-export type CreatedWebhook = { webhook: WebhookConfigView; secret: string };
+import type { CreatedWebhook } from "./types.ts";
 
 export function createWebhookSecretService(db: Db, encryptionKey: string) {
   const mint = (): { secret: string; ciphertext: string; last4: string } => {
@@ -83,5 +82,3 @@ export function createWebhookSecretService(db: Db, encryptionKey: string) {
     },
   };
 }
-
-export type WebhookSecretService = ReturnType<typeof createWebhookSecretService>;

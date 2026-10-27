@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Elysia } from "elysia";
-import type { Logger } from "@wasanni/kit";
-
-export type RequestContext = {
-  readonly requestId: string;
-  readonly startedAt: number;
-};
+import { internal, type Logger } from "@wasanni/kit";
+import type { RequestContext } from "./types.ts";
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/;
 
@@ -15,7 +11,7 @@ export function requestContextOf(request: Request): RequestContext {
   const context = contexts.get(request);
 
   if (context === undefined) {
-    throw new Error("request context missing: onRequest did not run");
+    throw internal("request context missing: onRequest did not run");
   }
 
   return context;

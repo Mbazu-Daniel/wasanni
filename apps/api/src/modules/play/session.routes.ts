@@ -6,16 +6,12 @@ import {
   PERMISSION,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { SessionService } from "./session.service.ts";
-
-type SessionDeps = {
-  service: SessionService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { SessionRouteDeps } from "./types.ts";
 
 export const createSessionRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: SessionDeps,
+  { service }: SessionRouteDeps,
 ) =>
   api
     .post(

@@ -1,7 +1,7 @@
-import type { Queues } from "./queues.ts";
 import { JOB, PACK_DELAY_MS, PACK_DEDUPLICATION_TTL_MS } from "./names.ts";
 import type {
   EmailJob,
+  Queues,
   ScorePackJob,
   ScoreRecheckJob,
   WebhookDeliveryJob,
@@ -42,4 +42,3 @@ export function createEnqueuer(queues: Queues) {
   };
 }
 
-export type Enqueuer = ReturnType<typeof createEnqueuer>;
