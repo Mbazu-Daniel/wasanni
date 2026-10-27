@@ -17,6 +17,7 @@ import {
   IconUsers,
   IconBuilding,
   IconUser,
+  IconAlertTriangle,
   IconChevronLeft,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -39,6 +40,9 @@ type NavItem = {
     | "/o/$orgSlug/matches"
     | "/o/$orgSlug/audit"
     | "/o/$orgSlug/developer"
+    | "/o/$orgSlug/usage"
+    | "/o/$orgSlug/settings/organization"
+    | "/o/$orgSlug/settings/danger"
     | "/o/$orgSlug/settings/members"
     | "/o/$orgSlug/settings/account";
 };
@@ -82,7 +86,7 @@ const groups: { label: string | null; items: NavItem[] }[] = [
     label: "Observe",
     items: [
       { label: "Audit", to: "/o/$orgSlug/audit", icon: IconList },
-      { label: "Usage", icon: IconChartBar },
+      { label: "Usage", to: "/o/$orgSlug/usage", icon: IconChartBar },
       { label: "Developer", to: "/o/$orgSlug/developer", icon: IconCode },
     ],
   },
@@ -90,8 +94,9 @@ const groups: { label: string | null; items: NavItem[] }[] = [
     label: "Settings",
     items: [
       { label: "Members", to: "/o/$orgSlug/settings/members", icon: IconUsers },
-      { label: "Organization", icon: IconBuilding },
+      { label: "Organization", to: "/o/$orgSlug/settings/organization", icon: IconBuilding },
       { label: "Account", to: "/o/$orgSlug/settings/account", icon: IconUser },
+      { label: "Danger zone", to: "/o/$orgSlug/settings/danger", icon: IconAlertTriangle },
     ],
   },
 ];

@@ -17,6 +17,7 @@ const LABELS: Record<string, string> = {
   usage: "Usage",
   developer: "Developer",
   settings: "Settings",
+  danger: "Danger zone",
   members: "Members",
   organization: "Organization",
   account: "Account",

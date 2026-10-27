@@ -26,10 +26,16 @@ import { Route as OOrgSlugPlatformsIndexRouteImport } from './routes/o/$orgSlug/
 import { Route as OOrgSlugPlatformsPlatformSlugRouteImport } from './routes/o/$orgSlug/platforms/$platformSlug'
 import { Route as OOrgSlugPlatformsNewRouteImport } from './routes/o/$orgSlug/platforms/new'
 import { Route as OOrgSlugSettingsAccountRouteImport } from './routes/o/$orgSlug/settings/account'
+import { Route as OOrgSlugSettingsDangerRouteImport } from './routes/o/$orgSlug/settings/danger'
 import { Route as OOrgSlugSettingsMembersRouteImport } from './routes/o/$orgSlug/settings/members'
+import { Route as OOrgSlugSettingsOrganizationRouteImport } from './routes/o/$orgSlug/settings/organization'
 import { Route as OOrgSlugTemplatesIndexRouteImport } from './routes/o/$orgSlug/templates/index'
 import { Route as OOrgSlugTemplatesTemplateIdRouteImport } from './routes/o/$orgSlug/templates/$templateId'
 import { Route as OOrgSlugTemplatesNewRouteImport } from './routes/o/$orgSlug/templates/new'
+import { Route as OOrgSlugTournamentsIndexRouteImport } from './routes/o/$orgSlug/tournaments/index'
+import { Route as OOrgSlugTournamentsTournamentSlugRouteImport } from './routes/o/$orgSlug/tournaments/$tournamentSlug'
+import { Route as OOrgSlugTournamentsNewRouteImport } from './routes/o/$orgSlug/tournaments/new'
+import { Route as OOrgSlugUsageIndexRouteImport } from './routes/o/$orgSlug/usage/index'
 import { Route as OOrgSlugWebhooksIndexRouteImport } from './routes/o/$orgSlug/webhooks/index'
 import { Route as OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport } from './routes/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
 
@@ -120,11 +126,22 @@ const OOrgSlugSettingsAccountRoute = OOrgSlugSettingsAccountRouteImport.update({
   path: '/settings/account',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugSettingsDangerRoute = OOrgSlugSettingsDangerRouteImport.update({
+  id: '/settings/danger',
+  path: '/settings/danger',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
 const OOrgSlugSettingsMembersRoute = OOrgSlugSettingsMembersRouteImport.update({
   id: '/settings/members',
   path: '/settings/members',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugSettingsOrganizationRoute =
+  OOrgSlugSettingsOrganizationRouteImport.update({
+    id: '/settings/organization',
+    path: '/settings/organization',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
 const OOrgSlugTemplatesIndexRoute = OOrgSlugTemplatesIndexRouteImport.update({
   id: '/templates/',
   path: '/templates/',
@@ -139,6 +156,28 @@ const OOrgSlugTemplatesTemplateIdRoute =
 const OOrgSlugTemplatesNewRoute = OOrgSlugTemplatesNewRouteImport.update({
   id: '/templates/new',
   path: '/templates/new',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
+const OOrgSlugTournamentsIndexRoute =
+  OOrgSlugTournamentsIndexRouteImport.update({
+    id: '/tournaments/',
+    path: '/tournaments/',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
+const OOrgSlugTournamentsTournamentSlugRoute =
+  OOrgSlugTournamentsTournamentSlugRouteImport.update({
+    id: '/tournaments/$tournamentSlug',
+    path: '/tournaments/$tournamentSlug',
+    getParentRoute: () => OOrgSlugRouteRoute,
+  } as any)
+const OOrgSlugTournamentsNewRoute = OOrgSlugTournamentsNewRouteImport.update({
+  id: '/tournaments/new',
+  path: '/tournaments/new',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
+const OOrgSlugUsageIndexRoute = OOrgSlugUsageIndexRouteImport.update({
+  id: '/usage/',
+  path: '/usage/',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
 const OOrgSlugWebhooksIndexRoute = OOrgSlugWebhooksIndexRouteImport.update({
@@ -167,14 +206,20 @@ export interface FileRoutesByFullPath {
   '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
   '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
   '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
+  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
   '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
   '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
+  '/o/$orgSlug/tournaments/': typeof OOrgSlugTournamentsIndexRoute
+  '/o/$orgSlug/usage/': typeof OOrgSlugUsageIndexRoute
   '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
   '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -192,14 +237,20 @@ export interface FileRoutesByTo {
   '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
   '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
   '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
+  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
   '/o/$orgSlug/assignments': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms': typeof OOrgSlugPlatformsIndexRoute
   '/o/$orgSlug/templates': typeof OOrgSlugTemplatesIndexRoute
+  '/o/$orgSlug/tournaments': typeof OOrgSlugTournamentsIndexRoute
+  '/o/$orgSlug/usage': typeof OOrgSlugUsageIndexRoute
   '/o/$orgSlug/webhooks': typeof OOrgSlugWebhooksIndexRoute
   '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -218,14 +269,20 @@ export interface FileRoutesById {
   '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
   '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
   '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
   '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
+  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
   '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
   '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
+  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
+  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
   '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
   '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
   '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
   '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
+  '/o/$orgSlug/tournaments/': typeof OOrgSlugTournamentsIndexRoute
+  '/o/$orgSlug/usage/': typeof OOrgSlugUsageIndexRoute
   '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
   '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -245,14 +302,20 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/$platformSlug'
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/danger'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/settings/organization'
     | '/o/$orgSlug/templates/$templateId'
     | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/tournaments/$tournamentSlug'
+    | '/o/$orgSlug/tournaments/new'
     | '/o/$orgSlug/assignments/'
     | '/o/$orgSlug/games/'
     | '/o/$orgSlug/keys/'
     | '/o/$orgSlug/platforms/'
     | '/o/$orgSlug/templates/'
+    | '/o/$orgSlug/tournaments/'
+    | '/o/$orgSlug/usage/'
     | '/o/$orgSlug/webhooks/'
     | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -270,14 +333,20 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/$platformSlug'
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/danger'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/settings/organization'
     | '/o/$orgSlug/templates/$templateId'
     | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/tournaments/$tournamentSlug'
+    | '/o/$orgSlug/tournaments/new'
     | '/o/$orgSlug/assignments'
     | '/o/$orgSlug/games'
     | '/o/$orgSlug/keys'
     | '/o/$orgSlug/platforms'
     | '/o/$orgSlug/templates'
+    | '/o/$orgSlug/tournaments'
+    | '/o/$orgSlug/usage'
     | '/o/$orgSlug/webhooks'
     | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   id:
@@ -295,14 +364,20 @@ export interface FileRouteTypes {
     | '/o/$orgSlug/platforms/$platformSlug'
     | '/o/$orgSlug/platforms/new'
     | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/danger'
     | '/o/$orgSlug/settings/members'
+    | '/o/$orgSlug/settings/organization'
     | '/o/$orgSlug/templates/$templateId'
     | '/o/$orgSlug/templates/new'
+    | '/o/$orgSlug/tournaments/$tournamentSlug'
+    | '/o/$orgSlug/tournaments/new'
     | '/o/$orgSlug/assignments/'
     | '/o/$orgSlug/games/'
     | '/o/$orgSlug/keys/'
     | '/o/$orgSlug/platforms/'
     | '/o/$orgSlug/templates/'
+    | '/o/$orgSlug/tournaments/'
+    | '/o/$orgSlug/usage/'
     | '/o/$orgSlug/webhooks/'
     | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesById: FileRoutesById
@@ -440,11 +515,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OOrgSlugSettingsAccountRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
+    '/o/$orgSlug/settings/danger': {
+      id: '/o/$orgSlug/settings/danger'
+      path: '/settings/danger'
+      fullPath: '/o/$orgSlug/settings/danger'
+      preLoaderRoute: typeof OOrgSlugSettingsDangerRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
     '/o/$orgSlug/settings/members': {
       id: '/o/$orgSlug/settings/members'
       path: '/settings/members'
       fullPath: '/o/$orgSlug/settings/members'
       preLoaderRoute: typeof OOrgSlugSettingsMembersRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/settings/organization': {
+      id: '/o/$orgSlug/settings/organization'
+      path: '/settings/organization'
+      fullPath: '/o/$orgSlug/settings/organization'
+      preLoaderRoute: typeof OOrgSlugSettingsOrganizationRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
     '/o/$orgSlug/templates/': {
@@ -466,6 +555,34 @@ declare module '@tanstack/react-router' {
       path: '/templates/new'
       fullPath: '/o/$orgSlug/templates/new'
       preLoaderRoute: typeof OOrgSlugTemplatesNewRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/tournaments/': {
+      id: '/o/$orgSlug/tournaments/'
+      path: '/tournaments'
+      fullPath: '/o/$orgSlug/tournaments/'
+      preLoaderRoute: typeof OOrgSlugTournamentsIndexRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/tournaments/$tournamentSlug': {
+      id: '/o/$orgSlug/tournaments/$tournamentSlug'
+      path: '/tournaments/$tournamentSlug'
+      fullPath: '/o/$orgSlug/tournaments/$tournamentSlug'
+      preLoaderRoute: typeof OOrgSlugTournamentsTournamentSlugRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/tournaments/new': {
+      id: '/o/$orgSlug/tournaments/new'
+      path: '/tournaments/new'
+      fullPath: '/o/$orgSlug/tournaments/new'
+      preLoaderRoute: typeof OOrgSlugTournamentsNewRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/usage/': {
+      id: '/o/$orgSlug/usage/'
+      path: '/usage'
+      fullPath: '/o/$orgSlug/usage/'
+      preLoaderRoute: typeof OOrgSlugUsageIndexRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
     '/o/$orgSlug/webhooks/': {
@@ -490,14 +607,20 @@ interface OOrgSlugRouteRouteChildren {
   OOrgSlugPlatformsPlatformSlugRoute: typeof OOrgSlugPlatformsPlatformSlugRoute
   OOrgSlugPlatformsNewRoute: typeof OOrgSlugPlatformsNewRoute
   OOrgSlugSettingsAccountRoute: typeof OOrgSlugSettingsAccountRoute
+  OOrgSlugSettingsDangerRoute: typeof OOrgSlugSettingsDangerRoute
   OOrgSlugSettingsMembersRoute: typeof OOrgSlugSettingsMembersRoute
+  OOrgSlugSettingsOrganizationRoute: typeof OOrgSlugSettingsOrganizationRoute
   OOrgSlugTemplatesTemplateIdRoute: typeof OOrgSlugTemplatesTemplateIdRoute
   OOrgSlugTemplatesNewRoute: typeof OOrgSlugTemplatesNewRoute
+  OOrgSlugTournamentsTournamentSlugRoute: typeof OOrgSlugTournamentsTournamentSlugRoute
+  OOrgSlugTournamentsNewRoute: typeof OOrgSlugTournamentsNewRoute
   OOrgSlugAssignmentsIndexRoute: typeof OOrgSlugAssignmentsIndexRoute
   OOrgSlugGamesIndexRoute: typeof OOrgSlugGamesIndexRoute
   OOrgSlugKeysIndexRoute: typeof OOrgSlugKeysIndexRoute
   OOrgSlugPlatformsIndexRoute: typeof OOrgSlugPlatformsIndexRoute
   OOrgSlugTemplatesIndexRoute: typeof OOrgSlugTemplatesIndexRoute
+  OOrgSlugTournamentsIndexRoute: typeof OOrgSlugTournamentsIndexRoute
+  OOrgSlugUsageIndexRoute: typeof OOrgSlugUsageIndexRoute
   OOrgSlugWebhooksIndexRoute: typeof OOrgSlugWebhooksIndexRoute
   OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute: typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -507,14 +630,21 @@ const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
   OOrgSlugPlatformsPlatformSlugRoute: OOrgSlugPlatformsPlatformSlugRoute,
   OOrgSlugPlatformsNewRoute: OOrgSlugPlatformsNewRoute,
   OOrgSlugSettingsAccountRoute: OOrgSlugSettingsAccountRoute,
+  OOrgSlugSettingsDangerRoute: OOrgSlugSettingsDangerRoute,
   OOrgSlugSettingsMembersRoute: OOrgSlugSettingsMembersRoute,
+  OOrgSlugSettingsOrganizationRoute: OOrgSlugSettingsOrganizationRoute,
   OOrgSlugTemplatesTemplateIdRoute: OOrgSlugTemplatesTemplateIdRoute,
   OOrgSlugTemplatesNewRoute: OOrgSlugTemplatesNewRoute,
+  OOrgSlugTournamentsTournamentSlugRoute:
+    OOrgSlugTournamentsTournamentSlugRoute,
+  OOrgSlugTournamentsNewRoute: OOrgSlugTournamentsNewRoute,
   OOrgSlugAssignmentsIndexRoute: OOrgSlugAssignmentsIndexRoute,
   OOrgSlugGamesIndexRoute: OOrgSlugGamesIndexRoute,
   OOrgSlugKeysIndexRoute: OOrgSlugKeysIndexRoute,
   OOrgSlugPlatformsIndexRoute: OOrgSlugPlatformsIndexRoute,
   OOrgSlugTemplatesIndexRoute: OOrgSlugTemplatesIndexRoute,
+  OOrgSlugTournamentsIndexRoute: OOrgSlugTournamentsIndexRoute,
+  OOrgSlugUsageIndexRoute: OOrgSlugUsageIndexRoute,
   OOrgSlugWebhooksIndexRoute: OOrgSlugWebhooksIndexRoute,
   OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute:
     OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute,
