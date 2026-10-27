@@ -45,12 +45,6 @@ export const OrganizationSummaryList = Type.Object({
 });
 export type OrganizationSummaryList = Static<typeof OrganizationSummaryList>;
 
-export const MemberSingle = Type.Object({ member: OrganizationMemberView });
-export type MemberSingle = Static<typeof MemberSingle>;
-
-export const MemberList = Type.Object({ members: Type.Array(OrganizationMemberView) });
-export type MemberList = Static<typeof MemberList>;
-
 export const InvitationList = Type.Object({
   invitations: Type.Array(OrganizationInvitationView),
 });

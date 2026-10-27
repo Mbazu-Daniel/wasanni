@@ -18,4 +18,10 @@ export type Env = {
   readonly GOOGLE_CLIENT_SECRET: string | undefined;
   readonly GITHUB_CLIENT_ID: string | undefined;
   readonly GITHUB_CLIENT_SECRET: string | undefined;
+  readonly R2_ACCOUNT_ID: string | undefined;
+  readonly R2_ACCESS_KEY_ID: string | undefined;
+  readonly R2_SECRET_ACCESS_KEY: string | undefined;
+  readonly R2_BUCKET_NAME: string | undefined;
+  readonly R2_PUBLIC_ID: string | undefined;
+  readonly R2_CUSTOM_DOMAIN: string | undefined;
 };

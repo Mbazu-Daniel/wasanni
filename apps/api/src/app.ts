@@ -6,8 +6,8 @@ import { toErrorBody } from "@wasanni/contracts";
 import { authApiDocument, authRoutes } from "./modules/auth/index.ts";
 import { organizationRoutes } from "./modules/organization/index.ts";
 import { organizationService } from "./modules/organization/service.ts";
-import { memberRoutes } from "./modules/members/index.ts";
-import { memberService } from "./modules/members/service.ts";
+import { memberRoutes } from "./modules/member/index.ts";
+import { memberService } from "./modules/member/service.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
 import { principal, type PrincipalDeps } from "./plugins/principal.ts";
 import { healthRoutes } from "./routes/health.ts";
@@ -52,7 +52,7 @@ export async function createApp(deps: AppDeps) {
       }),
     )
     .use(authRoutes(base, betterAuth))
-    .use(memberRoutes(base, { auth: betterAuth, service: memberService(deps.db) }))
+    .use(memberRoutes(base, { service: memberService(deps.db), env: deps.env }))
     .use(organizationRoutes(base, { auth: betterAuth, service: organizationService(deps.db) }))
     .use(platformRoutes(base, { service: platformService(deps.db) }))
     .use(apiKeyRoutes(base, { service: apiKeyService(deps.db) }))

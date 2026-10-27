@@ -106,6 +106,12 @@ export function parseEnv(raw: RawEnv): Env {
     GOOGLE_CLIENT_SECRET: readOptional(raw, "GOOGLE_CLIENT_SECRET"),
     GITHUB_CLIENT_ID: readOptional(raw, "GITHUB_CLIENT_ID"),
     GITHUB_CLIENT_SECRET: readOptional(raw, "GITHUB_CLIENT_SECRET"),
+    R2_ACCOUNT_ID: readOptional(raw, "R2_ACCOUNT_ID"),
+    R2_ACCESS_KEY_ID: readOptional(raw, "R2_ACCESS_KEY_ID"),
+    R2_SECRET_ACCESS_KEY: readOptional(raw, "R2_SECRET_ACCESS_KEY"),
+    R2_BUCKET_NAME: readOptional(raw, "R2_BUCKET_NAME"),
+    R2_PUBLIC_ID: readOptional(raw, "R2_PUBLIC_ID"),
+    R2_CUSTOM_DOMAIN: readOptional(raw, "R2_CUSTOM_DOMAIN"),
   };
 
   if (problems.invalid) throw problems.report();

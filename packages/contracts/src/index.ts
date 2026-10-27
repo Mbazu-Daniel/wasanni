@@ -7,3 +7,4 @@ export * from "./error-body.ts";
 export * from "./organization.contract.ts";
 export * from "./platform.contract.ts";
 export * from "./api-key.contract.ts";
+export * from "./member.contract.ts";

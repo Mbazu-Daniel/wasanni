@@ -84,9 +84,9 @@ apps/api/src/modules/organization/
   index.ts       controller — the caller's organizations and invitations
   service.ts    reads backed by @wasanni/db's membership module
 
-apps/api/src/modules/members/
-  index.ts       the member lifecycle under /organizations/:organizationId/members
-  service.ts     member reads and the display-name write
+apps/api/src/modules/member/
+  index.ts       the signed-in member's own record under /members/me
+  service.ts     the read, and the one write better-auth leaves us: displayName
 
 apps/api/src/modules/platform/
   index.ts       controller — platforms under /organizations/:organizationId
@@ -101,7 +101,7 @@ apps/api/src/modules/api-key/
 plugin, outside the feature folders because three places read it.
 
 One Elysia instance is one controller. `Context` is never passed to a function.
-Schemas come from `t` in `elysia`. `auth`, `organization`, `members`, `platform`
+Schemas come from `t` in `elysia`. `auth`, `organization`, `member`, `platform`
 and `apiKey` are the features. Full conventions:
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
