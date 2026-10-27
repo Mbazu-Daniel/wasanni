@@ -1,10 +1,11 @@
 import { and, eq } from "drizzle-orm";
+import type { RoleName } from "@wasanni/contracts";
 import type { Db } from "./client.ts";
 import { activeMember, member } from "./schema/organization/member.ts";
 
 export type MembershipRow = {
   memberId: string;
-  role: string;
+  role: RoleName;
   displayName: string | null;
 };
 
