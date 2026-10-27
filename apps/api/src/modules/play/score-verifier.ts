@@ -1,12 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { CallbackConfig, Env, Logger } from "@wasanni/kit";
-import {
-  decryptSecret,
-  encryptSecret,
-  hmacSign,
-  randomBytesBase64Url,
-  readGameConfig,
-} from "@wasanni/kit";
+import type { Env, Logger } from "@wasanni/kit";
+import { decryptSecret, encryptSecret, hmacSign, randomBytesBase64Url } from "@wasanni/kit";
 import type { ScoreFlag } from "@wasanni/contracts";
 import type {
   ScoreVerificationInput,
@@ -23,6 +17,32 @@ const sameSignature = (expected: string, given: string): boolean => {
   if (left.length !== right.length) return false;
 
   return timingSafeEqual(left, right);
+};
+
+type CallbackConfig = {
+  url: string;
+  secret: string;
+  timeoutMs?: number;
+};
+
+const readCallbackConfig = (config: Record<string, unknown>): CallbackConfig | null => {
+  const block = config.scoreVerification;
+
+  if (typeof block !== "object" || block === null) return null;
+
+  const callback = (block as Record<string, unknown>).callback;
+
+  if (typeof callback !== "object" || callback === null) return null;
+
+  const { url, secret, timeoutMs } = callback as Record<string, unknown>;
+
+  if (typeof url !== "string" || typeof secret !== "string") return null;
+
+  return {
+    url,
+    secret,
+    ...(typeof timeoutMs === "number" ? { timeoutMs } : {}),
+  };
 };
 
 export function createScoreVerifier(env: Env, logger: Logger) {
@@ -168,7 +188,7 @@ export function createScoreVerifier(env: Env, logger: Logger) {
       }
 
       if (input.mode === "callback" || input.mode === "both") {
-        const callback = readGameConfig(input.config).callback;
+        const callback = readCallbackConfig(input.config);
 
         if (callback === null) {
           return {
