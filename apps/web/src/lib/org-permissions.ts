@@ -18,10 +18,6 @@ export function canManageMembers(role: string): boolean {
   return atLeast(role, "admin");
 }
 
-export function canManageOrganization(role: string): boolean {
-  return atLeast(role, "owner");
-}
-
 export function canChangeRole(actorRole: string, targetRole: string): boolean {
   if (actorRole === "owner") return true;
   if (actorRole === "admin") return targetRole === "member";

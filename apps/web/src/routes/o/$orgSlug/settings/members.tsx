@@ -15,15 +15,14 @@ import { fetchSession } from "@/lib/session";
 import { canChangeRole, canManageMembers } from "@/lib/org-permissions";
 import type { RoleName } from "@/lib/role-types";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
-import { Dialog } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/primitives/page-header";
 import { DataTable, type DataTableColumn } from "@/components/primitives/data-table";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
+import { EditDisplayNameModal } from "@/components/members/display-name-modal";
+import { InviteModal } from "@/components/members/invite-modal";
 
 import type { InvitationRow, MemberRow } from "@/lib/member-types";
 
@@ -332,157 +331,5 @@ function MembersPage() {
         onConfirm={removeMember}
       />
     </div>
-  );
-}
-
-function InviteModal({
-  open,
-  onOpenChange,
-  organizationId,
-  onInvited,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  organizationId: string;
-  onInvited: () => void;
-}) {
-  const [email, setEmail] = React.useState("");
-  const [role, setRole] = React.useState<RoleName>("member");
-  const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!open) {
-      setEmail("");
-      setRole("member");
-    }
-  }, [open]);
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    const { error } = await authClient.organization.inviteMember({
-      email,
-      role,
-      organizationId,
-    });
-    setBusy(false);
-
-    if (error) {
-      toast.error(error.message ?? "Could not send invitation");
-      return;
-    }
-
-    toast.success(`Invitation sent to ${email}`);
-    onInvited();
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Invite a member"
-      description="They get an email with a link to join this organization."
-    >
-      <form onSubmit={submit} className="mt-5 space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="invite-email">Email</Label>
-          <Input
-            id="invite-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="teammate@studio.com"
-            required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Role</Label>
-          <Select
-            value={role}
-            onValueChange={(value) => setRole(value as RoleName)}
-            options={[
-              { value: "member", label: "Member — read only" },
-              { value: "admin", label: "Admin — full manage" },
-              { value: "owner", label: "Owner — full control" },
-            ]}
-          />
-        </div>
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" size="sm" disabled={busy || !email}>
-            {busy ? "Sending…" : "Send invitation"}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
-  );
-}
-
-function EditDisplayNameModal({
-  member,
-  onClose,
-  onSave,
-}: {
-  member: MemberRow | null;
-  onClose: () => void;
-  onSave: (member: MemberRow, displayName: string) => Promise<void>;
-}) {
-  const [value, setValue] = React.useState("");
-  const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    if (member) setValue(member.displayName ?? "");
-  }, [member]);
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (member === null) return;
-
-    setBusy(true);
-    await onSave(member, value);
-    setBusy(false);
-  };
-
-  return (
-    <Dialog
-      open={member !== null}
-      onOpenChange={(open) => !open && onClose()}
-      title="Display name"
-      description="Shown in this organization only. Falls back to their account name when empty."
-    >
-      <form onSubmit={submit} className="mt-5 space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="display-name">Display name</Label>
-          <Input
-            id="display-name"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder={member?.name}
-            maxLength={80}
-          />
-        </div>
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" size="sm" disabled={busy}>
-            {busy ? "Saving…" : "Save"}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
   );
 }

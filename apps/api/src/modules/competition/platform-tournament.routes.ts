@@ -36,7 +36,7 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/platform/tournaments/:tournamentId/register",
       async ({ principal, params, body, status }) => {
-        const participant = await deps.tournaments.register(
+        const participant = await deps.participants.register(
           organizationScope(principal),
           {
             tournamentId: params.tournamentId,
@@ -63,7 +63,7 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
     .delete(
       "/api/v1/platform/tournaments/:tournamentId/register/:externalUserId",
       async ({ principal, params, status }) => {
-        await deps.tournaments.withdraw(
+        await deps.participants.withdraw(
           organizationScope(principal),
           params.tournamentId,
           {

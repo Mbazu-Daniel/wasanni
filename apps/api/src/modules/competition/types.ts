@@ -12,6 +12,7 @@ import type {
 } from "@wasanni/db/schema";
 import type { Scope } from "@wasanni/kit";
 import type { createBracketService } from "./bracket.service.ts";
+import type { createParticipantsService } from "./participants.service.ts";
 import type { createMatchService } from "./match.service.ts";
 import type { createStandingsService } from "./standings.service.ts";
 import type { createTournamentService } from "./tournament.service.ts";
@@ -103,8 +104,11 @@ export type BracketService = ReturnType<typeof createBracketService>;
 
 export type StandingsService = ReturnType<typeof createStandingsService>;
 
+export type ParticipantsService = ReturnType<typeof createParticipantsService>;
+
 export type CompetitionRouteDeps = {
   tournaments: TournamentService;
+  participants: ParticipantsService;
   matches: MatchService;
   brackets: BracketService;
   standings: StandingsService;

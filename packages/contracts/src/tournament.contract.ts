@@ -1,21 +1,11 @@
 import { t, type UnwrapSchema } from "elysia";
 import { BracketView } from "./match.contract.ts";
 
-export const TOURNAMENT_FORMATS = ["leaderboard", "bracket"] as const;
-
 export const TournamentFormat = t.Union([
   t.Literal("leaderboard"),
   t.Literal("bracket"),
 ]);
 export type TournamentFormat = UnwrapSchema<typeof TournamentFormat>;
-
-export const TOURNAMENT_STATUSES = [
-  "draft",
-  "open",
-  "running",
-  "completed",
-  "cancelled",
-] as const;
 
 export const TournamentStatus = t.Union([
   t.Literal("draft"),
@@ -25,14 +15,6 @@ export const TournamentStatus = t.Union([
   t.Literal("cancelled"),
 ]);
 export type TournamentStatus = UnwrapSchema<typeof TournamentStatus>;
-
-export const PARTICIPANT_STATUSES = [
-  "registered",
-  "active",
-  "withdrawn",
-  "eliminated",
-  "winner",
-] as const;
 
 export const ParticipantStatus = t.Union([
   t.Literal("registered"),

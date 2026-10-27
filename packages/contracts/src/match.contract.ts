@@ -1,7 +1,5 @@
 import { t, type UnwrapSchema } from "elysia";
 
-export const MATCH_STATUSES = ["pending", "active", "completed", "cancelled"] as const;
-
 export const MatchStatus = t.Union([
   t.Literal("pending"),
   t.Literal("active"),
@@ -9,14 +7,6 @@ export const MatchStatus = t.Union([
   t.Literal("cancelled"),
 ]);
 export type MatchStatus = UnwrapSchema<typeof MatchStatus>;
-
-export const MATCH_OUTCOMES = [
-  "pending",
-  "won",
-  "lost",
-  "draw",
-  "disqualified",
-] as const;
 
 export const MatchOutcome = t.Union([
   t.Literal("pending"),

@@ -23,13 +23,6 @@ export type ScoreVerificationMode = (typeof SCORE_VERIFICATION_MODES)[number];
 export const SCORE_VERIFICATION_STATUSES = ["not_required", "passed", "unavailable"] as const;
 export type ScoreVerificationStatus = (typeof SCORE_VERIFICATION_STATUSES)[number];
 
-export const ScoreVerificationModeModel = t.Union([
-  t.Literal("none"),
-  t.Literal("hmac"),
-  t.Literal("callback"),
-  t.Literal("both"),
-]);
-
 export const ScoreVerificationStatusModel = t.Union([
   t.Literal("not_required"),
   t.Literal("passed"),
