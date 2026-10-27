@@ -26,7 +26,11 @@ type IconComponent = typeof IconLayoutDashboard;
 type NavItem = {
   label: string;
   icon: IconComponent;
-  to?: "/o/$orgSlug/overview" | "/o/$orgSlug/games";
+  to?:
+    | "/o/$orgSlug/overview"
+    | "/o/$orgSlug/games"
+    | "/o/$orgSlug/settings/members"
+    | "/o/$orgSlug/settings/account";
 };
 
 const groups: { label: string | null; items: NavItem[] }[] = [
@@ -74,9 +78,9 @@ const groups: { label: string | null; items: NavItem[] }[] = [
   {
     label: "Settings",
     items: [
-      { label: "Members", icon: IconUsers },
+      { label: "Members", to: "/o/$orgSlug/settings/members", icon: IconUsers },
       { label: "Organization", icon: IconBuilding },
-      { label: "Account", icon: IconUser },
+      { label: "Account", to: "/o/$orgSlug/settings/account", icon: IconUser },
     ],
   },
 ];

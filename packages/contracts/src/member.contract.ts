@@ -12,6 +12,9 @@ export const MemberView = t.Object({
 });
 export type MemberView = UnwrapSchema<typeof MemberView>;
 
+export const MemberList = t.Object({ members: t.Array(MemberView) });
+export type MemberList = UnwrapSchema<typeof MemberList>;
+
 export const MemberSingle = t.Object({ member: MemberView });
 export type MemberSingle = UnwrapSchema<typeof MemberSingle>;
 

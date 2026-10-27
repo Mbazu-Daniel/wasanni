@@ -10,17 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
 import { Route as OOrgSlugRouteRouteImport } from './routes/o/$orgSlug/route'
 import { Route as OOrgSlugOverviewRouteImport } from './routes/o/$orgSlug/overview'
 import { Route as OOrgSlugGamesIndexRouteImport } from './routes/o/$orgSlug/games/index'
+import { Route as OOrgSlugSettingsAccountRouteImport } from './routes/o/$orgSlug/settings/account'
+import { Route as OOrgSlugSettingsMembersRouteImport } from './routes/o/$orgSlug/settings/members'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingRoute = LandingRouteImport.update({
@@ -33,6 +43,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -41,6 +56,11 @@ const SignInRoute = SignInRouteImport.update({
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
+  id: '/accept-invitation/$id',
+  path: '/accept-invitation/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OOrgSlugRouteRoute = OOrgSlugRouteRouteImport.update({
@@ -58,78 +78,121 @@ const OOrgSlugGamesIndexRoute = OOrgSlugGamesIndexRouteImport.update({
   path: '/games/',
   getParentRoute: () => OOrgSlugRouteRoute,
 } as any)
+const OOrgSlugSettingsAccountRoute = OOrgSlugSettingsAccountRouteImport.update({
+  id: '/settings/account',
+  path: '/settings/account',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
+const OOrgSlugSettingsMembersRoute = OOrgSlugSettingsMembersRouteImport.update({
+  id: '/settings/members',
+  path: '/settings/members',
+  getParentRoute: () => OOrgSlugRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
   '/o/$orgSlug/games': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
   '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
+  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
+  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
   '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/landing'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/o/$orgSlug'
+    | '/accept-invitation/$id'
     | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/members'
     | '/o/$orgSlug/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/landing'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/o/$orgSlug'
+    | '/accept-invitation/$id'
     | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/members'
     | '/o/$orgSlug/games'
   id:
     | '__root__'
     | '/'
+    | '/forgot-password'
     | '/landing'
     | '/onboarding'
+    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/o/$orgSlug'
+    | '/accept-invitation/$id'
     | '/o/$orgSlug/overview'
+    | '/o/$orgSlug/settings/account'
+    | '/o/$orgSlug/settings/members'
     | '/o/$orgSlug/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LandingRoute: typeof LandingRoute
   OnboardingRoute: typeof OnboardingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   OOrgSlugRouteRoute: typeof OOrgSlugRouteRouteWithChildren
+  AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -139,6 +202,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing': {
@@ -155,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
@@ -167,6 +244,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-up'
       fullPath: '/sign-up'
       preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invitation/$id': {
+      id: '/accept-invitation/$id'
+      path: '/accept-invitation/$id'
+      fullPath: '/accept-invitation/$id'
+      preLoaderRoute: typeof AcceptInvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/o/$orgSlug': {
@@ -190,16 +274,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OOrgSlugGamesIndexRouteImport
       parentRoute: typeof OOrgSlugRouteRoute
     }
+    '/o/$orgSlug/settings/account': {
+      id: '/o/$orgSlug/settings/account'
+      path: '/settings/account'
+      fullPath: '/o/$orgSlug/settings/account'
+      preLoaderRoute: typeof OOrgSlugSettingsAccountRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
+    '/o/$orgSlug/settings/members': {
+      id: '/o/$orgSlug/settings/members'
+      path: '/settings/members'
+      fullPath: '/o/$orgSlug/settings/members'
+      preLoaderRoute: typeof OOrgSlugSettingsMembersRouteImport
+      parentRoute: typeof OOrgSlugRouteRoute
+    }
   }
 }
 
 interface OOrgSlugRouteRouteChildren {
   OOrgSlugOverviewRoute: typeof OOrgSlugOverviewRoute
+  OOrgSlugSettingsAccountRoute: typeof OOrgSlugSettingsAccountRoute
+  OOrgSlugSettingsMembersRoute: typeof OOrgSlugSettingsMembersRoute
   OOrgSlugGamesIndexRoute: typeof OOrgSlugGamesIndexRoute
 }
 
 const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
   OOrgSlugOverviewRoute: OOrgSlugOverviewRoute,
+  OOrgSlugSettingsAccountRoute: OOrgSlugSettingsAccountRoute,
+  OOrgSlugSettingsMembersRoute: OOrgSlugSettingsMembersRoute,
   OOrgSlugGamesIndexRoute: OOrgSlugGamesIndexRoute,
 }
 
@@ -209,11 +311,14 @@ const OOrgSlugRouteRouteWithChildren = OOrgSlugRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LandingRoute: LandingRoute,
   OnboardingRoute: OnboardingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   OOrgSlugRouteRoute: OOrgSlugRouteRouteWithChildren,
+  AcceptInvitationIdRoute: AcceptInvitationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

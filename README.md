@@ -47,8 +47,9 @@ curl localhost:3001/readyz
 ```
 
 `apps/web` is the marketing site (`/landing`) and the dashboard
-(`/o/:orgSlug/...`). It runs on 5173 and talks to the api on 3000 through
-`VITE_API_URL`; the api trusts the web origin, so the session cookie crosses.
+(`/o/:orgSlug/...`). It runs on 5173 and talks to the api through
+`VITE_API_URL` (the api's port, 9000 by default); the api trusts the web
+origin, so the session cookie crosses.
 
 `apps/realtime` listens on `REALTIME_PORT` (3001) and upgrades
 `/rt/:sessionId?token=…`. A session's create response carries that URL as
