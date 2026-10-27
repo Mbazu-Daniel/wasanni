@@ -84,7 +84,7 @@ function DangerZonePage() {
     <div className="max-w-xl">
       <PageHeader
         title="Danger zone"
-        description="Actions here cannot be undone. Both need the owner role."
+        description="Actions here cannot be undone. The export needs the admin role, the delete the owner role."
       />
 
       <div className="space-y-6">
