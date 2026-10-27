@@ -3,22 +3,14 @@ import type { Db } from "@wasanni/db";
 import { usageCounter, usageQuota } from "@wasanni/db/schema";
 import type { UsageMetric, UsagePeriod } from "@wasanni/contracts";
 import { RateLimitedError } from "@wasanni/kit";
-import type { UsageServiceDeps } from "./types.ts";
+import { DAILY_SOURCES } from "./constants.ts";
+import type { DailyMetric, DailyRow, UsageServiceDeps } from "./types.ts";
 
 export const currentPeriodStart = (now = new Date()): Date =>
   new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
 export const periodEnd = (start: Date): Date =>
   new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
-
-const DAILY_SOURCES = {
-  sessions_created: { table: "game_session", column: "started_at" },
-  scores_submitted: { table: "game_session_score", column: "submitted_at" },
-  matches_created: { table: "match", column: "created_at" },
-  tournaments_created: { table: "tournament", column: "created_at" },
-} as const;
-
-export type DailyMetric = keyof typeof DAILY_SOURCES;
 
 export function createUsageService(db: Db, deps: UsageServiceDeps) {
   const { logger, enabled } = deps;
@@ -132,7 +124,7 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
     metric: DailyMetric;
     from: Date;
     to: Date;
-  }): Promise<{ date: string; value: number }[]> => {
+  }): Promise<DailyRow[]> => {
     const source = DAILY_SOURCES[input.metric];
 
     const rows = (await db.execute(sql`
@@ -149,7 +141,7 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
 
     const byDate = new Map(rows.map((row) => [row.day, Number(row.value)]));
 
-    const series: { date: string; value: number }[] = [];
+    const series: DailyRow[] = [];
     const cursor = new Date(input.from);
     cursor.setUTCHours(0, 0, 0, 0);
 

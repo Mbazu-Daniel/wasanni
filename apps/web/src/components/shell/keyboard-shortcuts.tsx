@@ -4,6 +4,7 @@ import {
   useParams,
   useRouterState,
 } from "@tanstack/react-router";
+import type { DashboardPath } from "./dashboard-paths";
 
 export const PAGE_SHORTCUTS: Record<string, string> = {
   overview: "d",
@@ -24,31 +25,31 @@ export const PAGE_SHORTCUTS: Record<string, string> = {
   danger: "x",
 };
 
-const GO_TARGETS: Record<string, string> = {
-  d: "overview",
-  g: "games",
-  t: "templates",
-  p: "platforms",
-  a: "assignments",
-  k: "keys",
-  w: "webhooks",
-  o: "tournaments",
-  m: "matches",
-  u: "audit",
-  v: "usage",
-  f: "developer",
-  e: "settings/members",
-  r: "settings/organization",
-  c: "settings/account",
-  x: "settings/danger",
+const GO_TARGETS: Record<string, DashboardPath> = {
+  d: "/o/$orgSlug/overview",
+  g: "/o/$orgSlug/games",
+  t: "/o/$orgSlug/templates",
+  p: "/o/$orgSlug/platforms",
+  a: "/o/$orgSlug/assignments",
+  k: "/o/$orgSlug/keys",
+  w: "/o/$orgSlug/webhooks",
+  o: "/o/$orgSlug/tournaments",
+  m: "/o/$orgSlug/matches",
+  u: "/o/$orgSlug/audit",
+  v: "/o/$orgSlug/usage",
+  f: "/o/$orgSlug/developer",
+  e: "/o/$orgSlug/settings/members",
+  r: "/o/$orgSlug/settings/organization",
+  c: "/o/$orgSlug/settings/account",
+  x: "/o/$orgSlug/settings/danger",
 };
 
-const CREATE_TARGETS: Record<string, string> = {
-  games: "games/new",
-  templates: "templates/new",
-  platforms: "platforms/new",
-  tournaments: "tournaments/new",
-  matches: "matches/new",
+const CREATE_TARGETS: Record<string, DashboardPath> = {
+  games: "/o/$orgSlug/games/new",
+  templates: "/o/$orgSlug/templates/new",
+  platforms: "/o/$orgSlug/platforms/new",
+  tournaments: "/o/$orgSlug/tournaments/new",
+  matches: "/o/$orgSlug/matches/new",
 };
 
 function isTyping(target: EventTarget | null): boolean {
@@ -85,11 +86,8 @@ export function useDashboardShortcuts({
   );
 
   const go = React.useCallback(
-    (segment: string) => {
-      navigate({
-        to: `/o/$orgSlug/${segment}` as never,
-        params: { orgSlug } as never,
-      });
+    (path: DashboardPath) => {
+      navigate({ to: path, params: { orgSlug } });
     },
     [navigate, orgSlug],
   );
@@ -150,7 +148,7 @@ export function useDashboardShortcuts({
 
       if (key === ",") {
         event.preventDefault();
-        go("settings/account");
+        go("/o/$orgSlug/settings/account");
         return;
       }
 

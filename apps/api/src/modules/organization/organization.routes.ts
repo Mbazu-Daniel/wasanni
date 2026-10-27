@@ -1,6 +1,6 @@
 import { OrganizationIdParams, PERMISSION } from "@wasanni/contracts";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import type { ExportService } from "./export.service.ts";
+import type { ExportService } from "./types.ts";
 
 export const createOrganizationRoutes = <T extends PrincipalApi>(
   api: T,

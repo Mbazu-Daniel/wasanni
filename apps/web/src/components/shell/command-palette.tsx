@@ -35,6 +35,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
 import { PAGE_SHORTCUTS } from "./keyboard-shortcuts";
+import type { DashboardPath } from "./dashboard-paths";
 
 type Icon = React.ComponentType<{ className?: string }>;
 
@@ -43,38 +44,36 @@ type Command = {
   label: string;
   section: "Go to" | "Create" | "Actions";
   icon: Icon;
-  to?: string;
+  to?: DashboardPath;
   action?: () => void | Promise<void>;
   shortcut?: string;
 };
 
-const NAV: { id: string; label: string; icon: Icon }[] = [
-  { id: "overview", label: "Overview", icon: IconLayoutDashboard },
-  { id: "games", label: "Games", icon: IconDeviceGamepad2 },
-  { id: "templates", label: "Templates", icon: IconLayout },
-  { id: "platforms", label: "Platforms", icon: IconBroadcast },
-  { id: "assignments", label: "Assignments", icon: IconLink },
-  { id: "keys", label: "API keys", icon: IconKey },
-  { id: "webhooks", label: "Webhooks", icon: IconWebhook },
-  { id: "tournaments", label: "Tournaments", icon: IconMedal },
-  { id: "matches", label: "Matches", icon: IconSwords },
-  { id: "audit", label: "Audit", icon: IconList },
-  { id: "usage", label: "Usage", icon: IconChartBar },
-  { id: "developer", label: "Developer", icon: IconCode },
-  { id: "members", label: "Members", icon: IconUsers },
-  { id: "organization", label: "Organization", icon: IconBuilding },
-  { id: "account", label: "Account", icon: IconUser },
-  { id: "danger", label: "Danger zone", icon: IconAlertTriangle },
+const NAV: { id: string; label: string; icon: Icon; to: DashboardPath }[] = [
+  { id: "overview", label: "Overview", icon: IconLayoutDashboard, to: "/o/$orgSlug/overview" },
+  { id: "games", label: "Games", icon: IconDeviceGamepad2, to: "/o/$orgSlug/games" },
+  { id: "templates", label: "Templates", icon: IconLayout, to: "/o/$orgSlug/templates" },
+  { id: "platforms", label: "Platforms", icon: IconBroadcast, to: "/o/$orgSlug/platforms" },
+  { id: "assignments", label: "Assignments", icon: IconLink, to: "/o/$orgSlug/assignments" },
+  { id: "keys", label: "API keys", icon: IconKey, to: "/o/$orgSlug/keys" },
+  { id: "webhooks", label: "Webhooks", icon: IconWebhook, to: "/o/$orgSlug/webhooks" },
+  { id: "tournaments", label: "Tournaments", icon: IconMedal, to: "/o/$orgSlug/tournaments" },
+  { id: "matches", label: "Matches", icon: IconSwords, to: "/o/$orgSlug/matches" },
+  { id: "audit", label: "Audit", icon: IconList, to: "/o/$orgSlug/audit" },
+  { id: "usage", label: "Usage", icon: IconChartBar, to: "/o/$orgSlug/usage" },
+  { id: "developer", label: "Developer", icon: IconCode, to: "/o/$orgSlug/developer" },
+  { id: "members", label: "Members", icon: IconUsers, to: "/o/$orgSlug/settings/members" },
+  { id: "organization", label: "Organization", icon: IconBuilding, to: "/o/$orgSlug/settings/organization" },
+  { id: "account", label: "Account", icon: IconUser, to: "/o/$orgSlug/settings/account" },
+  { id: "danger", label: "Danger zone", icon: IconAlertTriangle, to: "/o/$orgSlug/settings/danger" },
 ];
 
-const SETTINGS = new Set(["members", "organization", "account", "danger"]);
-
-const CREATE: { id: string; label: string; to: string }[] = [
-  { id: "new-game", label: "New game", to: "games/new" },
-  { id: "new-template", label: "New template", to: "templates/new" },
-  { id: "new-platform", label: "New platform", to: "platforms/new" },
-  { id: "new-tournament", label: "New tournament", to: "tournaments/new" },
-  { id: "new-match", label: "New match", to: "matches/new" },
+const CREATE: { id: string; label: string; to: DashboardPath }[] = [
+  { id: "new-game", label: "New game", to: "/o/$orgSlug/games/new" },
+  { id: "new-template", label: "New template", to: "/o/$orgSlug/templates/new" },
+  { id: "new-platform", label: "New platform", to: "/o/$orgSlug/platforms/new" },
+  { id: "new-tournament", label: "New tournament", to: "/o/$orgSlug/tournaments/new" },
+  { id: "new-match", label: "New match", to: "/o/$orgSlug/matches/new" },
 ];
 
 export function CommandPalette({
@@ -115,7 +114,7 @@ export function CommandPalette({
       label: item.label,
       section: "Go to",
       icon: item.icon,
-      to: `/o/$orgSlug/${SETTINGS.has(item.id) ? `settings/${item.id}` : item.id}`,
+      to: item.to,
       shortcut:
         PAGE_SHORTCUTS[item.id] === undefined
           ? undefined
@@ -127,7 +126,7 @@ export function CommandPalette({
       label: item.label,
       section: "Create",
       icon: IconPlus,
-      to: `/o/$orgSlug/${item.to}`,
+      to: item.to,
     }));
 
     const actions: Command[] = [
@@ -215,8 +214,7 @@ export function CommandPalette({
     }
 
     if (command.to !== undefined) {
-      const path = command.to.replace("$orgSlug", orgSlug);
-      navigate({ to: path as never, params: { orgSlug } as never });
+      navigate({ to: command.to, params: { orgSlug } });
       onOpenChange(false);
     }
   }

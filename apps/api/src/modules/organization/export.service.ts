@@ -16,8 +16,7 @@ import {
   tournamentParticipant,
 } from "@wasanni/db/schema";
 import { NotFoundError } from "@wasanni/kit";
-
-const ROW_LIMIT = 10_000;
+import { EXPORT_ROW_LIMIT } from "./constants.ts";
 
 export function createExportService(db: Db) {
   return {
@@ -64,12 +63,12 @@ export function createExportService(db: Db) {
           .select()
           .from(gameSession)
           .where(eq(gameSession.organizationId, organizationId))
-          .limit(ROW_LIMIT),
+          .limit(EXPORT_ROW_LIMIT),
         db
           .select()
           .from(gameSessionScore)
           .where(eq(gameSessionScore.organizationId, organizationId))
-          .limit(ROW_LIMIT),
+          .limit(EXPORT_ROW_LIMIT),
       ]);
 
       return {
@@ -89,7 +88,7 @@ export function createExportService(db: Db) {
           sessions: sessions.length,
           scores: scores.length,
         },
-        limits: { sessions: ROW_LIMIT, scores: ROW_LIMIT },
+        limits: { sessions: EXPORT_ROW_LIMIT, scores: EXPORT_ROW_LIMIT },
         data: {
           members,
           invitations,
@@ -108,5 +107,3 @@ export function createExportService(db: Db) {
     },
   };
 }
-
-export type ExportService = ReturnType<typeof createExportService>;
