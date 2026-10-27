@@ -25,7 +25,7 @@ const toView = (row: PlatformRow): PlatformView => ({
   updatedAt: row.updatedAt.toISOString(),
 });
 
-export function platformService(db: Db) {
+export function createPlatformService(db: Db) {
   const rethrowAsSlugConflict = (error: unknown): never => {
     if (isUniqueViolation(error)) throw conflict("platform slug already exists");
     throw error;
@@ -111,4 +111,4 @@ export function platformService(db: Db) {
   };
 }
 
-export type PlatformService = ReturnType<typeof platformService>;
+export type PlatformService = ReturnType<typeof createPlatformService>;

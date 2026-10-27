@@ -7,11 +7,7 @@ export function scopeTo<T extends OrganizationScoped>(
   table: T,
   ...filters: (SQL | undefined)[]
 ): SQL {
-  const predicate = and(eq(table.organizationId, scope.organizationId), ...filters);
+  const scoped = eq(table.organizationId, scope.organizationId);
 
-  if (predicate === undefined) {
-    throw new Error("organization scope predicate is empty");
-  }
-
-  return predicate;
+  return and(scoped, ...filters) ?? scoped;
 }

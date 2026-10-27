@@ -5,7 +5,7 @@ import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { API_KEY_DISPLAY_CHARS, badRequest, hashApiKey, newApiKeySecret, newId, notFound } from "@wasanni/kit";
 import {
-  unknownPermissions,
+  listUnknownPermissions,
   type ApiKeyView,
   type CreatedApiKey,
   type PermissionGrant,
@@ -28,7 +28,7 @@ const toView = (row: ApiKeyRow): ApiKeyView => ({
   expiresAt: row.expiresAt === null ? null : row.expiresAt.toISOString(),
 });
 
-export function apiKeyService(db: Db) {
+export function createApiKeyService(db: Db) {
   return {
     async list(scope: Scope, platformId: string): Promise<ApiKeyView[]> {
       const rows = await db
@@ -49,7 +49,7 @@ export function apiKeyService(db: Db) {
         permissions: PermissionGrant;
       },
     ): Promise<CreatedApiKey> {
-      const unknown = unknownPermissions(input.permissions);
+      const unknown = listUnknownPermissions(input.permissions);
       if (unknown.length > 0) {
         throw badRequest(`unknown permission: ${unknown.join(", ")}`);
       }
@@ -132,4 +132,4 @@ export function apiKeyService(db: Db) {
   };
 }
 
-export type ApiKeyService = ReturnType<typeof apiKeyService>;
+export type ApiKeyService = ReturnType<typeof createApiKeyService>;

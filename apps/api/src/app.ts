@@ -2,30 +2,51 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { STATUS, toErrorBody } from "@wasanni/contracts";
-import { authApiDocument, authRoutes } from "./modules/auth/index.ts";
+import {
+  createMemorySessionEventStore,
+  createObjectStorage,
+  readStorageConfig,
+  readStorageLimits,
+} from "@wasanni/kit";
+import { buildAuthApiDocument, createAuthRoutes } from "./modules/auth/index.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
-import { principal, type PrincipalDeps } from "./plugins/principal.ts";
-import { healthRoutes } from "./routes/health.ts";
+import { createPrincipalPlugin, type PrincipalDeps } from "./plugins/principal.ts";
+import { createHealthRoutes } from "./routes/health.ts";
 import { failureOf } from "./failures.ts";
-import { requestContext, requestContextOf } from "./plugins/request-context.ts";
-import { platformRoutes } from "./modules/platform/index.ts";
-import { platformService } from "./modules/platform/service.ts";
-import { memberRoutes } from "./modules/member/index.ts";
-import { memberService } from "./modules/member/service.ts";
-import { apiKeyRoutes } from "./modules/api-key/index.ts";
-import { apiKeyService } from "./modules/api-key/service.ts";
+import { createRequestContextPlugin, requestContextOf } from "./plugins/request-context.ts";
+import { createPlatformRoutes } from "./modules/platform/index.ts";
+import { createPlatformService } from "./modules/platform/service.ts";
+import { createMemberRoutes } from "./modules/member/index.ts";
+import { createMemberService } from "./modules/member/service.ts";
+import { createApiKeyRoutes } from "./modules/api-key/index.ts";
+import { createApiKeyService } from "./modules/api-key/service.ts";
+import { createGamesRoutes } from "./modules/games/index.ts";
+import { createTemplatesRoutes } from "./modules/templates/index.ts";
+import { createPlayRoutes } from "./modules/play/index.ts";
+import { createWebhooksRoutes } from "./modules/webhook/index.ts";
+import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
 import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
 
 export async function createApp(deps: AppDeps) {
-  const moduleDeps: ModuleDeps = { db: deps.db, env: deps.env, logger: deps.logger };
+  const moduleDeps: ModuleDeps = {
+    db: deps.db,
+    env: deps.env,
+    logger: deps.logger,
+    enqueuer: deps.enqueuer ?? null,
+  };
   const betterAuth = createBetterAuth(moduleDeps);
 
   const principalDeps: PrincipalDeps = { db: deps.db, auth: betterAuth };
-  const base = principal(principalDeps);
+  const base = createPrincipalPlugin(principalDeps);
+
+  const storage = deps.storage ?? createObjectStorage(readStorageConfig(deps.env));
+  const events = deps.events ?? createMemorySessionEventStore();
+  const enqueuer = deps.enqueuer ?? null;
+  const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
 
   return new Elysia({ name: "wasanni-api" })
-    .use(requestContext(deps.logger))
+    .use(createRequestContextPlugin(deps.logger))
     .use(
       cors({
         origin: deps.corsOrigins,
@@ -45,7 +66,7 @@ export async function createApp(deps: AppDeps) {
         path: DOCS_PATH,
         exclude: { paths: [`${AUTH_ROUTE_PREFIX}/*`] },
         documentation: {
-          ...(await authApiDocument(betterAuth)),
+          ...(await buildAuthApiDocument(betterAuth)),
           info: {
             title: "Wasanni API",
             version: deps.version,
@@ -82,11 +103,44 @@ export async function createApp(deps: AppDeps) {
       set.status = failure.status;
       return toErrorBody(failure.source, requestId);
     })
-    .use(authRoutes(base, betterAuth))
-    .use(memberRoutes(base, { service: memberService(deps.db), env: deps.env }))
-    .use(platformRoutes(base, { service: platformService(deps.db) }))
-    .use(apiKeyRoutes(base, { service: apiKeyService(deps.db) }))
-    .use(healthRoutes(deps))
+    .use(createAuthRoutes(base, betterAuth))
+    .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
+    .use(createPlatformRoutes(base, { service: createPlatformService(deps.db) }))
+    .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
+    .use(
+      createGamesRoutes(base, {
+        db: deps.db,
+        storage,
+        config: readStorageLimits(deps.env),
+        onConfigChanged: async (input) => {
+          await enqueuer?.scoreRecheck(input);
+        },
+      }),
+    )
+    .use(
+      createTemplatesRoutes(base, {
+        db: deps.db,
+        storage,
+        config: readStorageLimits(deps.env),
+      }),
+    )
+    .use(
+      createWebhooksRoutes(base, {
+        db: deps.db,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+      }),
+    )
+    .use(
+      createPlayRoutes(base, {
+        db: deps.db,
+        storage,
+        events,
+        dispatcher,
+        enqueuer,
+        realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
+      }),
+    )
+    .use(createHealthRoutes(deps))
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
       deps.logger.info("http", {

@@ -7,8 +7,9 @@ import {
   type Action,
   type Resource,
 } from "@wasanni/contracts";
+import { forbidden, unauthenticated, type Principal } from "@wasanni/kit";
 
-const actionsUsedBy = (resource: Resource): Action[] => {
+const resolveResourceActions = (resource: Resource): Action[] => {
   const actions = new Set<Action>();
   for (const role of ROLE_NAMES) {
     for (const action of ROLE_PERMISSIONS[role][resource]) actions.add(action);
@@ -17,11 +18,19 @@ const actionsUsedBy = (resource: Resource): Action[] => {
 };
 
 const statement: { [K in Resource]: Action[] } = {
-  organization: actionsUsedBy("organization"),
-  member: actionsUsedBy("member"),
-  invitation: actionsUsedBy("invitation"),
-  platform: actionsUsedBy("platform"),
-  apiKey: actionsUsedBy("apiKey"),
+  organization: resolveResourceActions("organization"),
+  member: resolveResourceActions("member"),
+  invitation: resolveResourceActions("invitation"),
+  platform: resolveResourceActions("platform"),
+  apiKey: resolveResourceActions("apiKey"),
+  game: resolveResourceActions("game"),
+  gameFile: resolveResourceActions("gameFile"),
+  assignment: resolveResourceActions("assignment"),
+  gameConfig: resolveResourceActions("gameConfig"),
+  template: resolveResourceActions("template"),
+  session: resolveResourceActions("session"),
+  score: resolveResourceActions("score"),
+  webhook: resolveResourceActions("webhook"),
 };
 
 export const ac = createAccessControl(statement);
@@ -45,4 +54,15 @@ export function permissionsForRole(role: string): ReadonlySet<string> {
     }
   }
   return permissions;
+}
+
+export function requirePermission(
+  principal: Principal | null | undefined,
+  permission: string,
+): Principal {
+  if (!principal) throw unauthenticated();
+  if (!principal.permissions.has(permission)) {
+    throw forbidden(`missing permission: ${permission}`);
+  }
+  return principal;
 }

@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@wasanni/db": "workspace:*",
-    "@wasanni/kit": "workspace:*"
+    "@wasanni/jobs": "workspace:*",
+    "@wasanni/kit": "workspace:*",
+    "bullmq": "6.4.0"
   }
 }

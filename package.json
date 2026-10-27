@@ -4,9 +4,10 @@
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun run dev:api & bun run dev:worker",
+    "dev": "bun run dev:api & bun run dev:worker & bun run dev:realtime",
     "dev:api": "bun --watch apps/api/src/index.ts",
     "dev:worker": "bun --watch apps/worker/src/index.ts",
+    "dev:realtime": "bun --watch apps/realtime/src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "db:generate": "bun run --cwd packages/db generate",

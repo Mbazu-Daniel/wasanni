@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { activeMember, member, user } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { R2_KEY_PATTERN, notFound } from "@wasanni/kit";
+import { notFound } from "@wasanni/kit";
 import type { MemberView } from "@wasanni/contracts";
 
 const columns = {
@@ -33,7 +33,7 @@ const toView = (row: MemberRow): MemberView => ({
   joinedAt: row.joinedAt.toISOString(),
 });
 
-export function memberService(db: Db) {
+export function createMemberService(db: Db) {
   return {
     async readSelf(scope: Scope, memberId: string): Promise<MemberView | null> {
       const [row] = await db
@@ -84,10 +84,4 @@ export function memberService(db: Db) {
   };
 }
 
-export function assertMemberAvatarKey(key: string): void {
-  if (!R2_KEY_PATTERN.test(key)) {
-    throw notFound("that avatar key is not one this api issued");
-  }
-}
-
-export type MemberService = ReturnType<typeof memberService>;
+export type MemberService = ReturnType<typeof createMemberService>;

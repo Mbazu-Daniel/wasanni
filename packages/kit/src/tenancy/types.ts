@@ -17,4 +17,14 @@ export type PlatformPrincipal = BasePrincipal & {
   apiKeyId: string;
 };
 
+export type GameSessionPrincipal = {
+  kind: "gameSession";
+  sessionId: string;
+  organizationId: string;
+  platformId: string;
+  gameId: string;
+  externalUserId: string;
+  mode: string | null;
+};
+
 export type Principal = UserPrincipal | PlatformPrincipal;
