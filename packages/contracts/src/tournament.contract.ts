@@ -206,15 +206,15 @@ export type PlatformTournamentParams = UnwrapSchema<
 
 export const StandingsRow = t.Object({
   position: t.Number(),
-  participantId: t.Optional(t.String()),
+  participantId: t.String(),
   externalUserId: t.String(),
   displayName: t.Union([t.String(), t.Null()]),
-  seed: t.Optional(t.Union([t.Number(), t.Null()])),
-  status: t.Optional(t.String()),
+  seed: t.Union([t.Number(), t.Null()]),
+  status: t.String(),
   score: t.Union([t.Number(), t.Null()]),
   flagged: t.Boolean(),
-  flags: t.Optional(t.Array(t.String())),
-  submittedAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Null()])),
+  flags: t.Array(t.String()),
+  submittedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
 });
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
 

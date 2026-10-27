@@ -1,4 +1,4 @@
-import type { AuditService } from "../modules/audit/service.ts";
+import type { AuditService } from "../modules/audit/types.ts";
 import type { AuditActor, AuditEvent } from "../modules/audit/types.ts";
 
 type HookContext = {

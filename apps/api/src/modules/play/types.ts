@@ -1,4 +1,9 @@
-import type { CreateGameSessionBody, SubmitScoreBody } from "@wasanni/contracts";
+import type {
+  CreateGameSessionBody,
+  ScoreFlag,
+  ScoreVerificationMode,
+  SubmitScoreBody,
+} from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import type { gameSession, gameSessionScore } from "@wasanni/db/schema";
 import type { Enqueuer } from "@wasanni/jobs";
@@ -16,6 +21,23 @@ import type { createReplayService } from "./replay.service.ts";
 import type { createScoreService } from "./score.service.ts";
 import type { createSessionService } from "./session.service.ts";
 import type { ScoreVerifier } from "./score-verifier.ts";
+
+export type ScoreVerificationInput = {
+  sessionId: string;
+  organizationId: string;
+  externalUserId: string;
+  score: number;
+  mode: ScoreVerificationMode;
+  submittedAt: Date;
+  signingKeyCiphertext: string | null;
+  signature: string | null;
+  config: Record<string, unknown>;
+};
+
+export type ScoreVerificationVerdict =
+  | { kind: "passed"; flags: ScoreFlag[] }
+  | { kind: "unavailable"; flags: ScoreFlag[]; reason: string }
+  | { kind: "failed"; code: string; reason: string };
 
 export type GameSessionRow = (typeof gameSession.$inferSelect);
 

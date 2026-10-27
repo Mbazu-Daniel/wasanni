@@ -81,7 +81,7 @@ export function TournamentStandingsPanel({
           <tbody>
             {data.rows.map((row) => (
               <tr
-                key={row.participantId ?? row.externalUserId}
+                key={row.participantId}
                 className="border-t border-border transition-colors hover:bg-white/[0.02]"
               >
                 <td className="px-4 py-3 align-middle">
@@ -104,7 +104,7 @@ export function TournamentStandingsPanel({
                   </p>
                 </td>
                 <td className="px-4 py-3 align-middle">
-                  {row.seed === null || row.seed === undefined ? (
+                  {row.seed === null ? (
                     <span className="text-xs text-muted-foreground">—</span>
                   ) : (
                     <span className="font-mono text-xs text-muted-foreground">
@@ -118,17 +118,17 @@ export function TournamentStandingsPanel({
                   </span>
                 </td>
                 <td className="px-4 py-3 align-middle">
-                  {(row.flags ?? []).length > 0 ? (
+                  {row.flags.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
-                      {(row.flags ?? []).slice(0, 2).map((flag) => (
+                      {row.flags.slice(0, 2).map((flag) => (
                         <Badge key={flag} variant="default" className="gap-1 text-[10px]">
                           <IconFlag className="size-2.5" />
                           {flag}
                         </Badge>
                       ))}
-                      {(row.flags ?? []).length > 2 && (
+                      {row.flags.length > 2 && (
                         <Badge variant="muted" className="text-[10px]">
-                          +{(row.flags ?? []).length - 2}
+                          +{row.flags.length - 2}
                         </Badge>
                       )}
                     </div>
@@ -137,13 +137,9 @@ export function TournamentStandingsPanel({
                   )}
                 </td>
                 <td className="px-4 py-3 align-middle">
-                  {row.status === undefined ? (
-                    <span className="text-[11px] text-muted-foreground">—</span>
-                  ) : (
-                    <Badge variant="muted" className="text-[10px] capitalize">
-                      {row.status}
-                    </Badge>
-                  )}
+                  <Badge variant="muted" className="text-[10px] capitalize">
+                    {row.status}
+                  </Badge>
                 </td>
               </tr>
             ))}

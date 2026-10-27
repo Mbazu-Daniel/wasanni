@@ -1,4 +1,4 @@
-export type RoleName = "owner" | "admin" | "member";
+import type { RoleName } from "./role-types";
 
 const ROLE_RANK: Record<RoleName, number> = {
   owner: 3,

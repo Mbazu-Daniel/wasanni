@@ -9,7 +9,7 @@ import type {
   SessionEventStore,
 } from "@wasanni/kit";
 import type { ErrorSource } from "@wasanni/contracts";
-import type { AuditService } from "./modules/audit/service.ts";
+import type { AuditService } from "./modules/audit/types.ts";
 
 export type AppDeps = {
   logger: Logger;

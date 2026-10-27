@@ -155,7 +155,13 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
   };
 
   const storageBreakdown = async (organizationId: string) => {
-    const games = (await db.execute(sql`
+    const games = await db.execute<{
+      id: string;
+      name: string;
+      slug: string;
+      size_bytes: string | number;
+      file_count: number;
+    }>(sql`
       select
         g.id,
         g.name,
@@ -171,13 +177,7 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
       group by g.id, g.name, g.slug
       having coalesce(sum(gf.size_bytes), 0) > 0
       order by size_bytes desc
-    `)) as {
-      id: string;
-      name: string;
-      slug: string;
-      size_bytes: string | number;
-      file_count: number;
-    }[];
+    `);
 
     const templates = (await db.execute(sql`
       select t.id, t.name, t.slug, coalesce(t.size_bytes, 0)::bigint as size_bytes
@@ -329,7 +329,7 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
     },
 
     async storageBytes(organizationId: string): Promise<number> {
-      const rows = await db.execute(sql`
+      const rows = await db.execute<{ total: string }>(sql`
         select coalesce(sum(size_bytes), 0)::bigint as total
         from (
           select size_bytes from game_file
@@ -340,7 +340,7 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
         ) as files
       `);
 
-      return Number((rows as unknown as { total: string }[])[0]?.total ?? 0);
+      return Number(rows[0]?.total ?? 0);
     },
   };
 }

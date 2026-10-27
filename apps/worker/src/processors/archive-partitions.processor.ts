@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import type { Env, Logger, ObjectStorage } from "@wasanni/kit";
-import type { AuditService } from "../../../api/src/modules/audit/service.ts";
+import type { AuditService } from "../../../api/src/modules/audit/types.ts";
 import type { ScoreArchivePartition, ScoreArchiveRow } from "../types.ts";
 
 const HOUR_MS = 3_600_000;

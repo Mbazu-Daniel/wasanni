@@ -12,11 +12,8 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import { fetchSession } from "@/lib/session";
-import {
-  canChangeRole,
-  canManageMembers,
-  type RoleName,
-} from "@/lib/org-permissions";
+import { canChangeRole, canManageMembers } from "@/lib/org-permissions";
+import type { RoleName } from "@/lib/role-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

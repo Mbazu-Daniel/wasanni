@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import type { Principal } from "@wasanni/kit";
-import type { AuditService } from "../modules/audit/service.ts";
+import type { AuditService } from "../modules/audit/types.ts";
 
 const MUTATING_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 

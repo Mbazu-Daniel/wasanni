@@ -1,24 +1,17 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { Env, Logger } from "@wasanni/kit";
-import { decryptSecret, encryptSecret, hmacSign, randomBytesBase64Url } from "@wasanni/kit";
-import type { ScoreVerificationMode } from "@wasanni/contracts";
-
-export type ScoreVerificationInput = {
-  sessionId: string;
-  organizationId: string;
-  externalUserId: string;
-  score: number;
-  mode: ScoreVerificationMode;
-  submittedAt: Date;
-  signingKeyCiphertext: string | null;
-  signature: string | null;
-  config: Record<string, unknown>;
-};
-
-export type ScoreVerificationVerdict =
-  | { kind: "passed"; flags: string[] }
-  | { kind: "unavailable"; flags: string[]; reason: string }
-  | { kind: "failed"; code: string; reason: string };
+import type { CallbackConfig, Env, Logger } from "@wasanni/kit";
+import {
+  decryptSecret,
+  encryptSecret,
+  hmacSign,
+  randomBytesBase64Url,
+  readGameConfig,
+} from "@wasanni/kit";
+import type { ScoreFlag } from "@wasanni/contracts";
+import type {
+  ScoreVerificationInput,
+  ScoreVerificationVerdict,
+} from "./types.ts";
 
 export const SCORE_SIGNATURE_PAYLOAD = (sessionId: string, score: number): string =>
   `${sessionId}|${score}`;
@@ -30,32 +23,6 @@ const sameSignature = (expected: string, given: string): boolean => {
   if (left.length !== right.length) return false;
 
   return timingSafeEqual(left, right);
-};
-
-type CallbackConfig = {
-  url: string;
-  secret: string;
-  timeoutMs?: number;
-};
-
-const readCallbackConfig = (config: Record<string, unknown>): CallbackConfig | null => {
-  const block = config.scoreVerification;
-
-  if (typeof block !== "object" || block === null) return null;
-
-  const callback = (block as Record<string, unknown>).callback;
-
-  if (typeof callback !== "object" || callback === null) return null;
-
-  const { url, secret, timeoutMs } = callback as Record<string, unknown>;
-
-  if (typeof url !== "string" || typeof secret !== "string") return null;
-
-  return {
-    url,
-    secret,
-    ...(typeof timeoutMs === "number" ? { timeoutMs } : {}),
-  };
 };
 
 export function createScoreVerifier(env: Env, logger: Logger) {
@@ -190,7 +157,7 @@ export function createScoreVerifier(env: Env, logger: Logger) {
     async verify(input: ScoreVerificationInput): Promise<ScoreVerificationVerdict> {
       if (input.mode === "none") return { kind: "passed", flags: [] };
 
-      const flags: string[] = [];
+      const flags: ScoreFlag[] = [];
 
       if (input.mode === "hmac" || input.mode === "both") {
         const failure = verifyHmac(input);
@@ -201,7 +168,7 @@ export function createScoreVerifier(env: Env, logger: Logger) {
       }
 
       if (input.mode === "callback" || input.mode === "both") {
-        const callback = readCallbackConfig(input.config);
+        const callback = readGameConfig(input.config).callback;
 
         if (callback === null) {
           return {
