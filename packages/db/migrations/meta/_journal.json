@@ -57,6 +57,13 @@
       "when": 1792602741216,
       "tag": "0007_robust_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792605256974,
+      "tag": "0008_partition_game_session_score",
+      "breakpoints": true
     }
   ]
 }

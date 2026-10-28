@@ -173,9 +173,14 @@ marketing site is a separate origin and is not versioned by this API at all.
 | `/api/v1/organizations/:organizationId/...` | every tenant-scoped resource |
 | `/api/v1/platform/...` | the routes an api key calls |
 | `/api/v1/play/...` | the routes a session token calls |
+| `/play/:gameId/:fileId/*` | the game bundle itself, served by the api |
 | `/docs` | one OpenAPI document describing all of the above |
 | `/api/v1/auth/reference` | Better Auth's own page for its endpoints |
 | `/healthz`, `/readyz` | the ops probes |
+| `/metrics` | Prometheus text, `wasanni_http_requests_total` |
+
+`/metrics` answers without a token on purpose — a scraper has no session. Block
+it at the ingress instead: only the monitoring network may reach it.
 
 `/docs` carries better-auth's endpoints — 22 of the organization plugin's among
 them — not just ours: the auth module contributes them through `openAPI()`'s
@@ -184,8 +189,20 @@ them — not just ours: the auth module contributes them through `openAPI()`'s
 sign-in, email-verification and OAuth route with its operation id, request body
 and security scheme. The startup log prints both URLs.
 
-## Conventions
+## Secret rotation
 
+`bun scripts/rotate-secret.ts <old-key> <new-key>` re-encrypts every webhook
+secret in place. Deploy the new key afterwards, then remove the old one.
+
+| Secret | Rotation effect |
+|---|---|
+| `WEBHOOK_SECRET_ENCRYPTION_KEY` | None, if the secrets are re-encrypted first |
+| `BETTER_AUTH_SECRET` | Every session is invalidated — users sign in again |
+| `REALTIME_JWT_SECRET` | In-flight sockets are rejected on reconnect |
+| `S3_SECRET_ACCESS_KEY` | None, if the old key is valid during the overlap |
+| `ZEPTOMAIL_API_KEY` | None |
+
+## Conventions
 - Every module is `domain / app / adapters`. Arrows point inward. The domain
   never imports Elysia or Drizzle.
 - Every tenant query passes through `organizationScope(...)`, in `@wasanni/kit`.

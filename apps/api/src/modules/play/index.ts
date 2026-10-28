@@ -22,12 +22,12 @@ export const createPlayRoutes = <T extends PrincipalApi>(api: T, deps: PlayDeps)
       ? {}
       : { matchRecorder: deps.matchRecorder }),
   });
-  const leaderboard = createLeaderboardService(deps.db);
+  const leaderboards = createLeaderboardService(deps.db);
   const replay = createReplayService(deps.db, deps.storage, deps.events);
 
-  createSessionRoutes(api, { service: sessions });
-  createScoreRoutes(api, { service: scores });
-  createLeaderboardRoutes(api, { service: leaderboard });
+  createSessionRoutes(api, { service: sessions, ...deps.rateLimit });
+  createScoreRoutes(api, { service: scores, ...deps.rateLimit });
+  createLeaderboardRoutes(api, { service: leaderboards, ...deps.rateLimit });
   createReplayRoutes(api, { service: replay });
 
   return api;

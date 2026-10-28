@@ -3,7 +3,7 @@ import { t, type UnwrapSchema } from "elysia";
 export const AUDIT_ACTOR_TYPES = ["user", "api_key", "system"] as const;
 export type AuditActorType = (typeof AUDIT_ACTOR_TYPES)[number];
 
-export const AUDIT_SOURCES = ["auth", "organization", "api"] as const;
+export const AUDIT_SOURCES = ["auth", "organization", "api", "worker"] as const;
 export type AuditSource = (typeof AUDIT_SOURCES)[number];
 
 export const AuditActorTypeModel = t.Union([
@@ -16,6 +16,7 @@ export const AuditSourceModel = t.Union([
   t.Literal("auth"),
   t.Literal("organization"),
   t.Literal("api"),
+  t.Literal("worker"),
 ]);
 
 export const AuditLogView = t.Object({

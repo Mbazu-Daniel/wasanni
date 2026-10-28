@@ -14,7 +14,7 @@ import type { ScoreRouteDeps } from "./types.ts";
 
 export const createScoreRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: ScoreRouteDeps,
+  { service, rateLimit }: ScoreRouteDeps,
 ) =>
   api
     .post(
@@ -30,6 +30,7 @@ export const createScoreRoutes = <T extends PrincipalApi>(
       {
         sessionAuth: true,
         params: GameSessionIdParams,
+        ...(rateLimit === undefined ? {} : { beforeHandle: rateLimit("scoreSubmit") }),
         body: SubmitScoreBody,
         response: { 201: ScoreSingle },
         detail: { tags: ["scores"], summary: "Send the score of a game session" },

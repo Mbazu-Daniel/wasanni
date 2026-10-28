@@ -6,10 +6,20 @@ import {
   DEFAULT_EMAIL_FROM_ADDRESS,
   DEFAULT_EMAIL_FROM_NAME,
   DEFAULT_FD_LIMIT_MINIMUM,
+  DEFAULT_GAME_BUNDLE_MAX_FILES,
+  DEFAULT_GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES,
   DEFAULT_NODE_ENV,
   DEFAULT_PORT,
   DEFAULT_REALTIME_PORT,
   DEFAULT_REALTIME_PUBLIC_URL,
+  DEFAULT_SCORE_ARCHIVE_CRON,
+  DEFAULT_SCORE_ARCHIVE_ENABLED,
+  DEFAULT_SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN,
+  DEFAULT_SCORE_ARCHIVE_RETENTION_HOURS,
+  DEFAULT_SCORE_PARTITIONING_ENABLED,
+  DEFAULT_SCORE_PARTITION_PREMAKE_HOURS,
+  DEFAULT_SCORE_RATE_LIMIT_PER_MINUTE,
+  DEFAULT_SESSION_RATE_LIMIT_PER_MINUTE,
   DEFAULT_STORAGE_DOWNLOAD_URL_TTL_SECONDS,
   DEFAULT_STORAGE_MAX_GAME_BUNDLE_BYTES,
   DEFAULT_STORAGE_UPLOAD_URL_TTL_SECONDS,
@@ -17,9 +27,15 @@ import {
   DEFAULT_WS_IDLE_TIMEOUT_SECONDS,
   DEFAULT_WS_MAX_MESSAGE_BYTES,
   FD_LIMIT_RANGE,
+  GAME_BUNDLE_MAX_FILES_RANGE,
+  GAME_BUNDLE_MAX_UNCOMPRESSED_RANGE,
   NODE_ENVS,
   PORT_RANGE,
+  RATE_LIMIT_RANGE,
   SECRET_MIN_LENGTH,
+  SCORE_ARCHIVE_MAX_PARTITIONS_RANGE,
+  SCORE_ARCHIVE_RETENTION_RANGE,
+  SCORE_PARTITION_PREMAKE_RANGE,
   STORAGE_MAX_GAME_BUNDLE_BYTES_RANGE,
   STORAGE_URL_TTL_RANGE,
   WS_IDLE_TIMEOUT_RANGE,
@@ -110,6 +126,22 @@ function readEnum<T extends string>(
 
 function readOptional(raw: RawEnv, key: string): string | undefined {
   return raw[key]?.trim() || undefined;
+}
+
+function readBoolean(
+  raw: RawEnv,
+  problems: Problems,
+  key: string,
+  fallback: boolean,
+): boolean {
+  const value = raw[key]?.trim().toLowerCase();
+
+  if (value === undefined || value === "") return fallback;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+
+  problems.add(key, "must be true or false");
+  return fallback;
 }
 
 function readNumber(
@@ -239,6 +271,79 @@ export function parseEnv(raw: RawEnv): Env {
       "FD_LIMIT_MINIMUM",
       DEFAULT_FD_LIMIT_MINIMUM,
       FD_LIMIT_RANGE,
+    ),
+    SCORE_PARTITIONING_ENABLED: readBoolean(
+      raw,
+      problems,
+      "SCORE_PARTITIONING_ENABLED",
+      DEFAULT_SCORE_PARTITIONING_ENABLED,
+    ),
+    SCORE_PARTITION_PREMAKE_HOURS: readNumber(
+      raw,
+      problems,
+      "SCORE_PARTITION_PREMAKE_HOURS",
+      DEFAULT_SCORE_PARTITION_PREMAKE_HOURS,
+      SCORE_PARTITION_PREMAKE_RANGE,
+    ),
+    SCORE_ARCHIVE_ENABLED: readBoolean(
+      raw,
+      problems,
+      "SCORE_ARCHIVE_ENABLED",
+      DEFAULT_SCORE_ARCHIVE_ENABLED,
+    ),
+    SCORE_ARCHIVE_CRON: readString(
+      raw,
+      problems,
+      "SCORE_ARCHIVE_CRON",
+      DEFAULT_SCORE_ARCHIVE_CRON,
+    ),
+    SCORE_ARCHIVE_RETENTION_HOURS: readNumber(
+      raw,
+      problems,
+      "SCORE_ARCHIVE_RETENTION_HOURS",
+      DEFAULT_SCORE_ARCHIVE_RETENTION_HOURS,
+      SCORE_ARCHIVE_RETENTION_RANGE,
+    ),
+    SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN: readNumber(
+      raw,
+      problems,
+      "SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN",
+      DEFAULT_SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN,
+      SCORE_ARCHIVE_MAX_PARTITIONS_RANGE,
+    ),
+    SCORE_ARCHIVE_DRY_RUN: readBoolean(
+      raw,
+      problems,
+      "SCORE_ARCHIVE_DRY_RUN",
+      true,
+    ),
+    SCORE_RATE_LIMIT_PER_MINUTE: readNumber(
+      raw,
+      problems,
+      "SCORE_RATE_LIMIT_PER_MINUTE",
+      DEFAULT_SCORE_RATE_LIMIT_PER_MINUTE,
+      RATE_LIMIT_RANGE,
+    ),
+    SESSION_RATE_LIMIT_PER_MINUTE: readNumber(
+      raw,
+      problems,
+      "SESSION_RATE_LIMIT_PER_MINUTE",
+      DEFAULT_SESSION_RATE_LIMIT_PER_MINUTE,
+      RATE_LIMIT_RANGE,
+    ),
+    GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES: readNumber(
+      raw,
+      problems,
+      "GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES",
+      DEFAULT_GAME_BUNDLE_MAX_UNCOMPRESSED_BYTES,
+      GAME_BUNDLE_MAX_UNCOMPRESSED_RANGE,
+    ),
+    GAME_BUNDLE_MAX_FILES: readNumber(
+      raw,
+      problems,
+      "GAME_BUNDLE_MAX_FILES",
+      DEFAULT_GAME_BUNDLE_MAX_FILES,
+      GAME_BUNDLE_MAX_FILES_RANGE,
     ),
   };
 

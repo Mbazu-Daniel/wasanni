@@ -62,6 +62,7 @@ const deps: AppDeps = {
   env: cfg,
   events,
   enqueuer,
+  redis,
   ready: async () => {
     const [database, redisOk] = await Promise.all([
       pingDatabase(sql).catch(() => false),

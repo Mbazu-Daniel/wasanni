@@ -18,6 +18,7 @@ export function createWebhookWorker(
       if (job.name !== JOB.WEBHOOK_DELIVER) {
         throw new InternalServerError(`unexpected webhook job: ${job.name}`);
       }
+
       return deliver(job.data);
     },
     {
