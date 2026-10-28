@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  platformPickOptions,
+  resolvePlatformId,
+  type PlatformTarget,
+} from "./platform-choice";
 import { DataTable, type DataTableColumn } from "@/components/primitives/data-table";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
@@ -86,7 +92,7 @@ export function PlatformKeysPanel({
     try {
       await apiFetch(
         `/api/v1/organizations/${organizationId}/platforms/${platformId}/keys/${revoking.id}`,
-        { method: "PATCH", body: JSON.stringify({ enabled: false }) },
+        { method: "PATCH", data: JSON.stringify({ enabled: false }) },
       );
       toast.success("API key revoked");
       setRevoking(null);
@@ -198,7 +204,7 @@ export function PlatformKeysPanel({
           }
         }}
         organizationId={organizationId}
-        platformId={platformId}
+        target={{ kind: "fixed", platformId }}
         onCreated={(secret) => {
           setRevealedSecret(secret);
           refresh();
@@ -223,11 +229,11 @@ export function PlatformKeysPanel({
   );
 }
 
-function CreateKeyModal({
+export function CreateKeyModal({
   open,
   onOpenChange,
   organizationId,
-  platformId,
+  target,
   onCreated,
   revealedSecret,
   onAcknowledged,
@@ -236,7 +242,7 @@ function CreateKeyModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
-  platformId: string;
+  target: PlatformTarget;
   onCreated: (secret: string) => void;
   revealedSecret: string | null;
   onAcknowledged: () => void;
@@ -245,13 +251,17 @@ function CreateKeyModal({
   const [name, setName] = React.useState("");
   const [scopes, setScopes] = React.useState<Set<string>>(new Set(DEFAULT_SCOPES));
   const [expiresInDays, setExpiresInDays] = React.useState<number | "">(90);
+  const [picked, setPicked] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+
+  const platformId = resolvePlatformId(target, picked);
 
   React.useEffect(() => {
     if (open) return;
     setName("");
     setScopes(new Set(DEFAULT_SCOPES));
     setExpiresInDays(90);
+    setPicked("");
   }, [open]);
 
   function toggleScope(id: string) {
@@ -265,6 +275,11 @@ function CreateKeyModal({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (platformId === "") {
+      toast.error("Pick the platform this key belongs to");
+      return;
+    }
 
     if (scopes.size === 0) {
       toast.error("Pick at least one scope");
@@ -284,7 +299,7 @@ function CreateKeyModal({
         `/api/v1/organizations/${organizationId}/platforms/${platformId}/keys`,
         {
           method: "POST",
-          body: JSON.stringify({
+          data: JSON.stringify({
             name,
             permissions: payload,
             expiresInSeconds:
@@ -315,6 +330,18 @@ function CreateKeyModal({
     >
       {revealedSecret === null ? (
         <form onSubmit={submit} className="mt-4 space-y-4">
+          {target.kind === "pick" && (
+            <div className="space-y-1.5">
+              <Label>Platform</Label>
+              <SearchableSelect
+                value={platformId}
+                onValueChange={setPicked}
+                options={platformPickOptions(target.platforms)}
+                placeholder="Choose a platform"
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="key-name">Name</Label>
             <Input
@@ -339,7 +366,7 @@ function CreateKeyModal({
                     {group.scopes.map((scope) => (
                       <label
                         key={scope.id}
-                        className="flex cursor-pointer items-start gap-2.5 rounded-md px-1 py-1 hover:bg-white/[0.03]"
+                        className="flex cursor-pointer items-start gap-2.5 rounded-md px-1 py-1 hover:bg-ink/[0.05]"
                       >
                         <input
                           type="checkbox"
@@ -389,7 +416,7 @@ function CreateKeyModal({
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={busy || !name}>
+            <Button type="submit" size="sm" disabled={busy || !name || platformId === ""}>
               {busy ? "Creating…" : "Create key"}
             </Button>
           </div>

@@ -10,7 +10,6 @@ import {
   IconBroadcast,
   IconBuilding,
   IconCheck,
-  IconCode,
   IconCopy,
   IconDeviceGamepad2,
   IconKey,
@@ -50,30 +49,29 @@ type Command = {
 };
 
 const NAV: { id: string; label: string; icon: Icon; to: DashboardPath }[] = [
-  { id: "overview", label: "Overview", icon: IconLayoutDashboard, to: "/o/$orgSlug/overview" },
-  { id: "games", label: "Games", icon: IconDeviceGamepad2, to: "/o/$orgSlug/games" },
-  { id: "templates", label: "Templates", icon: IconLayout, to: "/o/$orgSlug/templates" },
-  { id: "platforms", label: "Platforms", icon: IconBroadcast, to: "/o/$orgSlug/platforms" },
-  { id: "assignments", label: "Assignments", icon: IconLink, to: "/o/$orgSlug/assignments" },
-  { id: "keys", label: "API keys", icon: IconKey, to: "/o/$orgSlug/keys" },
-  { id: "webhooks", label: "Webhooks", icon: IconWebhook, to: "/o/$orgSlug/webhooks" },
-  { id: "tournaments", label: "Tournaments", icon: IconMedal, to: "/o/$orgSlug/tournaments" },
-  { id: "matches", label: "Matches", icon: IconSwords, to: "/o/$orgSlug/matches" },
-  { id: "audit", label: "Audit", icon: IconList, to: "/o/$orgSlug/audit" },
-  { id: "usage", label: "Usage", icon: IconChartBar, to: "/o/$orgSlug/usage" },
-  { id: "developer", label: "Developer", icon: IconCode, to: "/o/$orgSlug/developer" },
-  { id: "members", label: "Members", icon: IconUsers, to: "/o/$orgSlug/settings/members" },
-  { id: "organization", label: "Organization", icon: IconBuilding, to: "/o/$orgSlug/settings/organization" },
-  { id: "account", label: "Account", icon: IconUser, to: "/o/$orgSlug/settings/account" },
-  { id: "danger", label: "Danger zone", icon: IconAlertTriangle, to: "/o/$orgSlug/settings/danger" },
+  { id: "overview", label: "Overview", icon: IconLayoutDashboard, to: "/$orgSlug/overview" },
+  { id: "games", label: "Games", icon: IconDeviceGamepad2, to: "/$orgSlug/games" },
+  { id: "templates", label: "Templates", icon: IconLayout, to: "/$orgSlug/templates" },
+  { id: "platforms", label: "Platforms", icon: IconBroadcast, to: "/$orgSlug/platforms" },
+  { id: "assignments", label: "Assignments", icon: IconLink, to: "/$orgSlug/assignments" },
+  { id: "keys", label: "API keys", icon: IconKey, to: "/$orgSlug/keys" },
+  { id: "webhooks", label: "Webhooks", icon: IconWebhook, to: "/$orgSlug/webhooks" },
+  { id: "tournaments", label: "Tournaments", icon: IconMedal, to: "/$orgSlug/tournaments" },
+  { id: "matches", label: "Matches", icon: IconSwords, to: "/$orgSlug/matches" },
+  { id: "audit", label: "Audit", icon: IconList, to: "/$orgSlug/audit" },
+  { id: "usage", label: "Usage", icon: IconChartBar, to: "/$orgSlug/usage" },
+  { id: "members", label: "Members", icon: IconUsers, to: "/$orgSlug/settings/members" },
+  { id: "organization", label: "Organization", icon: IconBuilding, to: "/$orgSlug/settings/organization" },
+  { id: "account", label: "Account", icon: IconUser, to: "/$orgSlug/settings/account" },
+  { id: "danger", label: "Danger zone", icon: IconAlertTriangle, to: "/$orgSlug/settings/danger" },
 ];
 
 const CREATE: { id: string; label: string; to: DashboardPath }[] = [
-  { id: "new-game", label: "New game", to: "/o/$orgSlug/games/new" },
-  { id: "new-template", label: "New template", to: "/o/$orgSlug/templates/new" },
-  { id: "new-platform", label: "New platform", to: "/o/$orgSlug/platforms/new" },
-  { id: "new-tournament", label: "New tournament", to: "/o/$orgSlug/tournaments/new" },
-  { id: "new-match", label: "New match", to: "/o/$orgSlug/matches/new" },
+  { id: "new-game", label: "New game", to: "/$orgSlug/games/new" },
+  { id: "new-template", label: "New template", to: "/$orgSlug/templates/new" },
+  { id: "new-platform", label: "New platform", to: "/$orgSlug/platforms/new" },
+  { id: "new-tournament", label: "New tournament", to: "/$orgSlug/tournaments/new" },
+  { id: "new-match", label: "New match", to: "/$orgSlug/matches/new" },
 ];
 
 export function CommandPalette({
@@ -84,7 +82,7 @@ export function CommandPalette({
   onOpenChange: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
-  const { orgSlug } = useParams({ from: "/o/$orgSlug" });
+  const { orgSlug } = useParams({ from: "/$orgSlug" });
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -269,7 +267,7 @@ export function CommandPalette({
           placeholder="Search pages, create actions, or commands…"
           className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
         />
-        <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <kbd className="rounded border border-border bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
           ESC
         </kbd>
       </div>
@@ -306,7 +304,7 @@ export function CommandPalette({
                     className={cn(
                       "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
                       isActive
-                        ? "bg-white/[0.06] text-foreground"
+                        ? "bg-ink/[0.08] text-foreground"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -315,7 +313,7 @@ export function CommandPalette({
                       {command.label}
                     </span>
                     {command.shortcut !== undefined && (
-                      <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      <kbd className="rounded border border-border bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                         {command.shortcut}
                       </kbd>
                     )}
@@ -329,11 +327,11 @@ export function CommandPalette({
 
       <div className="flex items-center justify-between border-t border-border px-4 py-2 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-2">
-          <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono">
+          <kbd className="rounded border border-border bg-ink/[0.05] px-1.5 py-0.5 font-mono">
             ↑↓
           </kbd>
           navigate
-          <kbd className="rounded border border-border bg-white/[0.03] px-1.5 py-0.5 font-mono">
+          <kbd className="rounded border border-border bg-ink/[0.05] px-1.5 py-0.5 font-mono">
             ↵
           </kbd>
           run

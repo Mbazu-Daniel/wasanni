@@ -8,19 +8,20 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_0_20px_-6px_rgba(255,46,136,0.8)] hover:bg-pink-soft",
-        blue: "bg-accent text-accent-foreground hover:bg-blue-soft",
+          "bg-primary text-primary-foreground shadow-[3px_3px_0_var(--color-pink)] hover:bg-blue hover:shadow-[3px_3px_0_var(--color-cyan)]",
+        blue: "bg-accent text-accent-foreground shadow-[3px_3px_0_var(--color-cyan)] hover:bg-[#5b45c4]",
         outline:
-          "border border-border bg-white/[0.02] text-foreground hover:border-pink/40 hover:bg-white/[0.06]",
-        ghost: "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground",
-        destructive: "bg-destructive text-white hover:bg-red-500",
-        link: "text-blue-soft underline-offset-4 hover:underline",
+          "border border-border bg-card text-foreground hover:border-ink/60 hover:bg-secondary",
+        ghost: "text-muted-foreground hover:bg-ink/[0.07] hover:text-foreground",
+        destructive: "bg-destructive text-paper hover:bg-[#e0573f]",
+        link: "text-blue underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-8 px-3 text-xs",
         default: "h-9 px-4",
         lg: "h-11 px-6 text-base",
         icon: "size-9",
+        "icon-sm": "size-8",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

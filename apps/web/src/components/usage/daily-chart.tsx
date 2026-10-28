@@ -44,7 +44,7 @@ export function DailyActivity({
               onClick={() => onMetricChange(option)}
               className={
                 metric === option
-                  ? "rounded bg-white/[0.06] px-2 py-1 text-foreground"
+                  ? "rounded bg-ink/[0.08] px-2 py-1 text-foreground"
                   : "rounded px-2 py-1 text-muted-foreground hover:text-foreground"
               }
             >
@@ -63,7 +63,13 @@ export function DailyActivity({
   );
 }
 
-function Chart({ rows }: { rows: UsageDailyRow[] }) {
+export function Chart({
+  rows,
+  format = (value) => value.toLocaleString(),
+}: {
+  rows: UsageDailyRow[];
+  format?: (value: number) => string;
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border px-4 py-16 text-center">
@@ -83,8 +89,8 @@ function Chart({ rows }: { rows: UsageDailyRow[] }) {
       <svg viewBox={`0 0 ${width} ${height + 28}`} className="w-full">
         <defs>
           <linearGradient id="usageBar" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#ff2e88" />
-            <stop offset="100%" stopColor="#2e7bff" />
+            <stop offset="0%" stopColor="var(--color-pink)" />
+            <stop offset="100%" stopColor="var(--color-blue)" />
           </linearGradient>
         </defs>
 
@@ -96,7 +102,7 @@ function Chart({ rows }: { rows: UsageDailyRow[] }) {
           return (
             <g key={row.date}>
               <title>
-                {row.date}: {row.value}
+                {row.date}: {format(row.value)}
               </title>
               <motion.rect
                 x={x}
@@ -133,7 +139,7 @@ function Chart({ rows }: { rows: UsageDailyRow[] }) {
           y1={height}
           x2={width}
           y2={height}
-          stroke="rgba(122,184,255,0.15)"
+          stroke="var(--launch-line-strong)"
         />
       </svg>
     </div>

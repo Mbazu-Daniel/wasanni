@@ -111,7 +111,7 @@ export function PlatformWebhooksPanel({
         `/api/v1/organizations/${organizationId}/platforms/${platformId}/webhooks/${row.id}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ enabled }),
+          data: JSON.stringify({ enabled }),
         },
       );
       refresh();
@@ -275,7 +275,7 @@ export function PlatformWebhooksPanel({
           }
         }}
         organizationId={organizationId}
-        platformId={platformId}
+        target={{ kind: "fixed", platformId }}
         onCreated={(secret) => {
           setRevealedSecret(secret);
           setAcknowledged(false);

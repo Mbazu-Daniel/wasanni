@@ -9,9 +9,9 @@ export function Badge({
   variant?: "muted" | "default" | "blue" | "success" | "warning";
 }) {
   const variants = {
-    muted: "border-border bg-white/[0.03] text-muted-foreground",
-    default: "border-pink/30 bg-pink/10 text-pink-soft",
-    blue: "border-blue/30 bg-blue/10 text-blue-soft",
+    muted: "border-border bg-ink/[0.05] text-muted-foreground",
+    default: "border-pink/30 bg-pink/10 text-pink",
+    blue: "border-blue/30 bg-blue/10 text-blue",
     success: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
     warning: "border-amber-400/30 bg-amber-400/10 text-amber-300",
   };

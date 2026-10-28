@@ -10,55 +10,65 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrgSlugRouteRouteImport } from './routes/$orgSlug/route'
+import { Route as DocsRouteRouteImport } from './routes/docs/route'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as LandingRouteImport } from './routes/landing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as OrgSlugOverviewRouteImport } from './routes/$orgSlug/overview'
+import { Route as OrgSlugSettingsRouteRouteImport } from './routes/$orgSlug/settings/route'
 import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
-import { Route as OOrgSlugRouteRouteImport } from './routes/o/$orgSlug/route'
-import { Route as OOrgSlugOverviewRouteImport } from './routes/o/$orgSlug/overview'
-import { Route as OOrgSlugAssignmentsIndexRouteImport } from './routes/o/$orgSlug/assignments/index'
-import { Route as OOrgSlugAuditIndexRouteImport } from './routes/o/$orgSlug/audit/index'
-import { Route as OOrgSlugDeveloperIndexRouteImport } from './routes/o/$orgSlug/developer/index'
-import { Route as OOrgSlugGamesIndexRouteImport } from './routes/o/$orgSlug/games/index'
-import { Route as OOrgSlugGamesNewRouteImport } from './routes/o/$orgSlug/games/new'
-import { Route as OOrgSlugKeysIndexRouteImport } from './routes/o/$orgSlug/keys/index'
-import { Route as OOrgSlugMatchesIndexRouteImport } from './routes/o/$orgSlug/matches/index'
-import { Route as OOrgSlugMatchesMatchIdRouteImport } from './routes/o/$orgSlug/matches/$matchId'
-import { Route as OOrgSlugMatchesNewRouteImport } from './routes/o/$orgSlug/matches/new'
-import { Route as OOrgSlugPlatformsIndexRouteImport } from './routes/o/$orgSlug/platforms/index'
-import { Route as OOrgSlugPlatformsPlatformSlugRouteImport } from './routes/o/$orgSlug/platforms/$platformSlug'
-import { Route as OOrgSlugPlatformsNewRouteImport } from './routes/o/$orgSlug/platforms/new'
-import { Route as OOrgSlugSettingsAccountRouteImport } from './routes/o/$orgSlug/settings/account'
-import { Route as OOrgSlugSettingsDangerRouteImport } from './routes/o/$orgSlug/settings/danger'
-import { Route as OOrgSlugSettingsMembersRouteImport } from './routes/o/$orgSlug/settings/members'
-import { Route as OOrgSlugSettingsOrganizationRouteImport } from './routes/o/$orgSlug/settings/organization'
-import { Route as OOrgSlugTemplatesIndexRouteImport } from './routes/o/$orgSlug/templates/index'
-import { Route as OOrgSlugTemplatesTemplateIdRouteImport } from './routes/o/$orgSlug/templates/$templateId'
-import { Route as OOrgSlugTemplatesNewRouteImport } from './routes/o/$orgSlug/templates/new'
-import { Route as OOrgSlugTournamentsIndexRouteImport } from './routes/o/$orgSlug/tournaments/index'
-import { Route as OOrgSlugTournamentsTournamentSlugRouteImport } from './routes/o/$orgSlug/tournaments/$tournamentSlug'
-import { Route as OOrgSlugTournamentsNewRouteImport } from './routes/o/$orgSlug/tournaments/new'
-import { Route as OOrgSlugUsageIndexRouteImport } from './routes/o/$orgSlug/usage/index'
-import { Route as OOrgSlugWebhooksIndexRouteImport } from './routes/o/$orgSlug/webhooks/index'
-import { Route as OOrgSlugGamesGameSlugIndexRouteImport } from './routes/o/$orgSlug/games/$gameSlug/index'
-import { Route as OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport } from './routes/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+import { Route as DocsIndexRouteImport } from './routes/docs/index'
+import { Route as DocsSlugRouteImport } from './routes/docs/$slug'
+import { Route as OrgSlugAgentsIndexRouteImport } from './routes/$orgSlug/agents/index'
+import { Route as OrgSlugAssignmentsIndexRouteImport } from './routes/$orgSlug/assignments/index'
+import { Route as OrgSlugAuditIndexRouteImport } from './routes/$orgSlug/audit/index'
+import { Route as OrgSlugGamesIndexRouteImport } from './routes/$orgSlug/games/index'
+import { Route as OrgSlugGamesNewRouteImport } from './routes/$orgSlug/games/new'
+import { Route as OrgSlugKeysIndexRouteImport } from './routes/$orgSlug/keys/index'
+import { Route as OrgSlugMatchesIndexRouteImport } from './routes/$orgSlug/matches/index'
+import { Route as OrgSlugMatchesMatchIdRouteImport } from './routes/$orgSlug/matches/$matchId'
+import { Route as OrgSlugMatchesNewRouteImport } from './routes/$orgSlug/matches/new'
+import { Route as OrgSlugPlatformsIndexRouteImport } from './routes/$orgSlug/platforms/index'
+import { Route as OrgSlugPlatformsPlatformSlugRouteImport } from './routes/$orgSlug/platforms/$platformSlug'
+import { Route as OrgSlugPlatformsNewRouteImport } from './routes/$orgSlug/platforms/new'
+import { Route as OrgSlugSettingsIndexRouteImport } from './routes/$orgSlug/settings/index'
+import { Route as OrgSlugSettingsAccountRouteImport } from './routes/$orgSlug/settings/account'
+import { Route as OrgSlugSettingsDangerRouteImport } from './routes/$orgSlug/settings/danger'
+import { Route as OrgSlugSettingsMembersRouteImport } from './routes/$orgSlug/settings/members'
+import { Route as OrgSlugSettingsOrganizationRouteImport } from './routes/$orgSlug/settings/organization'
+import { Route as OrgSlugSettingsProvidersRouteImport } from './routes/$orgSlug/settings/providers'
+import { Route as OrgSlugTemplatesIndexRouteImport } from './routes/$orgSlug/templates/index'
+import { Route as OrgSlugTemplatesTemplateIdRouteImport } from './routes/$orgSlug/templates/$templateId'
+import { Route as OrgSlugTemplatesNewRouteImport } from './routes/$orgSlug/templates/new'
+import { Route as OrgSlugTournamentsIndexRouteImport } from './routes/$orgSlug/tournaments/index'
+import { Route as OrgSlugTournamentsTournamentSlugRouteImport } from './routes/$orgSlug/tournaments/$tournamentSlug'
+import { Route as OrgSlugTournamentsNewRouteImport } from './routes/$orgSlug/tournaments/new'
+import { Route as OrgSlugUsageIndexRouteImport } from './routes/$orgSlug/usage/index'
+import { Route as OrgSlugWebhooksIndexRouteImport } from './routes/$orgSlug/webhooks/index'
+import { Route as OrgSlugGamesGameSlugIndexRouteImport } from './routes/$orgSlug/games/$gameSlug/index'
+import { Route as OrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport } from './routes/$orgSlug/games/$gameSlug/assignments/$platformSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrgSlugRouteRoute = OrgSlugRouteRouteImport.update({
+  id: '/$orgSlug',
+  path: '/$orgSlug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRouteRoute = DocsRouteRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LandingRoute = LandingRouteImport.update({
-  id: '/landing',
-  path: '/landing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -81,401 +91,446 @@ const SignUpRoute = SignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrgSlugOverviewRoute = OrgSlugOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugSettingsRouteRoute = OrgSlugSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
 const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
   id: '/accept-invitation/$id',
   path: '/accept-invitation/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OOrgSlugRouteRoute = OOrgSlugRouteRouteImport.update({
-  id: '/o/$orgSlug',
-  path: '/o/$orgSlug',
-  getParentRoute: () => rootRouteImport,
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocsRouteRoute,
 } as any)
-const OOrgSlugOverviewRoute = OOrgSlugOverviewRouteImport.update({
-  id: '/overview',
-  path: '/overview',
-  getParentRoute: () => OOrgSlugRouteRoute,
+const DocsSlugRoute = DocsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => DocsRouteRoute,
 } as any)
-const OOrgSlugAssignmentsIndexRoute =
-  OOrgSlugAssignmentsIndexRouteImport.update({
-    id: '/assignments/',
-    path: '/assignments/',
-    getParentRoute: () => OOrgSlugRouteRoute,
-  } as any)
-const OOrgSlugAuditIndexRoute = OOrgSlugAuditIndexRouteImport.update({
+const OrgSlugAgentsIndexRoute = OrgSlugAgentsIndexRouteImport.update({
+  id: '/agents/',
+  path: '/agents/',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugAssignmentsIndexRoute = OrgSlugAssignmentsIndexRouteImport.update({
+  id: '/assignments/',
+  path: '/assignments/',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugAuditIndexRoute = OrgSlugAuditIndexRouteImport.update({
   id: '/audit/',
   path: '/audit/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugDeveloperIndexRoute = OOrgSlugDeveloperIndexRouteImport.update({
-  id: '/developer/',
-  path: '/developer/',
-  getParentRoute: () => OOrgSlugRouteRoute,
-} as any)
-const OOrgSlugGamesIndexRoute = OOrgSlugGamesIndexRouteImport.update({
+const OrgSlugGamesIndexRoute = OrgSlugGamesIndexRouteImport.update({
   id: '/games/',
   path: '/games/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugGamesNewRoute = OOrgSlugGamesNewRouteImport.update({
+const OrgSlugGamesNewRoute = OrgSlugGamesNewRouteImport.update({
   id: '/games/new',
   path: '/games/new',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugKeysIndexRoute = OOrgSlugKeysIndexRouteImport.update({
+const OrgSlugKeysIndexRoute = OrgSlugKeysIndexRouteImport.update({
   id: '/keys/',
   path: '/keys/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugMatchesIndexRoute = OOrgSlugMatchesIndexRouteImport.update({
+const OrgSlugMatchesIndexRoute = OrgSlugMatchesIndexRouteImport.update({
   id: '/matches/',
   path: '/matches/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugMatchesMatchIdRoute = OOrgSlugMatchesMatchIdRouteImport.update({
+const OrgSlugMatchesMatchIdRoute = OrgSlugMatchesMatchIdRouteImport.update({
   id: '/matches/$matchId',
   path: '/matches/$matchId',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugMatchesNewRoute = OOrgSlugMatchesNewRouteImport.update({
+const OrgSlugMatchesNewRoute = OrgSlugMatchesNewRouteImport.update({
   id: '/matches/new',
   path: '/matches/new',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugPlatformsIndexRoute = OOrgSlugPlatformsIndexRouteImport.update({
+const OrgSlugPlatformsIndexRoute = OrgSlugPlatformsIndexRouteImport.update({
   id: '/platforms/',
   path: '/platforms/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugPlatformsPlatformSlugRoute =
-  OOrgSlugPlatformsPlatformSlugRouteImport.update({
+const OrgSlugPlatformsPlatformSlugRoute =
+  OrgSlugPlatformsPlatformSlugRouteImport.update({
     id: '/platforms/$platformSlug',
     path: '/platforms/$platformSlug',
-    getParentRoute: () => OOrgSlugRouteRoute,
+    getParentRoute: () => OrgSlugRouteRoute,
   } as any)
-const OOrgSlugPlatformsNewRoute = OOrgSlugPlatformsNewRouteImport.update({
+const OrgSlugPlatformsNewRoute = OrgSlugPlatformsNewRouteImport.update({
   id: '/platforms/new',
   path: '/platforms/new',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugSettingsAccountRoute = OOrgSlugSettingsAccountRouteImport.update({
-  id: '/settings/account',
-  path: '/settings/account',
-  getParentRoute: () => OOrgSlugRouteRoute,
+const OrgSlugSettingsIndexRoute = OrgSlugSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrgSlugSettingsRouteRoute,
 } as any)
-const OOrgSlugSettingsDangerRoute = OOrgSlugSettingsDangerRouteImport.update({
-  id: '/settings/danger',
-  path: '/settings/danger',
-  getParentRoute: () => OOrgSlugRouteRoute,
+const OrgSlugSettingsAccountRoute = OrgSlugSettingsAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => OrgSlugSettingsRouteRoute,
 } as any)
-const OOrgSlugSettingsMembersRoute = OOrgSlugSettingsMembersRouteImport.update({
-  id: '/settings/members',
-  path: '/settings/members',
-  getParentRoute: () => OOrgSlugRouteRoute,
+const OrgSlugSettingsDangerRoute = OrgSlugSettingsDangerRouteImport.update({
+  id: '/danger',
+  path: '/danger',
+  getParentRoute: () => OrgSlugSettingsRouteRoute,
 } as any)
-const OOrgSlugSettingsOrganizationRoute =
-  OOrgSlugSettingsOrganizationRouteImport.update({
-    id: '/settings/organization',
-    path: '/settings/organization',
-    getParentRoute: () => OOrgSlugRouteRoute,
+const OrgSlugSettingsMembersRoute = OrgSlugSettingsMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => OrgSlugSettingsRouteRoute,
+} as any)
+const OrgSlugSettingsOrganizationRoute =
+  OrgSlugSettingsOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
+    getParentRoute: () => OrgSlugSettingsRouteRoute,
   } as any)
-const OOrgSlugTemplatesIndexRoute = OOrgSlugTemplatesIndexRouteImport.update({
+const OrgSlugSettingsProvidersRoute =
+  OrgSlugSettingsProvidersRouteImport.update({
+    id: '/providers',
+    path: '/providers',
+    getParentRoute: () => OrgSlugSettingsRouteRoute,
+  } as any)
+const OrgSlugTemplatesIndexRoute = OrgSlugTemplatesIndexRouteImport.update({
   id: '/templates/',
   path: '/templates/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugTemplatesTemplateIdRoute =
-  OOrgSlugTemplatesTemplateIdRouteImport.update({
+const OrgSlugTemplatesTemplateIdRoute =
+  OrgSlugTemplatesTemplateIdRouteImport.update({
     id: '/templates/$templateId',
     path: '/templates/$templateId',
-    getParentRoute: () => OOrgSlugRouteRoute,
+    getParentRoute: () => OrgSlugRouteRoute,
   } as any)
-const OOrgSlugTemplatesNewRoute = OOrgSlugTemplatesNewRouteImport.update({
+const OrgSlugTemplatesNewRoute = OrgSlugTemplatesNewRouteImport.update({
   id: '/templates/new',
   path: '/templates/new',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugTournamentsIndexRoute =
-  OOrgSlugTournamentsIndexRouteImport.update({
-    id: '/tournaments/',
-    path: '/tournaments/',
-    getParentRoute: () => OOrgSlugRouteRoute,
-  } as any)
-const OOrgSlugTournamentsTournamentSlugRoute =
-  OOrgSlugTournamentsTournamentSlugRouteImport.update({
+const OrgSlugTournamentsIndexRoute = OrgSlugTournamentsIndexRouteImport.update({
+  id: '/tournaments/',
+  path: '/tournaments/',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugTournamentsTournamentSlugRoute =
+  OrgSlugTournamentsTournamentSlugRouteImport.update({
     id: '/tournaments/$tournamentSlug',
     path: '/tournaments/$tournamentSlug',
-    getParentRoute: () => OOrgSlugRouteRoute,
+    getParentRoute: () => OrgSlugRouteRoute,
   } as any)
-const OOrgSlugTournamentsNewRoute = OOrgSlugTournamentsNewRouteImport.update({
+const OrgSlugTournamentsNewRoute = OrgSlugTournamentsNewRouteImport.update({
   id: '/tournaments/new',
   path: '/tournaments/new',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugUsageIndexRoute = OOrgSlugUsageIndexRouteImport.update({
+const OrgSlugUsageIndexRoute = OrgSlugUsageIndexRouteImport.update({
   id: '/usage/',
   path: '/usage/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugWebhooksIndexRoute = OOrgSlugWebhooksIndexRouteImport.update({
+const OrgSlugWebhooksIndexRoute = OrgSlugWebhooksIndexRouteImport.update({
   id: '/webhooks/',
   path: '/webhooks/',
-  getParentRoute: () => OOrgSlugRouteRoute,
+  getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OOrgSlugGamesGameSlugIndexRoute =
-  OOrgSlugGamesGameSlugIndexRouteImport.update({
+const OrgSlugGamesGameSlugIndexRoute =
+  OrgSlugGamesGameSlugIndexRouteImport.update({
     id: '/games/$gameSlug/',
     path: '/games/$gameSlug/',
-    getParentRoute: () => OOrgSlugRouteRoute,
+    getParentRoute: () => OrgSlugRouteRoute,
   } as any)
-const OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute =
-  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport.update({
+const OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute =
+  OrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport.update({
     id: '/games/$gameSlug/assignments/$platformSlug',
     path: '/games/$gameSlug/assignments/$platformSlug',
-    getParentRoute: () => OOrgSlugRouteRoute,
+    getParentRoute: () => OrgSlugRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$orgSlug': typeof OrgSlugRouteRouteWithChildren
+  '/docs': typeof DocsRouteRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/$orgSlug/settings': typeof OrgSlugSettingsRouteRouteWithChildren
+  '/$orgSlug/overview': typeof OrgSlugOverviewRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
-  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
-  '/o/$orgSlug/games/new': typeof OOrgSlugGamesNewRoute
-  '/o/$orgSlug/matches/$matchId': typeof OOrgSlugMatchesMatchIdRoute
-  '/o/$orgSlug/matches/new': typeof OOrgSlugMatchesNewRoute
-  '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
-  '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
-  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
-  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
-  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
-  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
-  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
-  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
-  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
-  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
-  '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
-  '/o/$orgSlug/audit/': typeof OOrgSlugAuditIndexRoute
-  '/o/$orgSlug/developer/': typeof OOrgSlugDeveloperIndexRoute
-  '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
-  '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
-  '/o/$orgSlug/matches/': typeof OOrgSlugMatchesIndexRoute
-  '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
-  '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
-  '/o/$orgSlug/tournaments/': typeof OOrgSlugTournamentsIndexRoute
-  '/o/$orgSlug/usage/': typeof OOrgSlugUsageIndexRoute
-  '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
-  '/o/$orgSlug/games/$gameSlug/': typeof OOrgSlugGamesGameSlugIndexRoute
-  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs/': typeof DocsIndexRoute
+  '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
+  '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
+  '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
+  '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
+  '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
+  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
+  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
+  '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
+  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
+  '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
+  '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
+  '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
+  '/$orgSlug/agents/': typeof OrgSlugAgentsIndexRoute
+  '/$orgSlug/assignments/': typeof OrgSlugAssignmentsIndexRoute
+  '/$orgSlug/audit/': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/games/': typeof OrgSlugGamesIndexRoute
+  '/$orgSlug/keys/': typeof OrgSlugKeysIndexRoute
+  '/$orgSlug/matches/': typeof OrgSlugMatchesIndexRoute
+  '/$orgSlug/platforms/': typeof OrgSlugPlatformsIndexRoute
+  '/$orgSlug/settings/': typeof OrgSlugSettingsIndexRoute
+  '/$orgSlug/templates/': typeof OrgSlugTemplatesIndexRoute
+  '/$orgSlug/tournaments/': typeof OrgSlugTournamentsIndexRoute
+  '/$orgSlug/usage/': typeof OrgSlugUsageIndexRoute
+  '/$orgSlug/webhooks/': typeof OrgSlugWebhooksIndexRoute
+  '/$orgSlug/games/$gameSlug/': typeof OrgSlugGamesGameSlugIndexRoute
+  '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$orgSlug': typeof OrgSlugRouteRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/$orgSlug/overview': typeof OrgSlugOverviewRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
-  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
-  '/o/$orgSlug/games/new': typeof OOrgSlugGamesNewRoute
-  '/o/$orgSlug/matches/$matchId': typeof OOrgSlugMatchesMatchIdRoute
-  '/o/$orgSlug/matches/new': typeof OOrgSlugMatchesNewRoute
-  '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
-  '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
-  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
-  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
-  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
-  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
-  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
-  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
-  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
-  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
-  '/o/$orgSlug/assignments': typeof OOrgSlugAssignmentsIndexRoute
-  '/o/$orgSlug/audit': typeof OOrgSlugAuditIndexRoute
-  '/o/$orgSlug/developer': typeof OOrgSlugDeveloperIndexRoute
-  '/o/$orgSlug/games': typeof OOrgSlugGamesIndexRoute
-  '/o/$orgSlug/keys': typeof OOrgSlugKeysIndexRoute
-  '/o/$orgSlug/matches': typeof OOrgSlugMatchesIndexRoute
-  '/o/$orgSlug/platforms': typeof OOrgSlugPlatformsIndexRoute
-  '/o/$orgSlug/templates': typeof OOrgSlugTemplatesIndexRoute
-  '/o/$orgSlug/tournaments': typeof OOrgSlugTournamentsIndexRoute
-  '/o/$orgSlug/usage': typeof OOrgSlugUsageIndexRoute
-  '/o/$orgSlug/webhooks': typeof OOrgSlugWebhooksIndexRoute
-  '/o/$orgSlug/games/$gameSlug': typeof OOrgSlugGamesGameSlugIndexRoute
-  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs': typeof DocsIndexRoute
+  '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
+  '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
+  '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
+  '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
+  '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
+  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
+  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
+  '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
+  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
+  '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
+  '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
+  '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
+  '/$orgSlug/agents': typeof OrgSlugAgentsIndexRoute
+  '/$orgSlug/assignments': typeof OrgSlugAssignmentsIndexRoute
+  '/$orgSlug/audit': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/games': typeof OrgSlugGamesIndexRoute
+  '/$orgSlug/keys': typeof OrgSlugKeysIndexRoute
+  '/$orgSlug/matches': typeof OrgSlugMatchesIndexRoute
+  '/$orgSlug/platforms': typeof OrgSlugPlatformsIndexRoute
+  '/$orgSlug/settings': typeof OrgSlugSettingsIndexRoute
+  '/$orgSlug/templates': typeof OrgSlugTemplatesIndexRoute
+  '/$orgSlug/tournaments': typeof OrgSlugTournamentsIndexRoute
+  '/$orgSlug/usage': typeof OrgSlugUsageIndexRoute
+  '/$orgSlug/webhooks': typeof OrgSlugWebhooksIndexRoute
+  '/$orgSlug/games/$gameSlug': typeof OrgSlugGamesGameSlugIndexRoute
+  '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$orgSlug': typeof OrgSlugRouteRouteWithChildren
+  '/docs': typeof DocsRouteRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
-  '/landing': typeof LandingRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/o/$orgSlug': typeof OOrgSlugRouteRouteWithChildren
+  '/$orgSlug/settings': typeof OrgSlugSettingsRouteRouteWithChildren
+  '/$orgSlug/overview': typeof OrgSlugOverviewRoute
   '/accept-invitation/$id': typeof AcceptInvitationIdRoute
-  '/o/$orgSlug/overview': typeof OOrgSlugOverviewRoute
-  '/o/$orgSlug/games/new': typeof OOrgSlugGamesNewRoute
-  '/o/$orgSlug/matches/$matchId': typeof OOrgSlugMatchesMatchIdRoute
-  '/o/$orgSlug/matches/new': typeof OOrgSlugMatchesNewRoute
-  '/o/$orgSlug/platforms/$platformSlug': typeof OOrgSlugPlatformsPlatformSlugRoute
-  '/o/$orgSlug/platforms/new': typeof OOrgSlugPlatformsNewRoute
-  '/o/$orgSlug/settings/account': typeof OOrgSlugSettingsAccountRoute
-  '/o/$orgSlug/settings/danger': typeof OOrgSlugSettingsDangerRoute
-  '/o/$orgSlug/settings/members': typeof OOrgSlugSettingsMembersRoute
-  '/o/$orgSlug/settings/organization': typeof OOrgSlugSettingsOrganizationRoute
-  '/o/$orgSlug/templates/$templateId': typeof OOrgSlugTemplatesTemplateIdRoute
-  '/o/$orgSlug/templates/new': typeof OOrgSlugTemplatesNewRoute
-  '/o/$orgSlug/tournaments/$tournamentSlug': typeof OOrgSlugTournamentsTournamentSlugRoute
-  '/o/$orgSlug/tournaments/new': typeof OOrgSlugTournamentsNewRoute
-  '/o/$orgSlug/assignments/': typeof OOrgSlugAssignmentsIndexRoute
-  '/o/$orgSlug/audit/': typeof OOrgSlugAuditIndexRoute
-  '/o/$orgSlug/developer/': typeof OOrgSlugDeveloperIndexRoute
-  '/o/$orgSlug/games/': typeof OOrgSlugGamesIndexRoute
-  '/o/$orgSlug/keys/': typeof OOrgSlugKeysIndexRoute
-  '/o/$orgSlug/matches/': typeof OOrgSlugMatchesIndexRoute
-  '/o/$orgSlug/platforms/': typeof OOrgSlugPlatformsIndexRoute
-  '/o/$orgSlug/templates/': typeof OOrgSlugTemplatesIndexRoute
-  '/o/$orgSlug/tournaments/': typeof OOrgSlugTournamentsIndexRoute
-  '/o/$orgSlug/usage/': typeof OOrgSlugUsageIndexRoute
-  '/o/$orgSlug/webhooks/': typeof OOrgSlugWebhooksIndexRoute
-  '/o/$orgSlug/games/$gameSlug/': typeof OOrgSlugGamesGameSlugIndexRoute
-  '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
+  '/docs/$slug': typeof DocsSlugRoute
+  '/docs/': typeof DocsIndexRoute
+  '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
+  '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
+  '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
+  '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
+  '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
+  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
+  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
+  '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
+  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
+  '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
+  '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
+  '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
+  '/$orgSlug/agents/': typeof OrgSlugAgentsIndexRoute
+  '/$orgSlug/assignments/': typeof OrgSlugAssignmentsIndexRoute
+  '/$orgSlug/audit/': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/games/': typeof OrgSlugGamesIndexRoute
+  '/$orgSlug/keys/': typeof OrgSlugKeysIndexRoute
+  '/$orgSlug/matches/': typeof OrgSlugMatchesIndexRoute
+  '/$orgSlug/platforms/': typeof OrgSlugPlatformsIndexRoute
+  '/$orgSlug/settings/': typeof OrgSlugSettingsIndexRoute
+  '/$orgSlug/templates/': typeof OrgSlugTemplatesIndexRoute
+  '/$orgSlug/tournaments/': typeof OrgSlugTournamentsIndexRoute
+  '/$orgSlug/usage/': typeof OrgSlugUsageIndexRoute
+  '/$orgSlug/webhooks/': typeof OrgSlugWebhooksIndexRoute
+  '/$orgSlug/games/$gameSlug/': typeof OrgSlugGamesGameSlugIndexRoute
+  '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$orgSlug'
+    | '/docs'
     | '/forgot-password'
-    | '/landing'
     | '/onboarding'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
-    | '/o/$orgSlug'
+    | '/$orgSlug/settings'
+    | '/$orgSlug/overview'
     | '/accept-invitation/$id'
-    | '/o/$orgSlug/overview'
-    | '/o/$orgSlug/games/new'
-    | '/o/$orgSlug/matches/$matchId'
-    | '/o/$orgSlug/matches/new'
-    | '/o/$orgSlug/platforms/$platformSlug'
-    | '/o/$orgSlug/platforms/new'
-    | '/o/$orgSlug/settings/account'
-    | '/o/$orgSlug/settings/danger'
-    | '/o/$orgSlug/settings/members'
-    | '/o/$orgSlug/settings/organization'
-    | '/o/$orgSlug/templates/$templateId'
-    | '/o/$orgSlug/templates/new'
-    | '/o/$orgSlug/tournaments/$tournamentSlug'
-    | '/o/$orgSlug/tournaments/new'
-    | '/o/$orgSlug/assignments/'
-    | '/o/$orgSlug/audit/'
-    | '/o/$orgSlug/developer/'
-    | '/o/$orgSlug/games/'
-    | '/o/$orgSlug/keys/'
-    | '/o/$orgSlug/matches/'
-    | '/o/$orgSlug/platforms/'
-    | '/o/$orgSlug/templates/'
-    | '/o/$orgSlug/tournaments/'
-    | '/o/$orgSlug/usage/'
-    | '/o/$orgSlug/webhooks/'
-    | '/o/$orgSlug/games/$gameSlug/'
-    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+    | '/docs/$slug'
+    | '/docs/'
+    | '/$orgSlug/games/new'
+    | '/$orgSlug/matches/$matchId'
+    | '/$orgSlug/matches/new'
+    | '/$orgSlug/platforms/$platformSlug'
+    | '/$orgSlug/platforms/new'
+    | '/$orgSlug/settings/account'
+    | '/$orgSlug/settings/danger'
+    | '/$orgSlug/settings/members'
+    | '/$orgSlug/settings/organization'
+    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/templates/$templateId'
+    | '/$orgSlug/templates/new'
+    | '/$orgSlug/tournaments/$tournamentSlug'
+    | '/$orgSlug/tournaments/new'
+    | '/$orgSlug/agents/'
+    | '/$orgSlug/assignments/'
+    | '/$orgSlug/audit/'
+    | '/$orgSlug/games/'
+    | '/$orgSlug/keys/'
+    | '/$orgSlug/matches/'
+    | '/$orgSlug/platforms/'
+    | '/$orgSlug/settings/'
+    | '/$orgSlug/templates/'
+    | '/$orgSlug/tournaments/'
+    | '/$orgSlug/usage/'
+    | '/$orgSlug/webhooks/'
+    | '/$orgSlug/games/$gameSlug/'
+    | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$orgSlug'
     | '/forgot-password'
-    | '/landing'
     | '/onboarding'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
-    | '/o/$orgSlug'
+    | '/$orgSlug/overview'
     | '/accept-invitation/$id'
-    | '/o/$orgSlug/overview'
-    | '/o/$orgSlug/games/new'
-    | '/o/$orgSlug/matches/$matchId'
-    | '/o/$orgSlug/matches/new'
-    | '/o/$orgSlug/platforms/$platformSlug'
-    | '/o/$orgSlug/platforms/new'
-    | '/o/$orgSlug/settings/account'
-    | '/o/$orgSlug/settings/danger'
-    | '/o/$orgSlug/settings/members'
-    | '/o/$orgSlug/settings/organization'
-    | '/o/$orgSlug/templates/$templateId'
-    | '/o/$orgSlug/templates/new'
-    | '/o/$orgSlug/tournaments/$tournamentSlug'
-    | '/o/$orgSlug/tournaments/new'
-    | '/o/$orgSlug/assignments'
-    | '/o/$orgSlug/audit'
-    | '/o/$orgSlug/developer'
-    | '/o/$orgSlug/games'
-    | '/o/$orgSlug/keys'
-    | '/o/$orgSlug/matches'
-    | '/o/$orgSlug/platforms'
-    | '/o/$orgSlug/templates'
-    | '/o/$orgSlug/tournaments'
-    | '/o/$orgSlug/usage'
-    | '/o/$orgSlug/webhooks'
-    | '/o/$orgSlug/games/$gameSlug'
-    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+    | '/docs/$slug'
+    | '/docs'
+    | '/$orgSlug/games/new'
+    | '/$orgSlug/matches/$matchId'
+    | '/$orgSlug/matches/new'
+    | '/$orgSlug/platforms/$platformSlug'
+    | '/$orgSlug/platforms/new'
+    | '/$orgSlug/settings/account'
+    | '/$orgSlug/settings/danger'
+    | '/$orgSlug/settings/members'
+    | '/$orgSlug/settings/organization'
+    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/templates/$templateId'
+    | '/$orgSlug/templates/new'
+    | '/$orgSlug/tournaments/$tournamentSlug'
+    | '/$orgSlug/tournaments/new'
+    | '/$orgSlug/agents'
+    | '/$orgSlug/assignments'
+    | '/$orgSlug/audit'
+    | '/$orgSlug/games'
+    | '/$orgSlug/keys'
+    | '/$orgSlug/matches'
+    | '/$orgSlug/platforms'
+    | '/$orgSlug/settings'
+    | '/$orgSlug/templates'
+    | '/$orgSlug/tournaments'
+    | '/$orgSlug/usage'
+    | '/$orgSlug/webhooks'
+    | '/$orgSlug/games/$gameSlug'
+    | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   id:
     | '__root__'
     | '/'
+    | '/$orgSlug'
+    | '/docs'
     | '/forgot-password'
-    | '/landing'
     | '/onboarding'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
-    | '/o/$orgSlug'
+    | '/$orgSlug/settings'
+    | '/$orgSlug/overview'
     | '/accept-invitation/$id'
-    | '/o/$orgSlug/overview'
-    | '/o/$orgSlug/games/new'
-    | '/o/$orgSlug/matches/$matchId'
-    | '/o/$orgSlug/matches/new'
-    | '/o/$orgSlug/platforms/$platformSlug'
-    | '/o/$orgSlug/platforms/new'
-    | '/o/$orgSlug/settings/account'
-    | '/o/$orgSlug/settings/danger'
-    | '/o/$orgSlug/settings/members'
-    | '/o/$orgSlug/settings/organization'
-    | '/o/$orgSlug/templates/$templateId'
-    | '/o/$orgSlug/templates/new'
-    | '/o/$orgSlug/tournaments/$tournamentSlug'
-    | '/o/$orgSlug/tournaments/new'
-    | '/o/$orgSlug/assignments/'
-    | '/o/$orgSlug/audit/'
-    | '/o/$orgSlug/developer/'
-    | '/o/$orgSlug/games/'
-    | '/o/$orgSlug/keys/'
-    | '/o/$orgSlug/matches/'
-    | '/o/$orgSlug/platforms/'
-    | '/o/$orgSlug/templates/'
-    | '/o/$orgSlug/tournaments/'
-    | '/o/$orgSlug/usage/'
-    | '/o/$orgSlug/webhooks/'
-    | '/o/$orgSlug/games/$gameSlug/'
-    | '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+    | '/docs/$slug'
+    | '/docs/'
+    | '/$orgSlug/games/new'
+    | '/$orgSlug/matches/$matchId'
+    | '/$orgSlug/matches/new'
+    | '/$orgSlug/platforms/$platformSlug'
+    | '/$orgSlug/platforms/new'
+    | '/$orgSlug/settings/account'
+    | '/$orgSlug/settings/danger'
+    | '/$orgSlug/settings/members'
+    | '/$orgSlug/settings/organization'
+    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/templates/$templateId'
+    | '/$orgSlug/templates/new'
+    | '/$orgSlug/tournaments/$tournamentSlug'
+    | '/$orgSlug/tournaments/new'
+    | '/$orgSlug/agents/'
+    | '/$orgSlug/assignments/'
+    | '/$orgSlug/audit/'
+    | '/$orgSlug/games/'
+    | '/$orgSlug/keys/'
+    | '/$orgSlug/matches/'
+    | '/$orgSlug/platforms/'
+    | '/$orgSlug/settings/'
+    | '/$orgSlug/templates/'
+    | '/$orgSlug/tournaments/'
+    | '/$orgSlug/usage/'
+    | '/$orgSlug/webhooks/'
+    | '/$orgSlug/games/$gameSlug/'
+    | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OrgSlugRouteRoute: typeof OrgSlugRouteRouteWithChildren
+  DocsRouteRoute: typeof DocsRouteRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
-  LandingRoute: typeof LandingRoute
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
-  OOrgSlugRouteRoute: typeof OOrgSlugRouteRouteWithChildren
   AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
 }
 
@@ -488,18 +543,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$orgSlug': {
+      id: '/$orgSlug'
+      path: '/$orgSlug'
+      fullPath: '/$orgSlug'
+      preLoaderRoute: typeof OrgSlugRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forgot-password': {
       id: '/forgot-password'
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/landing': {
-      id: '/landing'
-      path: '/landing'
-      fullPath: '/landing'
-      preLoaderRoute: typeof LandingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -530,6 +592,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$orgSlug/overview': {
+      id: '/$orgSlug/overview'
+      path: '/overview'
+      fullPath: '/$orgSlug/overview'
+      preLoaderRoute: typeof OrgSlugOverviewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
+    '/$orgSlug/settings': {
+      id: '/$orgSlug/settings'
+      path: '/settings'
+      fullPath: '/$orgSlug/settings'
+      preLoaderRoute: typeof OrgSlugSettingsRouteRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
     '/accept-invitation/$id': {
       id: '/accept-invitation/$id'
       path: '/accept-invitation/$id'
@@ -537,280 +613,322 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AcceptInvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/o/$orgSlug': {
-      id: '/o/$orgSlug'
-      path: '/o/$orgSlug'
-      fullPath: '/o/$orgSlug'
-      preLoaderRoute: typeof OOrgSlugRouteRouteImport
-      parentRoute: typeof rootRouteImport
+    '/docs/': {
+      id: '/docs/'
+      path: '/'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof DocsRouteRoute
     }
-    '/o/$orgSlug/overview': {
-      id: '/o/$orgSlug/overview'
-      path: '/overview'
-      fullPath: '/o/$orgSlug/overview'
-      preLoaderRoute: typeof OOrgSlugOverviewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+    '/docs/$slug': {
+      id: '/docs/$slug'
+      path: '/$slug'
+      fullPath: '/docs/$slug'
+      preLoaderRoute: typeof DocsSlugRouteImport
+      parentRoute: typeof DocsRouteRoute
     }
-    '/o/$orgSlug/assignments/': {
-      id: '/o/$orgSlug/assignments/'
+    '/$orgSlug/agents/': {
+      id: '/$orgSlug/agents/'
+      path: '/agents'
+      fullPath: '/$orgSlug/agents/'
+      preLoaderRoute: typeof OrgSlugAgentsIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
+    '/$orgSlug/assignments/': {
+      id: '/$orgSlug/assignments/'
       path: '/assignments'
-      fullPath: '/o/$orgSlug/assignments/'
-      preLoaderRoute: typeof OOrgSlugAssignmentsIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/assignments/'
+      preLoaderRoute: typeof OrgSlugAssignmentsIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/audit/': {
-      id: '/o/$orgSlug/audit/'
+    '/$orgSlug/audit/': {
+      id: '/$orgSlug/audit/'
       path: '/audit'
-      fullPath: '/o/$orgSlug/audit/'
-      preLoaderRoute: typeof OOrgSlugAuditIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/audit/'
+      preLoaderRoute: typeof OrgSlugAuditIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/developer/': {
-      id: '/o/$orgSlug/developer/'
-      path: '/developer'
-      fullPath: '/o/$orgSlug/developer/'
-      preLoaderRoute: typeof OOrgSlugDeveloperIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
-    }
-    '/o/$orgSlug/games/': {
-      id: '/o/$orgSlug/games/'
+    '/$orgSlug/games/': {
+      id: '/$orgSlug/games/'
       path: '/games'
-      fullPath: '/o/$orgSlug/games/'
-      preLoaderRoute: typeof OOrgSlugGamesIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/games/'
+      preLoaderRoute: typeof OrgSlugGamesIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/games/new': {
-      id: '/o/$orgSlug/games/new'
+    '/$orgSlug/games/new': {
+      id: '/$orgSlug/games/new'
       path: '/games/new'
-      fullPath: '/o/$orgSlug/games/new'
-      preLoaderRoute: typeof OOrgSlugGamesNewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/games/new'
+      preLoaderRoute: typeof OrgSlugGamesNewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/keys/': {
-      id: '/o/$orgSlug/keys/'
+    '/$orgSlug/keys/': {
+      id: '/$orgSlug/keys/'
       path: '/keys'
-      fullPath: '/o/$orgSlug/keys/'
-      preLoaderRoute: typeof OOrgSlugKeysIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/keys/'
+      preLoaderRoute: typeof OrgSlugKeysIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/matches/': {
-      id: '/o/$orgSlug/matches/'
+    '/$orgSlug/matches/': {
+      id: '/$orgSlug/matches/'
       path: '/matches'
-      fullPath: '/o/$orgSlug/matches/'
-      preLoaderRoute: typeof OOrgSlugMatchesIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/matches/'
+      preLoaderRoute: typeof OrgSlugMatchesIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/matches/$matchId': {
-      id: '/o/$orgSlug/matches/$matchId'
+    '/$orgSlug/matches/$matchId': {
+      id: '/$orgSlug/matches/$matchId'
       path: '/matches/$matchId'
-      fullPath: '/o/$orgSlug/matches/$matchId'
-      preLoaderRoute: typeof OOrgSlugMatchesMatchIdRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/matches/$matchId'
+      preLoaderRoute: typeof OrgSlugMatchesMatchIdRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/matches/new': {
-      id: '/o/$orgSlug/matches/new'
+    '/$orgSlug/matches/new': {
+      id: '/$orgSlug/matches/new'
       path: '/matches/new'
-      fullPath: '/o/$orgSlug/matches/new'
-      preLoaderRoute: typeof OOrgSlugMatchesNewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/matches/new'
+      preLoaderRoute: typeof OrgSlugMatchesNewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/platforms/': {
-      id: '/o/$orgSlug/platforms/'
+    '/$orgSlug/platforms/': {
+      id: '/$orgSlug/platforms/'
       path: '/platforms'
-      fullPath: '/o/$orgSlug/platforms/'
-      preLoaderRoute: typeof OOrgSlugPlatformsIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/platforms/'
+      preLoaderRoute: typeof OrgSlugPlatformsIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/platforms/$platformSlug': {
-      id: '/o/$orgSlug/platforms/$platformSlug'
+    '/$orgSlug/platforms/$platformSlug': {
+      id: '/$orgSlug/platforms/$platformSlug'
       path: '/platforms/$platformSlug'
-      fullPath: '/o/$orgSlug/platforms/$platformSlug'
-      preLoaderRoute: typeof OOrgSlugPlatformsPlatformSlugRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/platforms/$platformSlug'
+      preLoaderRoute: typeof OrgSlugPlatformsPlatformSlugRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/platforms/new': {
-      id: '/o/$orgSlug/platforms/new'
+    '/$orgSlug/platforms/new': {
+      id: '/$orgSlug/platforms/new'
       path: '/platforms/new'
-      fullPath: '/o/$orgSlug/platforms/new'
-      preLoaderRoute: typeof OOrgSlugPlatformsNewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/platforms/new'
+      preLoaderRoute: typeof OrgSlugPlatformsNewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/settings/account': {
-      id: '/o/$orgSlug/settings/account'
-      path: '/settings/account'
-      fullPath: '/o/$orgSlug/settings/account'
-      preLoaderRoute: typeof OOrgSlugSettingsAccountRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+    '/$orgSlug/settings/': {
+      id: '/$orgSlug/settings/'
+      path: '/'
+      fullPath: '/$orgSlug/settings/'
+      preLoaderRoute: typeof OrgSlugSettingsIndexRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/o/$orgSlug/settings/danger': {
-      id: '/o/$orgSlug/settings/danger'
-      path: '/settings/danger'
-      fullPath: '/o/$orgSlug/settings/danger'
-      preLoaderRoute: typeof OOrgSlugSettingsDangerRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+    '/$orgSlug/settings/account': {
+      id: '/$orgSlug/settings/account'
+      path: '/account'
+      fullPath: '/$orgSlug/settings/account'
+      preLoaderRoute: typeof OrgSlugSettingsAccountRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/o/$orgSlug/settings/members': {
-      id: '/o/$orgSlug/settings/members'
-      path: '/settings/members'
-      fullPath: '/o/$orgSlug/settings/members'
-      preLoaderRoute: typeof OOrgSlugSettingsMembersRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+    '/$orgSlug/settings/danger': {
+      id: '/$orgSlug/settings/danger'
+      path: '/danger'
+      fullPath: '/$orgSlug/settings/danger'
+      preLoaderRoute: typeof OrgSlugSettingsDangerRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/o/$orgSlug/settings/organization': {
-      id: '/o/$orgSlug/settings/organization'
-      path: '/settings/organization'
-      fullPath: '/o/$orgSlug/settings/organization'
-      preLoaderRoute: typeof OOrgSlugSettingsOrganizationRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+    '/$orgSlug/settings/members': {
+      id: '/$orgSlug/settings/members'
+      path: '/members'
+      fullPath: '/$orgSlug/settings/members'
+      preLoaderRoute: typeof OrgSlugSettingsMembersRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/o/$orgSlug/templates/': {
-      id: '/o/$orgSlug/templates/'
+    '/$orgSlug/settings/organization': {
+      id: '/$orgSlug/settings/organization'
+      path: '/organization'
+      fullPath: '/$orgSlug/settings/organization'
+      preLoaderRoute: typeof OrgSlugSettingsOrganizationRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
+    }
+    '/$orgSlug/settings/providers': {
+      id: '/$orgSlug/settings/providers'
+      path: '/providers'
+      fullPath: '/$orgSlug/settings/providers'
+      preLoaderRoute: typeof OrgSlugSettingsProvidersRouteImport
+      parentRoute: typeof OrgSlugSettingsRouteRoute
+    }
+    '/$orgSlug/templates/': {
+      id: '/$orgSlug/templates/'
       path: '/templates'
-      fullPath: '/o/$orgSlug/templates/'
-      preLoaderRoute: typeof OOrgSlugTemplatesIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/templates/'
+      preLoaderRoute: typeof OrgSlugTemplatesIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/templates/$templateId': {
-      id: '/o/$orgSlug/templates/$templateId'
+    '/$orgSlug/templates/$templateId': {
+      id: '/$orgSlug/templates/$templateId'
       path: '/templates/$templateId'
-      fullPath: '/o/$orgSlug/templates/$templateId'
-      preLoaderRoute: typeof OOrgSlugTemplatesTemplateIdRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/templates/$templateId'
+      preLoaderRoute: typeof OrgSlugTemplatesTemplateIdRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/templates/new': {
-      id: '/o/$orgSlug/templates/new'
+    '/$orgSlug/templates/new': {
+      id: '/$orgSlug/templates/new'
       path: '/templates/new'
-      fullPath: '/o/$orgSlug/templates/new'
-      preLoaderRoute: typeof OOrgSlugTemplatesNewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/templates/new'
+      preLoaderRoute: typeof OrgSlugTemplatesNewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/tournaments/': {
-      id: '/o/$orgSlug/tournaments/'
+    '/$orgSlug/tournaments/': {
+      id: '/$orgSlug/tournaments/'
       path: '/tournaments'
-      fullPath: '/o/$orgSlug/tournaments/'
-      preLoaderRoute: typeof OOrgSlugTournamentsIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/tournaments/'
+      preLoaderRoute: typeof OrgSlugTournamentsIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/tournaments/$tournamentSlug': {
-      id: '/o/$orgSlug/tournaments/$tournamentSlug'
+    '/$orgSlug/tournaments/$tournamentSlug': {
+      id: '/$orgSlug/tournaments/$tournamentSlug'
       path: '/tournaments/$tournamentSlug'
-      fullPath: '/o/$orgSlug/tournaments/$tournamentSlug'
-      preLoaderRoute: typeof OOrgSlugTournamentsTournamentSlugRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/tournaments/$tournamentSlug'
+      preLoaderRoute: typeof OrgSlugTournamentsTournamentSlugRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/tournaments/new': {
-      id: '/o/$orgSlug/tournaments/new'
+    '/$orgSlug/tournaments/new': {
+      id: '/$orgSlug/tournaments/new'
       path: '/tournaments/new'
-      fullPath: '/o/$orgSlug/tournaments/new'
-      preLoaderRoute: typeof OOrgSlugTournamentsNewRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/tournaments/new'
+      preLoaderRoute: typeof OrgSlugTournamentsNewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/usage/': {
-      id: '/o/$orgSlug/usage/'
+    '/$orgSlug/usage/': {
+      id: '/$orgSlug/usage/'
       path: '/usage'
-      fullPath: '/o/$orgSlug/usage/'
-      preLoaderRoute: typeof OOrgSlugUsageIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/usage/'
+      preLoaderRoute: typeof OrgSlugUsageIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/webhooks/': {
-      id: '/o/$orgSlug/webhooks/'
+    '/$orgSlug/webhooks/': {
+      id: '/$orgSlug/webhooks/'
       path: '/webhooks'
-      fullPath: '/o/$orgSlug/webhooks/'
-      preLoaderRoute: typeof OOrgSlugWebhooksIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/webhooks/'
+      preLoaderRoute: typeof OrgSlugWebhooksIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/games/$gameSlug/': {
-      id: '/o/$orgSlug/games/$gameSlug/'
+    '/$orgSlug/games/$gameSlug/': {
+      id: '/$orgSlug/games/$gameSlug/'
       path: '/games/$gameSlug'
-      fullPath: '/o/$orgSlug/games/$gameSlug/'
-      preLoaderRoute: typeof OOrgSlugGamesGameSlugIndexRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/games/$gameSlug/'
+      preLoaderRoute: typeof OrgSlugGamesGameSlugIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
-    '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug': {
-      id: '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+    '/$orgSlug/games/$gameSlug/assignments/$platformSlug': {
+      id: '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
       path: '/games/$gameSlug/assignments/$platformSlug'
-      fullPath: '/o/$orgSlug/games/$gameSlug/assignments/$platformSlug'
-      preLoaderRoute: typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport
-      parentRoute: typeof OOrgSlugRouteRoute
+      fullPath: '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
+      preLoaderRoute: typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
     }
   }
 }
 
-interface OOrgSlugRouteRouteChildren {
-  OOrgSlugOverviewRoute: typeof OOrgSlugOverviewRoute
-  OOrgSlugGamesNewRoute: typeof OOrgSlugGamesNewRoute
-  OOrgSlugMatchesMatchIdRoute: typeof OOrgSlugMatchesMatchIdRoute
-  OOrgSlugMatchesNewRoute: typeof OOrgSlugMatchesNewRoute
-  OOrgSlugPlatformsPlatformSlugRoute: typeof OOrgSlugPlatformsPlatformSlugRoute
-  OOrgSlugPlatformsNewRoute: typeof OOrgSlugPlatformsNewRoute
-  OOrgSlugSettingsAccountRoute: typeof OOrgSlugSettingsAccountRoute
-  OOrgSlugSettingsDangerRoute: typeof OOrgSlugSettingsDangerRoute
-  OOrgSlugSettingsMembersRoute: typeof OOrgSlugSettingsMembersRoute
-  OOrgSlugSettingsOrganizationRoute: typeof OOrgSlugSettingsOrganizationRoute
-  OOrgSlugTemplatesTemplateIdRoute: typeof OOrgSlugTemplatesTemplateIdRoute
-  OOrgSlugTemplatesNewRoute: typeof OOrgSlugTemplatesNewRoute
-  OOrgSlugTournamentsTournamentSlugRoute: typeof OOrgSlugTournamentsTournamentSlugRoute
-  OOrgSlugTournamentsNewRoute: typeof OOrgSlugTournamentsNewRoute
-  OOrgSlugAssignmentsIndexRoute: typeof OOrgSlugAssignmentsIndexRoute
-  OOrgSlugAuditIndexRoute: typeof OOrgSlugAuditIndexRoute
-  OOrgSlugDeveloperIndexRoute: typeof OOrgSlugDeveloperIndexRoute
-  OOrgSlugGamesIndexRoute: typeof OOrgSlugGamesIndexRoute
-  OOrgSlugKeysIndexRoute: typeof OOrgSlugKeysIndexRoute
-  OOrgSlugMatchesIndexRoute: typeof OOrgSlugMatchesIndexRoute
-  OOrgSlugPlatformsIndexRoute: typeof OOrgSlugPlatformsIndexRoute
-  OOrgSlugTemplatesIndexRoute: typeof OOrgSlugTemplatesIndexRoute
-  OOrgSlugTournamentsIndexRoute: typeof OOrgSlugTournamentsIndexRoute
-  OOrgSlugUsageIndexRoute: typeof OOrgSlugUsageIndexRoute
-  OOrgSlugWebhooksIndexRoute: typeof OOrgSlugWebhooksIndexRoute
-  OOrgSlugGamesGameSlugIndexRoute: typeof OOrgSlugGamesGameSlugIndexRoute
-  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute: typeof OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
+interface OrgSlugSettingsRouteRouteChildren {
+  OrgSlugSettingsAccountRoute: typeof OrgSlugSettingsAccountRoute
+  OrgSlugSettingsDangerRoute: typeof OrgSlugSettingsDangerRoute
+  OrgSlugSettingsMembersRoute: typeof OrgSlugSettingsMembersRoute
+  OrgSlugSettingsOrganizationRoute: typeof OrgSlugSettingsOrganizationRoute
+  OrgSlugSettingsProvidersRoute: typeof OrgSlugSettingsProvidersRoute
+  OrgSlugSettingsIndexRoute: typeof OrgSlugSettingsIndexRoute
 }
 
-const OOrgSlugRouteRouteChildren: OOrgSlugRouteRouteChildren = {
-  OOrgSlugOverviewRoute: OOrgSlugOverviewRoute,
-  OOrgSlugGamesNewRoute: OOrgSlugGamesNewRoute,
-  OOrgSlugMatchesMatchIdRoute: OOrgSlugMatchesMatchIdRoute,
-  OOrgSlugMatchesNewRoute: OOrgSlugMatchesNewRoute,
-  OOrgSlugPlatformsPlatformSlugRoute: OOrgSlugPlatformsPlatformSlugRoute,
-  OOrgSlugPlatformsNewRoute: OOrgSlugPlatformsNewRoute,
-  OOrgSlugSettingsAccountRoute: OOrgSlugSettingsAccountRoute,
-  OOrgSlugSettingsDangerRoute: OOrgSlugSettingsDangerRoute,
-  OOrgSlugSettingsMembersRoute: OOrgSlugSettingsMembersRoute,
-  OOrgSlugSettingsOrganizationRoute: OOrgSlugSettingsOrganizationRoute,
-  OOrgSlugTemplatesTemplateIdRoute: OOrgSlugTemplatesTemplateIdRoute,
-  OOrgSlugTemplatesNewRoute: OOrgSlugTemplatesNewRoute,
-  OOrgSlugTournamentsTournamentSlugRoute:
-    OOrgSlugTournamentsTournamentSlugRoute,
-  OOrgSlugTournamentsNewRoute: OOrgSlugTournamentsNewRoute,
-  OOrgSlugAssignmentsIndexRoute: OOrgSlugAssignmentsIndexRoute,
-  OOrgSlugAuditIndexRoute: OOrgSlugAuditIndexRoute,
-  OOrgSlugDeveloperIndexRoute: OOrgSlugDeveloperIndexRoute,
-  OOrgSlugGamesIndexRoute: OOrgSlugGamesIndexRoute,
-  OOrgSlugKeysIndexRoute: OOrgSlugKeysIndexRoute,
-  OOrgSlugMatchesIndexRoute: OOrgSlugMatchesIndexRoute,
-  OOrgSlugPlatformsIndexRoute: OOrgSlugPlatformsIndexRoute,
-  OOrgSlugTemplatesIndexRoute: OOrgSlugTemplatesIndexRoute,
-  OOrgSlugTournamentsIndexRoute: OOrgSlugTournamentsIndexRoute,
-  OOrgSlugUsageIndexRoute: OOrgSlugUsageIndexRoute,
-  OOrgSlugWebhooksIndexRoute: OOrgSlugWebhooksIndexRoute,
-  OOrgSlugGamesGameSlugIndexRoute: OOrgSlugGamesGameSlugIndexRoute,
-  OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute:
-    OOrgSlugGamesGameSlugAssignmentsPlatformSlugRoute,
+const OrgSlugSettingsRouteRouteChildren: OrgSlugSettingsRouteRouteChildren = {
+  OrgSlugSettingsAccountRoute: OrgSlugSettingsAccountRoute,
+  OrgSlugSettingsDangerRoute: OrgSlugSettingsDangerRoute,
+  OrgSlugSettingsMembersRoute: OrgSlugSettingsMembersRoute,
+  OrgSlugSettingsOrganizationRoute: OrgSlugSettingsOrganizationRoute,
+  OrgSlugSettingsProvidersRoute: OrgSlugSettingsProvidersRoute,
+  OrgSlugSettingsIndexRoute: OrgSlugSettingsIndexRoute,
 }
 
-const OOrgSlugRouteRouteWithChildren = OOrgSlugRouteRoute._addFileChildren(
-  OOrgSlugRouteRouteChildren,
+const OrgSlugSettingsRouteRouteWithChildren =
+  OrgSlugSettingsRouteRoute._addFileChildren(OrgSlugSettingsRouteRouteChildren)
+
+interface OrgSlugRouteRouteChildren {
+  OrgSlugSettingsRouteRoute: typeof OrgSlugSettingsRouteRouteWithChildren
+  OrgSlugOverviewRoute: typeof OrgSlugOverviewRoute
+  OrgSlugGamesNewRoute: typeof OrgSlugGamesNewRoute
+  OrgSlugMatchesMatchIdRoute: typeof OrgSlugMatchesMatchIdRoute
+  OrgSlugMatchesNewRoute: typeof OrgSlugMatchesNewRoute
+  OrgSlugPlatformsPlatformSlugRoute: typeof OrgSlugPlatformsPlatformSlugRoute
+  OrgSlugPlatformsNewRoute: typeof OrgSlugPlatformsNewRoute
+  OrgSlugTemplatesTemplateIdRoute: typeof OrgSlugTemplatesTemplateIdRoute
+  OrgSlugTemplatesNewRoute: typeof OrgSlugTemplatesNewRoute
+  OrgSlugTournamentsTournamentSlugRoute: typeof OrgSlugTournamentsTournamentSlugRoute
+  OrgSlugTournamentsNewRoute: typeof OrgSlugTournamentsNewRoute
+  OrgSlugAgentsIndexRoute: typeof OrgSlugAgentsIndexRoute
+  OrgSlugAssignmentsIndexRoute: typeof OrgSlugAssignmentsIndexRoute
+  OrgSlugAuditIndexRoute: typeof OrgSlugAuditIndexRoute
+  OrgSlugGamesIndexRoute: typeof OrgSlugGamesIndexRoute
+  OrgSlugKeysIndexRoute: typeof OrgSlugKeysIndexRoute
+  OrgSlugMatchesIndexRoute: typeof OrgSlugMatchesIndexRoute
+  OrgSlugPlatformsIndexRoute: typeof OrgSlugPlatformsIndexRoute
+  OrgSlugTemplatesIndexRoute: typeof OrgSlugTemplatesIndexRoute
+  OrgSlugTournamentsIndexRoute: typeof OrgSlugTournamentsIndexRoute
+  OrgSlugUsageIndexRoute: typeof OrgSlugUsageIndexRoute
+  OrgSlugWebhooksIndexRoute: typeof OrgSlugWebhooksIndexRoute
+  OrgSlugGamesGameSlugIndexRoute: typeof OrgSlugGamesGameSlugIndexRoute
+  OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute: typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
+}
+
+const OrgSlugRouteRouteChildren: OrgSlugRouteRouteChildren = {
+  OrgSlugSettingsRouteRoute: OrgSlugSettingsRouteRouteWithChildren,
+  OrgSlugOverviewRoute: OrgSlugOverviewRoute,
+  OrgSlugGamesNewRoute: OrgSlugGamesNewRoute,
+  OrgSlugMatchesMatchIdRoute: OrgSlugMatchesMatchIdRoute,
+  OrgSlugMatchesNewRoute: OrgSlugMatchesNewRoute,
+  OrgSlugPlatformsPlatformSlugRoute: OrgSlugPlatformsPlatformSlugRoute,
+  OrgSlugPlatformsNewRoute: OrgSlugPlatformsNewRoute,
+  OrgSlugTemplatesTemplateIdRoute: OrgSlugTemplatesTemplateIdRoute,
+  OrgSlugTemplatesNewRoute: OrgSlugTemplatesNewRoute,
+  OrgSlugTournamentsTournamentSlugRoute: OrgSlugTournamentsTournamentSlugRoute,
+  OrgSlugTournamentsNewRoute: OrgSlugTournamentsNewRoute,
+  OrgSlugAgentsIndexRoute: OrgSlugAgentsIndexRoute,
+  OrgSlugAssignmentsIndexRoute: OrgSlugAssignmentsIndexRoute,
+  OrgSlugAuditIndexRoute: OrgSlugAuditIndexRoute,
+  OrgSlugGamesIndexRoute: OrgSlugGamesIndexRoute,
+  OrgSlugKeysIndexRoute: OrgSlugKeysIndexRoute,
+  OrgSlugMatchesIndexRoute: OrgSlugMatchesIndexRoute,
+  OrgSlugPlatformsIndexRoute: OrgSlugPlatformsIndexRoute,
+  OrgSlugTemplatesIndexRoute: OrgSlugTemplatesIndexRoute,
+  OrgSlugTournamentsIndexRoute: OrgSlugTournamentsIndexRoute,
+  OrgSlugUsageIndexRoute: OrgSlugUsageIndexRoute,
+  OrgSlugWebhooksIndexRoute: OrgSlugWebhooksIndexRoute,
+  OrgSlugGamesGameSlugIndexRoute: OrgSlugGamesGameSlugIndexRoute,
+  OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute:
+    OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute,
+}
+
+const OrgSlugRouteRouteWithChildren = OrgSlugRouteRoute._addFileChildren(
+  OrgSlugRouteRouteChildren,
+)
+
+interface DocsRouteRouteChildren {
+  DocsSlugRoute: typeof DocsSlugRoute
+  DocsIndexRoute: typeof DocsIndexRoute
+}
+
+const DocsRouteRouteChildren: DocsRouteRouteChildren = {
+  DocsSlugRoute: DocsSlugRoute,
+  DocsIndexRoute: DocsIndexRoute,
+}
+
+const DocsRouteRouteWithChildren = DocsRouteRoute._addFileChildren(
+  DocsRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OrgSlugRouteRoute: OrgSlugRouteRouteWithChildren,
+  DocsRouteRoute: DocsRouteRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  LandingRoute: LandingRoute,
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
-  OOrgSlugRouteRoute: OOrgSlugRouteRouteWithChildren,
   AcceptInvitationIdRoute: AcceptInvitationIdRoute,
 }
 export const routeTree = rootRouteImport

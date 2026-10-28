@@ -92,6 +92,8 @@ export function ConfigsPanel({
       render: (row) => {
         const config = row.config ?? {};
         const rules = (config.rules ?? {}) as {
+          gameType?: string;
+          checks?: string[];
           maxScore?: number;
           maxScorePerSecond?: number;
         };
@@ -103,6 +105,8 @@ export function ConfigsPanel({
         const parts: string[] = [];
 
         if (duration !== undefined) parts.push(`${Math.round(duration / 60)}m`);
+        if (rules.gameType !== undefined) parts.push(rules.gameType);
+        if (rules.checks !== undefined) parts.push(`${rules.checks.length} checks`);
         if (rules.maxScore !== undefined) parts.push(`max ${rules.maxScore}`);
         if (verification.mode !== undefined && verification.mode !== "none") {
           parts.push(verification.mode);
@@ -190,7 +194,7 @@ export function ConfigsPanel({
             description={
               gameHosting === "hosted"
                 ? "The empty config accepts every score without flags. Add a config to enforce rules like a maximum score."
-                : "The empty config accepts every score without flags. Add a config to enable HMAC verification or a callback verifier."
+                : "The empty config accepts every score without flags. Add a config to send scores to your server for review."
             }
             primary={
               <Button size="sm" onClick={() => setEditor("new")} className="gap-1.5">

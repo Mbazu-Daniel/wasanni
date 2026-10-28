@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { fetchSession } from "@/lib/session";
-import { Button } from "@/components/ui/button";
+import { AuthFrame } from "@/components/auth/auth-frame";
 
 export const Route = createFileRoute("/accept-invitation/$id")({
   head: () => ({ meta: [{ title: "Accept your invitation · Wasanni" }] }),
@@ -57,44 +57,54 @@ function AcceptInvitationPage() {
 
   if (session === null) {
     return (
-      <div className="grid min-h-screen place-items-center bg-ink px-5">
-        <div className="w-full max-w-md text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            You have an invitation
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in with the invited email to accept it.
-          </p>
-          <Button className="mt-6" as-child={false}>
-            <Link
-              to="/sign-in"
-              search={{ returnTo: `/accept-invitation/${id}` }}
-              className="text-primary-foreground"
-            >
-              Sign in to accept
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <AuthFrame accent="lime">
+        <h1 className="auth-heading text-center">
+          You're
+          <br />
+          <em>invited.</em>
+        </h1>
+        <p className="mt-3 text-center text-sm leading-6 text-ink/70">
+          Sign in with the invited email to accept it.
+        </p>
+        <Link
+          to="/sign-in"
+          search={{ returnTo: `/accept-invitation/${id}` }}
+          className="launch-primary-button mt-8 w-full"
+        >
+          Sign in to accept
+        </Link>
+      </AuthFrame>
     );
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-ink px-5">
-      <div className="w-full max-w-md text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">You have an invitation</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Accept to join the organization. You can leave at any time.
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-          <Button variant="ghost" onClick={reject} disabled={busy !== null}>
-            {busy === "reject" ? "Rejecting…" : "Decline"}
-          </Button>
-          <Button onClick={accept} disabled={busy !== null}>
-            {busy === "accept" ? "Accepting…" : "Accept invitation"}
-          </Button>
-        </div>
+    <AuthFrame accent="lime">
+      <h1 className="auth-heading text-center">
+        You're
+        <br />
+        <em>invited.</em>
+      </h1>
+      <p className="mt-3 text-center text-sm leading-6 text-ink/70">
+        Accept to join the organization. You can leave at any time.
+      </p>
+      <div className="mt-8 flex flex-col gap-2">
+        <button
+          type="button"
+          className="launch-primary-button w-full"
+          onClick={accept}
+          disabled={busy !== null}
+        >
+          {busy === "accept" ? "Accepting…" : "Accept invitation"}
+        </button>
+        <button
+          type="button"
+          className="launch-outline-button w-full"
+          onClick={reject}
+          disabled={busy !== null}
+        >
+          {busy === "reject" ? "Rejecting…" : "Decline"}
+        </button>
       </div>
-    </div>
+    </AuthFrame>
   );
 }

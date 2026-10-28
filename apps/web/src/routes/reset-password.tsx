@@ -1,10 +1,13 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { IconLock } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  AuthChecklist,
+  AuthField,
+  AuthFrame,
+} from "@/components/auth/auth-frame";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Set a new password · Wasanni" }] }),
@@ -49,57 +52,59 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-ink px-5">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Set a new password</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose a new password for your account.
+    <AuthFrame accent="lime">
+      <h1 className="auth-heading">
+        New
+        <br />
+        <em>password.</em>
+      </h1>
+      <p className="mt-3 text-sm leading-6 text-ink/70">
+        Choose a new password for your account.
+      </p>
+
+      <form onSubmit={submit} className="mt-8 space-y-4">
+        <div className="space-y-2">
+          <AuthField
+            id="password"
+            label="New password"
+            icon={IconLock}
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            valid={password.length >= 8}
+            minLength={8}
+            required
+          />
+          <AuthChecklist
+            items={[
+              { label: "8+ characters", ok: password.length >= 8 },
+              { label: "Confirmed", ok: password.length >= 8 && password === confirm },
+            ]}
+          />
+        </div>
+        <AuthField
+          id="confirm"
+          label="Confirm"
+          icon={IconLock}
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+          valid={confirm.length > 0 && confirm === password}
+          minLength={8}
+          required
+        />
+        <button type="submit" className="launch-primary-button w-full" disabled={busy || token === undefined}>
+          {busy ? "Resetting…" : "Reset password"}
+        </button>
+      </form>
+
+      {token === undefined && (
+        <p className="mt-4 rounded-xl border border-pink/40 bg-pink/15 p-3 text-sm text-ink">
+          This page needs the reset link from your email.
         </p>
-
-        <form onSubmit={submit} className="mt-6 space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="password">New password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="confirm">Confirm</Label>
-            <Input
-              id="confirm"
-              type="password"
-              value={confirm}
-              onChange={(event) => setConfirm(event.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={busy || token === undefined}>
-            {busy ? "Resetting…" : "Reset password"}
-          </Button>
-        </form>
-
-        {token === undefined && (
-          <p className="mt-3 text-sm text-amber-300">
-            This page needs the reset link from your email.
-          </p>
-        )}
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          <Link
-            to="/sign-in"
-            search={{ returnTo: undefined }}
-            className="text-blue-soft hover:underline"
-          >
-            Back to sign in
-          </Link>
-        </p>
-      </div>
-    </div>
+      )}
+    </AuthFrame>
   );
 }

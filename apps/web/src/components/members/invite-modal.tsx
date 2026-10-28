@@ -8,15 +8,22 @@ import { Select } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
 import type { RoleName } from "@/lib/role-types";
 
+const ROLE_OPTIONS: { value: RoleName; label: string; ownerOnly: boolean }[] = [
+  { value: "member", label: "Member — build and read", ownerOnly: false },
+  { value: "admin", label: "Admin — manage the organization", ownerOnly: true },
+];
+
 export function InviteModal({
   open,
   onOpenChange,
   organizationId,
+  myRole,
   onInvited,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
+  myRole: string;
   onInvited: () => void;
 }) {
   const [email, setEmail] = React.useState("");
@@ -50,6 +57,10 @@ export function InviteModal({
     onOpenChange(false);
   };
 
+  const options = ROLE_OPTIONS.filter(
+    (option) => !option.ownerOnly || myRole === "owner",
+  ).map((option) => ({ value: option.value, label: option.label }));
+
   return (
     <Dialog
       open={open}
@@ -67,6 +78,7 @@ export function InviteModal({
             onChange={(event) => setEmail(event.target.value)}
             placeholder="teammate@studio.com"
             required
+            autoFocus
           />
         </div>
         <div className="space-y-1.5">
@@ -74,11 +86,7 @@ export function InviteModal({
           <Select
             value={role}
             onValueChange={(value) => setRole(value as RoleName)}
-            options={[
-              { value: "member", label: "Member — read only" },
-              { value: "admin", label: "Admin — full manage" },
-              { value: "owner", label: "Owner — full control" },
-            ]}
+            options={options}
           />
         </div>
         <div className="flex items-center justify-end gap-2 pt-2">
@@ -98,4 +106,3 @@ export function InviteModal({
     </Dialog>
   );
 }
-

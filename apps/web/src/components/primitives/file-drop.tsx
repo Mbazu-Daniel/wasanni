@@ -67,10 +67,10 @@ export function FileDrop({
           "flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-6 py-10 text-center transition-colors",
           over
             ? "border-pink bg-pink/[0.05]"
-            : "border-border hover:border-pink/40 hover:bg-white/[0.02]",
+            : "border-border hover:border-pink/40 hover:bg-ink/[0.04]",
         )}
       >
-        <span className="grid size-10 place-items-center rounded-xl border border-border bg-white/[0.03] text-blue-soft">
+        <span className="grid size-10 place-items-center rounded-xl border border-border bg-ink/[0.05] text-blue">
           <IconUpload className="size-4" />
         </span>
         <span className="text-sm font-medium">Drop a file or click to choose</span>
@@ -94,8 +94,8 @@ export function FileDrop({
 
 export function PickedFileRow({ picked }: { picked: PickedFile }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border bg-white/[0.02] p-3">
-      <IconFile className="size-4 text-blue-soft" />
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-ink/[0.04] p-3">
+      <IconFile className="size-4 text-blue" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{picked.name}</p>
         <p className="text-xs text-muted-foreground">

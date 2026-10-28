@@ -150,7 +150,7 @@ export function UploadWizard({
         `/api/v1/organizations/${organizationId}/games/${gameId}/files/upload`,
         {
           method: "POST",
-          body: JSON.stringify({
+          data: JSON.stringify({
             filename: picked.name,
             version,
             contentType: picked.contentType,
@@ -235,9 +235,9 @@ export function UploadWizard({
 
       {phase === "configure" && picked && kind && (
         <div className="mt-4 space-y-4">
-          <div className="rounded-xl border border-border bg-white/[0.02] p-4">
+          <div className="rounded-xl border border-border bg-ink/[0.04] p-4">
             <div className="flex items-start gap-3">
-              <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-white/[0.03] text-blue-soft">
+              <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-ink/[0.05] text-blue">
                 {kind === "bundle" ? (
                   <IconPackage className="size-4" />
                 ) : (
@@ -454,7 +454,7 @@ function UploadProgress({
         <IconLoader2 className="size-4 animate-spin text-pink" />
         <span>{label}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-2 overflow-hidden rounded-full bg-ink/[0.08]">
         <motion.div
           className="h-full rounded-full bg-[linear-gradient(90deg,#ff2e88,#2e7bff)]"
           animate={{ width: `${pct}%` }}

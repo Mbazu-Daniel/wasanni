@@ -5,6 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function looksLikeEmail(value: string): boolean {
+  return /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(value);
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()

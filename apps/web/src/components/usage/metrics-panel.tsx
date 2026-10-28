@@ -1,13 +1,14 @@
 import {
+  IconBroadcast,
   IconChartBar,
+  IconDeviceGamepad2,
   IconMedal,
   IconPlayerPlay,
   IconSwords,
   IconTrophy,
 } from "@tabler/icons-react";
 import { formatBytes } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import type { UsageMetric, UsageQuotaView } from "@/lib/usage-types";
+import type { UsageMetric } from "@/lib/usage-types";
 
 type Icon = React.ComponentType<{ className?: string }>;
 
@@ -51,15 +52,27 @@ const CARDS: {
 
 export function UsageMetrics({
   totals,
-  quotas,
+  gameCount,
+  platformCount,
 }: {
   totals: Record<string, number>;
-  quotas: UsageQuotaView[];
+  gameCount: number;
+  platformCount: number;
 }) {
-  const quotaByMetric = new Map(quotas.map((quota) => [quota.metric, quota]));
-
   return (
-    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7">
+      <Card
+        label="Games"
+        icon={IconDeviceGamepad2}
+        value={gameCount}
+        format={count}
+      />
+      <Card
+        label="Platforms"
+        icon={IconBroadcast}
+        value={platformCount}
+        format={count}
+      />
       {CARDS.map((card) => (
         <Card
           key={card.metric}
@@ -67,40 +80,27 @@ export function UsageMetrics({
           icon={card.icon}
           value={totals[card.metric] ?? 0}
           format={card.format}
-          quota={quotaByMetric.get(card.metric)?.limitValue}
         />
       ))}
     </div>
   );
 }
 
+const count = (value: number) => value.toLocaleString();
+
 function Card({
   label,
   value,
   icon: Icon,
-  quota,
   format,
 }: {
   label: string;
   value: number;
   icon: Icon;
-  quota?: number;
   format: (value: number) => string;
 }) {
-  const overWarn = quota !== undefined && quota > 0 && value / quota >= 0.8;
-  const overLimit = quota !== undefined && quota > 0 && value >= quota;
-
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-card/40 p-4",
-        overLimit
-          ? "border-rose-400/40"
-          : overWarn
-            ? "border-amber-400/40"
-            : "border-border",
-      )}
-    >
+    <div className="rounded-xl border border-border bg-card/40 p-4">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Icon className="size-3.5" />
         {label}
@@ -108,11 +108,6 @@ function Card({
       <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">
         {format(value)}
       </p>
-      {quota !== undefined && quota > 0 && (
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          of {format(quota)}
-        </p>
-      )}
     </div>
   );
 }

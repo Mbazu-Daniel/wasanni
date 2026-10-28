@@ -1,33 +1,38 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { fetchOrganizations, requireSession } from "@/lib/session";
+import * as React from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { resumeLastOrganizationSlug } from "@/lib/session";
+import { Landing } from "@/components/landing/landing";
 
 export const Route = createFileRoute("/")({
-  ssr: false,
-  beforeLoad: async ({ context }) => {
-    if (typeof window === "undefined") return;
-
-    await requireSession();
-
-    const organizations = await context.queryClient.ensureQueryData({
-      queryKey: ["organizations"],
-      queryFn: fetchOrganizations,
-      staleTime: 30_000,
-    });
-
-    if (organizations.length === 0) {
-      throw redirect({ to: "/onboarding" });
-    }
-
-    const lastSlug = localStorage.getItem("wasanni:last-org");
-    const target = organizations.find((org) => org.slug === lastSlug) ?? organizations[0];
-
-    if (target === undefined) throw redirect({ to: "/onboarding" });
-
-    localStorage.setItem("wasanni:last-org", target.slug);
-
-    throw redirect({
-      to: "/o/$orgSlug/overview",
-      params: { orgSlug: target.slug },
-    });
-  },
+  head: () => ({
+    meta: [
+      { title: "Wasanni — Build it. Play it. Bring a crowd." },
+      { name: "theme-color", content: "#06141b" },
+      {
+        name: "description",
+        content:
+          "Wasanni is the developer platform for hosting browser games and building the competitive world around them with sessions, verified scores, leaderboards, tournaments, and replays.",
+      },
+    ],
+  }),
+  component: LandingIndex,
 });
+
+function LandingIndex() {
+  const navigate = Route.useNavigate();
+
+  React.useEffect(() => {
+    void resumeLastOrganizationSlug()
+      .then((slug) => {
+        if (slug === undefined) return;
+        if (slug === null) {
+          navigate({ to: "/onboarding" });
+          return;
+        }
+        navigate({ to: "/$orgSlug/overview", params: { orgSlug: slug } });
+      })
+      .catch(() => undefined);
+  }, [navigate]);
+
+  return <Landing />;
+}

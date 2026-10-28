@@ -18,7 +18,6 @@ export const PAGE_SHORTCUTS: Record<string, string> = {
   matches: "m",
   audit: "u",
   usage: "v",
-  developer: "f",
   members: "e",
   organization: "r",
   account: "c",
@@ -26,30 +25,29 @@ export const PAGE_SHORTCUTS: Record<string, string> = {
 };
 
 const GO_TARGETS: Record<string, DashboardPath> = {
-  d: "/o/$orgSlug/overview",
-  g: "/o/$orgSlug/games",
-  t: "/o/$orgSlug/templates",
-  p: "/o/$orgSlug/platforms",
-  a: "/o/$orgSlug/assignments",
-  k: "/o/$orgSlug/keys",
-  w: "/o/$orgSlug/webhooks",
-  o: "/o/$orgSlug/tournaments",
-  m: "/o/$orgSlug/matches",
-  u: "/o/$orgSlug/audit",
-  v: "/o/$orgSlug/usage",
-  f: "/o/$orgSlug/developer",
-  e: "/o/$orgSlug/settings/members",
-  r: "/o/$orgSlug/settings/organization",
-  c: "/o/$orgSlug/settings/account",
-  x: "/o/$orgSlug/settings/danger",
+  d: "/$orgSlug/overview",
+  g: "/$orgSlug/games",
+  t: "/$orgSlug/templates",
+  p: "/$orgSlug/platforms",
+  a: "/$orgSlug/assignments",
+  k: "/$orgSlug/keys",
+  w: "/$orgSlug/webhooks",
+  o: "/$orgSlug/tournaments",
+  m: "/$orgSlug/matches",
+  u: "/$orgSlug/audit",
+  v: "/$orgSlug/usage",
+  e: "/$orgSlug/settings/members",
+  r: "/$orgSlug/settings/organization",
+  c: "/$orgSlug/settings/account",
+  x: "/$orgSlug/settings/danger",
 };
 
 const CREATE_TARGETS: Record<string, DashboardPath> = {
-  games: "/o/$orgSlug/games/new",
-  templates: "/o/$orgSlug/templates/new",
-  platforms: "/o/$orgSlug/platforms/new",
-  tournaments: "/o/$orgSlug/tournaments/new",
-  matches: "/o/$orgSlug/matches/new",
+  games: "/$orgSlug/games/new",
+  templates: "/$orgSlug/templates/new",
+  platforms: "/$orgSlug/platforms/new",
+  tournaments: "/$orgSlug/tournaments/new",
+  matches: "/$orgSlug/matches/new",
 };
 
 function isTyping(target: EventTarget | null): boolean {
@@ -75,7 +73,7 @@ export function useDashboardShortcuts({
   openHelp: () => void;
 }) {
   const navigate = useNavigate();
-  const { orgSlug } = useParams({ from: "/o/$orgSlug" });
+  const { orgSlug } = useParams({ from: "/$orgSlug" });
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -148,7 +146,7 @@ export function useDashboardShortcuts({
 
       if (key === ",") {
         event.preventDefault();
-        go("/o/$orgSlug/settings/account");
+        go("/$orgSlug/settings/account");
         return;
       }
 

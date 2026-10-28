@@ -13,7 +13,6 @@ const NAVIGATION_SHORTCUTS: [keys: string, label: string][] = [
   ["G M", "Matches"],
   ["G U", "Audit"],
   ["G V", "Usage"],
-  ["G F", "Developer"],
   ["G E", "Members"],
   ["G R", "Organization"],
   ["G C", "Account"],
@@ -22,6 +21,7 @@ const NAVIGATION_SHORTCUTS: [keys: string, label: string][] = [
 
 const ACTION_SHORTCUTS: [keys: string, label: string][] = [
   ["⌘ K", "Command palette"],
+  ["⌘ B", "Toggle sidebar"],
   ["/", "Open search"],
   ["?", "Show this help"],
   ["N", "New — context aware"],
@@ -99,7 +99,7 @@ function Row({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-white/[0.04] px-1.5 font-mono text-[10px] text-foreground">
+    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-ink/[0.06] px-1.5 font-mono text-[10px] text-foreground">
       {children}
     </span>
   );
