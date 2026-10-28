@@ -106,7 +106,7 @@ export type StandingsService = ReturnType<typeof createStandingsService>;
 
 export type ParticipantsService = ReturnType<typeof createParticipantsService>;
 
-export type CompetitionRouteDeps = {
+export type CompetitionServices = {
   tournaments: TournamentService;
   participants: ParticipantsService;
   matches: MatchService;

@@ -8,7 +8,8 @@ import {
   newId,
   NotFoundError,
   isFlagged,
-  UnprocessableError,
+  decryptSecret,
+  readGameConfig,
 } from "@wasanni/kit";
 import type {
   ScoreFlag,
@@ -83,10 +84,32 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
     source: ScoreSource,
   ): Promise<ScoreView> => {
     const session = await readGameSessionRow(db, scope, input.platformId, input.sessionId);
+    const submittedAt = new Date();
 
     if (session.status === "ended") throw new ForbiddenError("the game session has ended");
 
-    const submittedAt = new Date();
+    if (session.status === "expired") {
+      await deps.dispatcher
+        .dispatch({
+          organizationId: session.organizationId,
+          platformId: session.platformId,
+          eventType: "score.expired",
+          payload: {
+            sessionId: session.id,
+            gameId: session.gameId,
+            externalUserId: session.externalUserId,
+            score: null,
+            attemptedScore: input.body.score,
+            reason: "session_expired",
+            expiresAt: session.expiresAt.toISOString(),
+            submittedAt: submittedAt.toISOString(),
+          },
+        })
+        .catch(() => 0);
+
+      throw new ForbiddenError("the game session has expired");
+    }
+
     const flags = readScoreFlags(session, input.body.score, source, submittedAt, false);
 
     let verificationFlags: ScoreFlag[] = [];
@@ -100,35 +123,21 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         score: input.body.score,
         mode: session.scoreVerificationMode,
         submittedAt,
-        signingKeyCiphertext: session.scoreSigningKeyCiphertext,
-        signature: input.body.signature ?? null,
         config: session.configSnapshot,
+        callbackSecret: session.scoreVerificationCallbackSecretCiphertext === null
+          ? readGameConfig(session.configSnapshot).callback?.secret ?? null
+          : decryptSecret(session.scoreVerificationCallbackSecretCiphertext, deps.encryptionKey),
       });
 
       if (verdict.kind === "failed") {
-        await deps.dispatcher
-          .dispatch({
-            organizationId: session.organizationId,
-            platformId: session.platformId,
-            eventType: "score.rejected",
-            payload: {
-              sessionId: session.id,
-              externalUserId: session.externalUserId,
-              score: input.body.score,
-              mode: session.scoreVerificationMode,
-              code: verdict.code,
-              reason: verdict.reason,
-            },
-          })
-          .catch(() => 0);
-
-        throw new UnprocessableError(verdict.reason, {
-          details: { code: verdict.code },
-        });
+        verificationFlags = ["verification_failed"];
+        verificationStatus = "failed";
       }
 
-      verificationFlags = verdict.flags;
-      verificationStatus = verdict.kind === "passed" ? "passed" : "unavailable";
+      if (verdict.kind !== "failed") {
+        verificationFlags = verdict.flags;
+        verificationStatus = verdict.kind === "passed" ? "passed" : "unavailable";
+      }
     }
 
     const allFlags = [...new Set([...flags, ...verificationFlags])];

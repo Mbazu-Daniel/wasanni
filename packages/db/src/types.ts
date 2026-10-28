@@ -13,7 +13,7 @@ export type ApiKeyCredential = {
 export type MembershipRow = {
   memberId: string;
   role: string;
-  displayName: string | null;
+  name: string | null;
 };
 
 export type GameSessionCredential = {

@@ -38,3 +38,6 @@ tests/
 *.spec*
 *.test*
 *.html
+*impeccable*
+playwright-report
+*.playwright*

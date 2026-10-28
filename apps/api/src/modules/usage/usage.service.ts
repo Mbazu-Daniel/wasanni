@@ -124,17 +124,30 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
     metric: DailyMetric;
     from: Date;
     to: Date;
+    platformId?: string;
+    gameId?: string;
   }): Promise<DailyRow[]> => {
     const source = DAILY_SOURCES[input.metric];
 
+    const column = sql.raw(source.column);
+    const where = and(
+      sql`organization_id = ${input.organizationId}`,
+      sql`${column} >= ${input.from.toISOString()}::timestamptz`,
+      sql`${column} <= ${input.to.toISOString()}::timestamptz`,
+      input.gameId === undefined
+        ? undefined
+        : sql`${sql.raw(source.gameColumn)} = ${input.gameId}`,
+      input.platformId === undefined
+        ? undefined
+        : source.platformFilter(input.platformId),
+    );
+
     const rows = (await db.execute(sql`
       select
-        to_char(date_trunc('day', ${sql.raw(source.column)}), 'YYYY-MM-DD') as day,
+        to_char(date_trunc('day', ${column}), 'YYYY-MM-DD') as day,
         count(*)::int as value
       from ${sql.raw(source.table)}
-      where organization_id = ${input.organizationId}
-        and ${sql.raw(source.column)} >= ${input.from.toISOString()}::timestamptz
-        and ${sql.raw(source.column)} <= ${input.to.toISOString()}::timestamptz
+      where ${where}
       group by day
       order by day
     `)) as { day: string; value: number }[];

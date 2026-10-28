@@ -31,9 +31,8 @@ export type ScoreVerificationInput = {
   score: number;
   mode: ScoreVerificationMode;
   submittedAt: Date;
-  signingKeyCiphertext: string | null;
-  signature: string | null;
   config: Record<string, unknown>;
+  callbackSecret?: string | null;
 };
 
 export type ScoreVerificationVerdict =
@@ -75,6 +74,7 @@ export type SessionServiceDeps = {
   realtimeBaseUrl: string;
   verifier: ScoreVerifier | null;
   usage: UsageService | null;
+  encryptionKey: string;
 };
 
 export type ScoreServiceDeps = {
@@ -83,6 +83,7 @@ export type ScoreServiceDeps = {
   verifier: ScoreVerifier | null;
   usage: UsageService | null;
   matchRecorder?: MatchRecorder;
+  encryptionKey: string;
 };
 
 export type SessionService = ReturnType<typeof createSessionService>;
@@ -93,6 +94,13 @@ export type LeaderboardService = ReturnType<typeof createLeaderboardService>;
 
 export type ReplayService = ReturnType<typeof createReplayService>;
 
+export type PlayServices = {
+  sessions: SessionService;
+  scores: ScoreService;
+  leaderboards: LeaderboardService;
+  replay: ReplayService;
+};
+
 export type PlayDeps = {
   db: Db;
   storage: ObjectStorage;
@@ -101,9 +109,14 @@ export type PlayDeps = {
   enqueuer: Enqueuer | null;
   realtimeBaseUrl: string;
   matchRecorder?: MatchRecorder;
-  rateLimit?: RateLimitHook;
   verifier: ScoreVerifier | null;
   usage: UsageService | null;
+  encryptionKey: string;
+};
+
+export type PlayRouteDeps = {
+  services: PlayServices;
+  rateLimit?: RateLimitHook;
 };
 
 export type SessionRouteDeps = {

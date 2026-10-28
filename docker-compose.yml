@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: wasanni
       POSTGRES_PASSWORD: wasanni
       POSTGRES_DB: wasanni
-    ports: ["5432:5432"]
+    ports: ["5440:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wasanni -d wasanni"]
@@ -49,7 +49,7 @@ services:
       - 2gb
       - --maxmemory-policy
       - noeviction
-    ports: ["6379:6379"]
+    ports: ["6390:6379"]
     volumes: ["redisdata:/data"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -57,6 +57,23 @@ services:
       timeout: 3s
       retries: 10
 
+  localstack:
+    image: localstack/localstack:4.8
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: us-east-1
+      LS_LOG: warn
+    ports: ["4566:4566"]
+    volumes:
+      - localstackdata:/var/lib/localstack
+      - ./scripts/localstack:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
 volumes:
   pgdata:
   redisdata:
+  localstackdata:

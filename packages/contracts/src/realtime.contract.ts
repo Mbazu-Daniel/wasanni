@@ -10,14 +10,13 @@ export const REALTIME_CLOSE = {
 export const REALTIME_ERROR_CODES = [
   "bad_message",
   "score_failed",
-  "score_rejected",
 ] as const;
 
 export type RealtimeErrorCode = (typeof REALTIME_ERROR_CODES)[number];
 
 export type RealtimeClientMessage =
   | { type: "ping" }
-  | { type: "score"; score: number; signature?: string; endSession?: boolean }
+  | { type: "score"; score: number; endSession?: boolean }
   | { type: "event"; data: unknown };
 
 export type RealtimeServerMessage =

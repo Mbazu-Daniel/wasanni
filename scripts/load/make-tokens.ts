@@ -10,7 +10,7 @@ if (apiUrl === undefined || apiKey === undefined || gameId === undefined) {
 const sessions: { sessionId: string; sessionToken: string }[] = [];
 
 for (let index = 0; index < Number(count); index += 1) {
-  const response = await fetch(`${apiUrl}/api/v1/platform/sessions`, {
+  const response = await fetch(`${apiUrl}/api/v1/sessions`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": apiKey },
     body: JSON.stringify({ gameId, externalUserId: `load_${index}` }),

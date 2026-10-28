@@ -62,6 +62,7 @@ export type AssignmentConfig = {
   id: string;
   config: Record<string, unknown>;
   schemaVersion: number;
+  scoreVerificationCallbackSecretCiphertext: string | null;
 };
 
 export type GameRow = (typeof game.$inferSelect);
@@ -87,6 +88,7 @@ export type GamesDeps = {
   enqueuer?: Enqueuer | null;
   usage?: UsageService | null;
   redis?: Redis | null;
+  encryptionKey: string;
   onConfigChanged?: (input: {
     organizationId: string;
     configId: string;
@@ -107,4 +109,11 @@ export type AssignmentRouteDeps = {
 
 export type GameConfigRouteDeps = {
   service: GameConfigService;
+};
+
+export type PlatformGameRouteDeps = {
+  db: Db;
+  assignments: AssignmentService;
+  configs: GameConfigService;
+  files: GameFileService;
 };

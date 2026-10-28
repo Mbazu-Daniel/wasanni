@@ -12,15 +12,20 @@ const columns = {
   memberId: member.id,
   userId: user.id,
   email: user.email,
-  name: user.name,
+  memberName: member.name,
+  accountName: user.name,
   avatar: member.avatar,
   role: member.role,
-  displayName: member.displayName,
   joinedAt: member.createdAt,
 } as const;
 
 const toView = (row: MemberRow): MemberView => ({
-  ...row,
+  memberId: row.memberId,
+  userId: row.userId,
+  email: row.email,
+  name: row.memberName ?? row.accountName,
+  avatar: row.avatar,
+  role: row.role,
   joinedAt: row.joinedAt.toISOString(),
 });
 
@@ -54,12 +59,12 @@ export function createMemberService(db: Db) {
       return rows.map(toView);
     },
 
-    async setDisplayName(
+    async setName(
       scope: Scope,
       memberId: string,
-      displayName: string,
+      name: string,
     ): Promise<MemberView> {
-      return this.write(scope, memberId, { displayName });
+      return this.write(scope, memberId, { name });
     },
 
     async setAvatar(scope: Scope, memberId: string, avatar: string): Promise<MemberView> {
@@ -105,7 +110,7 @@ export function createMemberService(db: Db) {
     async write(
       scope: Scope,
       memberId: string,
-      patch: { displayName?: string; avatar?: string; role?: string },
+      patch: { name?: string; avatar?: string; role?: string },
     ): Promise<MemberView> {
       const [row] = await db
         .update(member)

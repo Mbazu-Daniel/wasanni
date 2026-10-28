@@ -25,6 +25,7 @@ export const gameConfig = pgTable(
       .references(() => gamePlatformAssignment.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),
+    scoreVerificationCallbackSecretCiphertext: text("score_verification_callback_secret_ciphertext"),
     schemaVersion: integer("schema_version").notNull().default(1),
     revision: integer("revision").notNull().default(1),
     isDefault: boolean("is_default").notNull().default(false),

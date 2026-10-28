@@ -43,7 +43,7 @@ export function RegisterParticipantModal({
         `/api/v1/organizations/${organizationId}/tournaments/${tournamentId}/participants`,
         {
           method: "POST",
-          body: JSON.stringify({
+          data: JSON.stringify({
             platformId,
             externalUserId,
             ...(displayName.trim() === "" ? {} : { displayName: displayName.trim() }),

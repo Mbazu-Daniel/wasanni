@@ -6,12 +6,18 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { SecretReveal } from "@/components/primitives/secret-reveal";
+import {
+  platformPickOptions,
+  resolvePlatformId,
+  type PlatformTarget,
+} from "./platform-choice";
 
 const EVENTS: string[] = [
   "score.submitted",
+  "score.expired",
   "score.hidden",
-  "score.rejected",
   "session.created",
   "session.ended",
   "webhook.test",
@@ -22,7 +28,7 @@ export function CreateWebhookModal({
   open,
   onOpenChange,
   organizationId,
-  platformId,
+  target,
   onCreated,
   revealedSecret,
   onAcknowledged,
@@ -31,7 +37,7 @@ export function CreateWebhookModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
-  platformId: string;
+  target: PlatformTarget;
   onCreated: (secret: string) => void;
   revealedSecret: string | null;
   onAcknowledged: () => void;
@@ -40,13 +46,17 @@ export function CreateWebhookModal({
   const [url, setUrl] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [events, setEvents] = React.useState<Set<string>>(new Set(["score.submitted"]));
+  const [picked, setPicked] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+
+  const platformId = resolvePlatformId(target, picked);
 
   React.useEffect(() => {
     if (open) return;
     setUrl("");
     setDescription("");
     setEvents(new Set(["score.submitted"]));
+    setPicked("");
   }, [open]);
 
   function toggleEvent(id: string) {
@@ -61,6 +71,11 @@ export function CreateWebhookModal({
   async function submit(event: React.FormEvent) {
     event.preventDefault();
 
+    if (platformId === "") {
+      toast.error("Pick the platform this webhook belongs to");
+      return;
+    }
+
     if (events.size === 0) {
       toast.error("Pick at least one event");
       return;
@@ -72,7 +87,7 @@ export function CreateWebhookModal({
         `/api/v1/organizations/${organizationId}/platforms/${platformId}/webhooks`,
         {
           method: "POST",
-          body: JSON.stringify({
+          data: JSON.stringify({
             url,
             description: description || undefined,
             events: Array.from(events),
@@ -102,6 +117,18 @@ export function CreateWebhookModal({
     >
       {revealedSecret === null ? (
         <form onSubmit={submit} className="mt-4 space-y-4">
+          {target.kind === "pick" && (
+            <div className="space-y-1.5">
+              <Label>Platform</Label>
+              <SearchableSelect
+                value={platformId}
+                onValueChange={setPicked}
+                options={platformPickOptions(target.platforms)}
+                placeholder="Choose a platform"
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="webhook-url">Endpoint URL</Label>
             <Input
@@ -132,7 +159,7 @@ export function CreateWebhookModal({
               {EVENTS.map((event) => (
                 <label
                   key={event}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-white/[0.03]"
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-ink/[0.05]"
                 >
                   <input
                     type="checkbox"
@@ -155,7 +182,7 @@ export function CreateWebhookModal({
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={busy || !url}>
+            <Button type="submit" size="sm" disabled={busy || !url || platformId === ""}>
               {busy ? "Creating…" : "Create webhook"}
             </Button>
           </div>

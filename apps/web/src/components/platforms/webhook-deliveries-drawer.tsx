@@ -66,7 +66,7 @@ export function WebhookDeliveriesDrawer({
           </div>
           <button
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
+            className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-ink/[0.07] hover:text-foreground"
             aria-label="Close"
           >
             <IconX className="size-4" />
@@ -89,7 +89,7 @@ export function WebhookDeliveriesDrawer({
               {deliveries.map((delivery) => (
                 <div
                   key={delivery.id}
-                  className="rounded-lg border border-border bg-white/[0.02] p-3"
+                  className="rounded-lg border border-border bg-ink/[0.04] p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export function WebhookDeliveriesDrawer({
                     <span className="truncate font-mono">{delivery.eventId}</span>
                   </div>
                   {(delivery.error ?? delivery.responseBody) !== null && (
-                    <pre className="mt-2 max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-border bg-black/20 p-2 font-mono text-[10px] text-muted-foreground">
+                    <pre className="mt-2 max-h-24 overflow-y-auto whitespace-pre-wrap break-all rounded-md border border-border bg-ink/20 p-2 font-mono text-[10px] text-muted-foreground">
                       {delivery.error ?? delivery.responseBody}
                     </pre>
                   )}

@@ -1,15 +1,18 @@
-import { desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { AuditLogPage, AuditLogView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
-import { auditLog } from "@wasanni/db/schema";
+import { auditLog, member, user } from "@wasanni/db/schema";
 import type { Logger, Scope } from "@wasanni/kit";
 import { afterCursor, decodeCursor, paginate } from "../../pagination.ts";
 import { AUDIT_PAGE_DEFAULT, AUDIT_PAGE_MAX } from "./constants.ts";
 import type { AuditEvent, AuditQuery } from "./types.ts";
 
-type AuditRow = typeof auditLog.$inferSelect;
+type AuditRow = typeof auditLog.$inferSelect & {
+  actorName: string | null;
+  actorAvatar: string | null;
+};
 
 const toView = (row: AuditRow): AuditLogView => ({
   id: row.id,
@@ -17,6 +20,8 @@ const toView = (row: AuditRow): AuditLogView => ({
   actorType: row.actorType,
   actorUserId: row.actorUserId,
   actorApiKeyId: row.actorApiKeyId,
+  actorName: row.actorName,
+  actorAvatar: row.actorAvatar,
   source: row.source,
   action: row.action,
   resourceType: row.resourceType,
@@ -77,8 +82,32 @@ export function createAuditService(db: Db, logger: Logger) {
       }
 
       const rows = await db
-        .select()
+        .select({
+          id: auditLog.id,
+          organizationId: auditLog.organizationId,
+          actorType: auditLog.actorType,
+          actorUserId: auditLog.actorUserId,
+          actorApiKeyId: auditLog.actorApiKeyId,
+          source: auditLog.source,
+          action: auditLog.action,
+          resourceType: auditLog.resourceType,
+          resourceId: auditLog.resourceId,
+          metadata: auditLog.metadata,
+          ipAddress: auditLog.ipAddress,
+          userAgent: auditLog.userAgent,
+          createdAt: auditLog.createdAt,
+          actorName: sql<string | null>`coalesce(${member.name}, ${user.name})`.as("actor_name"),
+          actorAvatar: sql<string | null>`coalesce(${member.avatar}, ${user.image})`.as("actor_avatar"),
+        })
         .from(auditLog)
+        .leftJoin(
+          member,
+          and(
+            eq(member.userId, auditLog.actorUserId),
+            eq(member.organizationId, auditLog.organizationId),
+          ),
+        )
+        .leftJoin(user, eq(user.id, auditLog.actorUserId))
         .where(scopeTo(scope, auditLog, ...filters))
         .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
         .limit(limit + 1);

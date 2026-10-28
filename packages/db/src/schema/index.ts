@@ -9,3 +9,5 @@ export * from "./play/index.ts";
 export * from "./webhook/index.ts";
 export * from "./audit/index.ts";
 export * from "./usage/index.ts";
+
+export * from "./agent/index.ts";

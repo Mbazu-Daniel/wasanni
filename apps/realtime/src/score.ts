@@ -2,7 +2,7 @@ import type { ScoreView, SubmitScoreBody } from "@wasanni/contracts";
 import { SCORE_FORWARD_TIMEOUT_MS } from "./constants.ts";
 import type { ScoreForwarder, ScoreForwarderDeps, ScoreForwardResult } from "./types.ts";
 
-const readRejection = async (response: Response): Promise<string> => {
+const readFailure = async (response: Response): Promise<string> => {
   try {
     const body = (await response.json()) as { error?: { message?: unknown } };
     const message = body.error?.message;
@@ -20,11 +20,10 @@ export function createScoreForwarder(deps: ScoreForwarderDeps): ScoreForwarder {
   const send = deps.fetch ?? fetch;
 
   return {
-    async forward({ sessionId, token, score, endSession, signature }): Promise<ScoreForwardResult> {
+    async forward({ sessionId, token, score, endSession }): Promise<ScoreForwardResult> {
       const body: SubmitScoreBody = {
         score,
         ...(endSession ? { endSession } : {}),
-        ...(signature === undefined ? {} : { signature }),
       };
       const url = `${base}/api/v1/play/sessions/${encodeURIComponent(sessionId)}/score`;
 
@@ -39,8 +38,7 @@ export function createScoreForwarder(deps: ScoreForwarderDeps): ScoreForwarder {
         if (!response.ok) {
           return {
             ok: false,
-            rejected: response.status < 500,
-            message: await readRejection(response),
+            message: await readFailure(response),
           };
         }
 
@@ -50,7 +48,7 @@ export function createScoreForwarder(deps: ScoreForwarderDeps): ScoreForwarder {
       } catch (error) {
         deps.logger.warn("score forward failed", { err: error, sessionId });
 
-        return { ok: false, rejected: false, message: "the score could not be recorded" };
+        return { ok: false, message: "the score could not be recorded" };
       }
     },
   };

@@ -27,7 +27,7 @@ export function readStorageConfig(env: Env): StorageConfig | undefined {
   const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME } = env;
 
   if (
-    R2_ACCOUNT_ID === undefined ||
+    (R2_ACCOUNT_ID === undefined && env.STORAGE_ENDPOINT === undefined) ||
     R2_ACCESS_KEY_ID === undefined ||
     R2_SECRET_ACCESS_KEY === undefined ||
     R2_BUCKET_NAME === undefined
@@ -36,16 +36,19 @@ export function readStorageConfig(env: Env): StorageConfig | undefined {
   }
 
   return {
-    accountId: R2_ACCOUNT_ID,
+    accountId: R2_ACCOUNT_ID ?? "local",
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
     bucket: R2_BUCKET_NAME,
     publicBaseUrl: resolvePublicBaseUrl(env.R2_PUBLIC_ID, env.R2_CUSTOM_DOMAIN),
+    endpoint: env.STORAGE_ENDPOINT,
+    forcePathStyle: env.STORAGE_FORCE_PATH_STYLE,
   };
 }
 
 function resolveObjectEndpoint(config: StorageConfig): string {
-  return `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}`;
+  const endpoint = config.endpoint ?? `https://${config.accountId}.r2.cloudflarestorage.com`;
+  return `${endpoint.replace(/\/$/, "")}/${config.bucket}`;
 }
 
 function resolveSigningTimestamp(): string {

@@ -9,6 +9,7 @@ import { createPlatformTournamentRoutes } from "./platform-tournament.routes.ts"
 import { createStandingsService } from "./standings.service.ts";
 import { createTournamentRoutes } from "./tournament.routes.ts";
 import { createTournamentService } from "./tournament.service.ts";
+import type { CompetitionServices } from "./types.ts";
 
 export const createCompetition = (db: Db, usage: UsageService | null) => {
   const brackets = createBracketService(db);
@@ -17,14 +18,20 @@ export const createCompetition = (db: Db, usage: UsageService | null) => {
   const participants = createParticipantsService(db);
   const standings = createStandingsService(db, { bracket: brackets });
 
-  const mount = <T extends PrincipalApi>(api: T) => {
-    const deps = { tournaments, participants, matches, brackets, standings };
+  const services: CompetitionServices = {
+    brackets,
+    matches,
+    participants,
+    standings,
+    tournaments,
+  };
 
-    createTournamentRoutes(api, deps);
-    createMatchRoutes(api, deps);
-    createPlatformTournamentRoutes(api, deps);
+  const mount = <T extends PrincipalApi>(api: T) => {
+    createTournamentRoutes(api, services);
+    createMatchRoutes(api, services);
+    createPlatformTournamentRoutes(api, services);
     return api;
   };
 
-  return { matches, mount };
+  return { ...services, mount };
 };

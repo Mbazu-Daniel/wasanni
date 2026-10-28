@@ -1,0 +1,2 @@
+ALTER TABLE "agent_provider" ADD COLUMN "price_input_micros_per_million" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "agent_provider" ADD COLUMN "price_output_micros_per_million" integer DEFAULT 0 NOT NULL;

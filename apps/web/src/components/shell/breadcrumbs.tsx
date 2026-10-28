@@ -14,17 +14,21 @@ const LABELS: Record<string, string> = {
   tournaments: "Tournaments",
   matches: "Matches",
   audit: "Audit",
+  agents: "Builder",
   usage: "Usage",
-  developer: "Developer",
   settings: "Settings",
   danger: "Danger zone",
   members: "Members",
   organization: "Organization",
   account: "Account",
+  new: "New",
 };
 
 const shortId = (segment: string): string =>
   `${segment.slice(0, 4)}…${segment.slice(-4)}`;
+
+const labelFor = (segment: string): string =>
+  LABELS[segment] ?? (segment.includes("_") ? shortId(segment) : segment);
 
 export function Breadcrumbs() {
   const router = useRouter();
@@ -33,16 +37,16 @@ export function Breadcrumbs() {
 
   if (segments.length <= 3) return null;
 
-  const trail = segments.slice(3);
+  const trail = segments.slice(2);
 
   const crumbs = trail.map((segment, index) => {
-    const href = "/" + segments.slice(0, 4 + index).join("/");
+    const href = "/" + segments.slice(0, 3 + index).join("/");
 
-    const label =
-      LABELS[segment] ??
-      (segment.includes("_") ? shortId(segment) : segment);
-
-    return { href, label, isLast: index === trail.length - 1 };
+    return {
+      href,
+      label: labelFor(segment),
+      isLast: index === trail.length - 1,
+    };
   });
 
   return (

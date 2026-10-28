@@ -4,7 +4,6 @@ import {
   IconCloud,
   IconWorld,
   IconArchive,
-  IconPlayerPlay,
   IconTrophy,
 } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
@@ -21,7 +20,6 @@ type Game = {
   description: string | null;
   hosting: "hosted" | "external";
   status: "draft" | "active" | "archived";
-  replayEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -76,7 +74,7 @@ export function GameOverviewPanel({
           <p className="text-xs text-muted-foreground">Hosting</p>
           <div className="mt-2 flex items-center gap-2">
             {game.hosting === "hosted" ? (
-              <IconCloud className="size-4 text-blue-soft" />
+              <IconCloud className="size-4 text-blue" />
             ) : (
               <IconWorld className="size-4 text-cyan" />
             )}
@@ -113,7 +111,7 @@ export function GameOverviewPanel({
           </div>
           {game.hosting === "hosted" && (
             <Link
-              to="/o/$orgSlug/games/$gameSlug"
+              to="/$orgSlug/games/$gameSlug"
               params={{ orgSlug: organizationSlug, gameSlug: game.slug }}
               search={{ tab: "versions" }}
             >
@@ -159,7 +157,7 @@ export function GameOverviewPanel({
                 </p>
               </div>
               <Link
-                to="/o/$orgSlug/games/$gameSlug"
+                to="/$orgSlug/games/$gameSlug"
                 params={{ orgSlug: organizationSlug, gameSlug: game.slug }}
                 search={{ tab: "versions" }}
               >
@@ -170,37 +168,19 @@ export function GameOverviewPanel({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card/50 p-4">
-          <div className="flex items-center gap-2">
-            <IconPlayerPlay className="size-4 text-blue-soft" />
-            <p className="text-xs text-muted-foreground">Replays</p>
-          </div>
-          <p className="mt-2 text-sm font-medium">
-            {game.replayEnabled ? "Enabled" : "Disabled"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {game.replayEnabled
-              ? "Session events are archived to R2 after they end."
-              : "Events are not stored beyond the live session."}
-          </p>
+      <div className="rounded-xl border border-border bg-card/50 p-4">
+        <div className="flex items-center gap-2">
+          {game.status === "archived" ? (
+            <IconArchive className="size-4 text-muted-foreground" />
+          ) : (
+            <IconTrophy className="size-4 text-pink" />
+          )}
+          <p className="text-xs text-muted-foreground">Created</p>
         </div>
-        <div className="rounded-xl border border-border bg-card/50 p-4">
-          <div className="flex items-center gap-2">
-            {game.status === "archived" ? (
-              <IconArchive className="size-4 text-muted-foreground" />
-            ) : (
-              <IconTrophy className="size-4 text-pink" />
-            )}
-            <p className="text-xs text-muted-foreground">Created</p>
-          </div>
-          <p className="mt-2 text-sm font-medium">
-            {formatDateTime(game.createdAt)}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Last updated {formatDateTime(game.updatedAt)}
-          </p>
-        </div>
+        <p className="mt-2 text-sm font-medium">{formatDateTime(game.createdAt)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Last updated {formatDateTime(game.updatedAt)}
+        </p>
       </div>
     </div>
   );

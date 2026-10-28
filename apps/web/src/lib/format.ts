@@ -16,3 +16,34 @@ export function formatBytes(bytes: number): string {
 
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unit]}`;
 }
+
+export function formatUsd(micros: number): string {
+  const dollars = micros / 1_000_000;
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: dollars >= 1 || dollars === 0 ? 2 : 4,
+    maximumFractionDigits: dollars >= 1 ? 2 : 6,
+  }).format(dollars);
+}
+
+export const usdPerMillion = (micros: number): string =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  }).format(micros / 1_000_000);
+
+export function formatTokens(count: number): string {
+  if (count < 1000) return `${count} tok`;
+
+  return `${(count / 1000).toFixed(count < 10_000 ? 1 : 0)}k tok`;
+}
+
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+
+  return `${(ms / 1000).toFixed(1)}s`;
+}

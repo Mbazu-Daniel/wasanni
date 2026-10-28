@@ -16,6 +16,7 @@ import {
   newOpaqueToken,
   NotFoundError,
   readGameConfig,
+  withoutCallbackSecret,
   sha256Hex,
 } from "@wasanni/kit";
 import type {
@@ -45,7 +46,7 @@ const toView = (row: GameSessionRow): GameSessionView => ({
   externalUserName: row.externalUserName,
   mode: row.mode,
   status: row.status,
-  config: row.configSnapshot,
+  config: withoutCallbackSecret(row.configSnapshot),
   configSchemaVersion: row.configSchemaVersion,
   startedAt: row.startedAt.toISOString(),
   expiresAt: row.expiresAt.toISOString(),
@@ -205,13 +206,14 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         scope,
         assignment.id,
         input.body.configId,
+        deps.encryptionKey,
       );
 
       if (input.body.configId !== undefined && resolved === null) {
         throw new NotFoundError("game config not found");
       }
 
-      const config = resolved ?? { id: null, config: {}, schemaVersion: 1 };
+      const config = resolved ?? { id: null, config: {}, schemaVersion: 1, scoreVerificationCallbackSecretCiphertext: null };
 
       let gameFileId: string | null = null;
 
@@ -225,15 +227,6 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       const mode = deps.verifier === null ? "none" : settings.verificationMode;
 
-      let signingKeyCiphertext: string | null = null;
-      let signingKeyPlaintext: string | null = null;
-
-      if (mode === "hmac" || mode === "both") {
-        const key = deps.verifier!.createSigningKey();
-
-        signingKeyCiphertext = key.ciphertext;
-        signingKeyPlaintext = key.plaintext;
-      }
 
       if (deps.usage !== null) {
         await deps.usage.checkQuota({
@@ -274,7 +267,7 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
           status: "active",
           tokenHash: sha256Hex(sessionToken),
           scoreVerificationMode: mode,
-          scoreSigningKeyCiphertext: signingKeyCiphertext,
+          scoreVerificationCallbackSecretCiphertext: config.scoreVerificationCallbackSecretCiphertext,
           configSnapshot: config.config,
           configSchemaVersion: config.schemaVersion,
           metadata: input.body.metadata ?? {},
@@ -310,7 +303,6 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         session,
         sessionToken,
         realtimeUrl,
-        ...(signingKeyPlaintext === null ? {} : { scoreSigningKey: signingKeyPlaintext }),
       };
     },
 

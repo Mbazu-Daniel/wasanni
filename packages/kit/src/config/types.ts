@@ -31,6 +31,8 @@ export type Env = {
   readonly R2_BUCKET_NAME: string | undefined;
   readonly R2_PUBLIC_ID: string | undefined;
   readonly R2_CUSTOM_DOMAIN: string | undefined;
+  readonly STORAGE_ENDPOINT: string | undefined;
+  readonly STORAGE_FORCE_PATH_STYLE: boolean;
   readonly STORAGE_UPLOAD_URL_TTL_SECONDS: number;
   readonly STORAGE_DOWNLOAD_URL_TTL_SECONDS: number;
   readonly STORAGE_MAX_GAME_BUNDLE_BYTES: number;
@@ -38,6 +40,11 @@ export type Env = {
   readonly EMAIL_FROM_ADDRESS: string;
   readonly EMAIL_FROM_NAME: string;
   readonly ZEPTOMAIL_API_KEY: string | undefined;
+  readonly AGENT_API_KEY: string | undefined;
+  readonly AGENT_BASE_URL: string | undefined;
+  readonly AGENT_MODEL: string | undefined;
+  readonly AGENT_OTEL_ENDPOINT: string | undefined;
+  readonly ALLOW_PRIVATE_OUTBOUND_URLS: boolean;
   readonly REALTIME_PORT: number;
   readonly REALTIME_PUBLIC_URL: string;
   readonly API_INTERNAL_URL: string;

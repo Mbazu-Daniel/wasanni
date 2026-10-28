@@ -74,7 +74,7 @@ export function TournamentParticipantsPanel({
         row.seed === null ? (
           <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          <span className="grid size-7 place-items-center rounded-full bg-white/[0.04] font-mono text-xs font-semibold">
+          <span className="grid size-7 place-items-center rounded-full bg-ink/[0.06] font-mono text-xs font-semibold">
             {row.seed}
           </span>
         ),

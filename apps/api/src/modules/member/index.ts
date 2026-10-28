@@ -8,7 +8,7 @@ import {
   RequestAvatarUpload,
   SetMemberAvatar,
   SetMemberRole,
-  UpdateMemberDisplayName,
+  UpdateMemberName,
 } from "@wasanni/contracts";
 import { NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
@@ -37,18 +37,18 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      const member = await service.setDisplayName(
+      const member = await service.setName(
         organizationScope(principal),
         principal.memberId,
-        body.displayName,
+        body.name,
       );
 
       return { member };
     }, {
       organizationAuth: null,
-      body: UpdateMemberDisplayName,
+      body: UpdateMemberName,
       response: { 200: MemberSingle },
-      detail: { tags: ["members"], summary: "Update the signed-in member display name" },
+      detail: { tags: ["members"], summary: "Update the signed-in member name" },
     })
     .put("/api/v1/organizations/:organizationId/members/:memberId/role", async ({
       principal,
@@ -83,17 +83,17 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       params,
       body,
     }) => {
-      const member = await service.setDisplayName(
+      const member = await service.setName(
         organizationScope(principal),
         params.memberId,
-        body.displayName,
+        body.name,
       );
 
       return { member };
     }, {
       organizationAuth: PERMISSION.memberUpdate,
       params: MemberIdParams,
-      body: UpdateMemberDisplayName,
+      body: UpdateMemberName,
       response: { 200: MemberSingle },
       detail: { tags: ["members"], summary: "Rename a member of the organization" },
     })

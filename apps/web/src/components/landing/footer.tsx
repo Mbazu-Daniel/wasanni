@@ -1,86 +1,55 @@
-import {
-  IconBrandGithub,
-  IconBrandX,
-  IconBrandDiscord,
-  IconHeart,
-} from "@tabler/icons-react";
-import { Separator } from "@/components/marketing/separator";
+import { Link } from "@tanstack/react-router";
 
-const columns = [
-  {
-    title: "Product",
-    links: ["Platform", "Replays", "Leaderboards", "Tournaments", "Matches"],
-  },
-  {
-    title: "Developers",
-    links: ["API reference", "SDK", "Webhooks", "Status", "Changelog"],
-  },
-  {
-    title: "Company",
-    links: ["About", "Blog", "Careers", "Contact", "Privacy"],
-  },
+const sections = [
+  { label: "Platform", href: "#features" },
+  { label: "Deploy", href: "#integration" },
+  { label: "Competition", href: "#board" },
+  { label: "Roadmap", href: "#copilot" },
 ];
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-border py-14">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,0.8fr)]">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-8 place-items-center rounded-lg bg-[linear-gradient(135deg,#ff2e88,#2e7bff)] font-mono text-xs font-bold text-ink">
-                W
-              </span>
-              <span className="font-display text-lg font-bold">Wasanni</span>
-            </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Sessions, scores, tournaments, and replays for games. Built for
-              studios that would rather ship the game.
-            </p>
-            <div className="mt-5 flex gap-2">
-              {[IconBrandGithub, IconBrandX, IconBrandDiscord].map((Icon, index) => (
-                <a
-                  key={index}
-                  href="#"
-                  className="grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:border-pink/40 hover:text-foreground"
-                  aria-label="Social"
-                >
-                  <Icon className="size-4" />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {columns.map((column) => (
-            <div key={column.title}>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-                {column.title}
-              </p>
-              <ul className="mt-4 space-y-2.5">
-                {column.links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <Separator className="my-8" />
-
-        <div className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row">
-          <p className="flex items-center gap-1.5">
-            © {new Date().getFullYear()} Wasanni. Built with{" "}
-            <IconHeart className="size-3.5 text-pink" /> for game studios.
+    <footer className="border-t border-mist/15 bg-abyss">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="font-poster text-2xl font-black uppercase text-chalk">
+            Wasanni<span className="text-signal">.</span>
           </p>
-          <p className="font-mono">status: all systems nominal</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-mist">
+            The developer platform for hosting browser games and running the
+            competition layer behind them.
+          </p>
         </div>
+
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {sections.map((section) => (
+            <a
+              key={section.href}
+              href={section.href}
+              className="font-mono text-xs uppercase tracking-[0.14em] text-mist transition-colors hover:text-signal"
+            >
+              {section.label}
+            </a>
+          ))}
+          <Link
+            to="/sign-in"
+            className="font-mono text-xs uppercase tracking-[0.14em] text-mist transition-colors hover:text-signal"
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/sign-up"
+            className="rounded-full border border-signal/40 px-3 py-1 font-mono text-xs uppercase tracking-[0.14em] text-signal transition-colors hover:bg-signal/12"
+          >
+            Start hosting a game
+          </Link>
+        </nav>
+      </div>
+      <div className="border-t border-mist/12">
+        <p className="mx-auto max-w-6xl px-5 py-4 font-mono text-[10px] uppercase tracking-[0.16em] text-mist/80 sm:px-8">
+          © {new Date().getFullYear()} Wasanni · public beta · set in Darker
+          Grotesque &amp; Archivo
+        </p>
       </div>
     </footer>
   );

@@ -51,3 +51,6 @@ export const PlatformIdParams = t.Object({
   platformId: t.String(),
 });
 export type PlatformIdParams = UnwrapSchema<typeof PlatformIdParams>;
+
+export const CallerPlatformParams = t.Object({ platformId: t.String() });
+export type CallerPlatformParams = UnwrapSchema<typeof CallerPlatformParams>;

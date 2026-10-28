@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { gameConfig, gamePlatformAssignment } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
+import { callbackSecretOf, ConflictError, decryptSecret, encryptSecret, InternalServerError, newId, NotFoundError, withoutCallbackSecret } from "@wasanni/kit";
 import type { GameConfigView } from "@wasanni/contracts";
 import type { GameConfigCreateInput, GameConfigRow, GameConfigUpdateInput } from "./types.ts";
 
@@ -12,7 +12,7 @@ const toView = (row: GameConfigRow): GameConfigView => ({
   organizationId: row.organizationId,
   assignmentId: row.assignmentId,
   name: row.name,
-  config: row.config,
+  config: withoutCallbackSecret(row.config),
   schemaVersion: row.schemaVersion,
   revision: row.revision,
   isDefault: row.isDefault,
@@ -22,6 +22,7 @@ const toView = (row: GameConfigRow): GameConfigView => ({
 
 export function createGameConfigService(
   db: Db,
+  encryptionKey: string,
   onConfigChanged?: (input: {
     organizationId: string;
     configId: string;
@@ -71,6 +72,18 @@ export function createGameConfigService(
     return row;
   };
 
+  const storedConfig = (config: Record<string, unknown>, currentSecret?: string | null) => {
+    const secret = callbackSecretOf(config) ?? currentSecret ?? null;
+    const mode = (config.scoreVerification as { mode?: unknown } | undefined)?.mode;
+    if (mode === "callback" && secret === null) throw new ConflictError("callback verification needs a secret");
+    return {
+      config: withoutCallbackSecret(config),
+      scoreVerificationCallbackSecretCiphertext: mode === "callback" && secret !== null
+        ? encryptSecret(secret, encryptionKey)
+        : null,
+    };
+  };
+
   return {
     async list(
       scope: Scope,
@@ -113,7 +126,7 @@ export function createGameConfigService(
               organizationId: scope.organizationId,
               assignmentId: input.assignmentId,
               name: input.body.name,
-              config: input.body.config ?? {},
+              ...storedConfig(input.body.config ?? {}),
               schemaVersion: input.body.schemaVersion ?? 1,
               isDefault: input.body.isDefault ?? false,
             })
@@ -145,11 +158,21 @@ export function createGameConfigService(
             );
         }
 
+        const nextConfig = input.body.config === undefined
+          ? { config: current.config, scoreVerificationCallbackSecretCiphertext: current.scoreVerificationCallbackSecretCiphertext }
+          : storedConfig(
+              input.body.config,
+              callbackSecretOf(current.config) ??
+                (current.scoreVerificationCallbackSecretCiphertext === null
+                  ? null
+                  : decryptSecret(current.scoreVerificationCallbackSecretCiphertext, encryptionKey)),
+            );
         const [row] = await tx
           .update(gameConfig)
           .set({
             ...(input.body.name !== undefined ? { name: input.body.name } : {}),
-            ...(input.body.config !== undefined ? { config: input.body.config } : {}),
+            config: nextConfig.config,
+            scoreVerificationCallbackSecretCiphertext: nextConfig.scoreVerificationCallbackSecretCiphertext,
             ...(input.body.schemaVersion !== undefined
               ? { schemaVersion: input.body.schemaVersion }
               : {}),
@@ -172,7 +195,7 @@ export function createGameConfigService(
         if (row === undefined) {
           throw new ConflictError("this game config was changed by someone else");
         }
-        return toView(row);
+        return toView({ ...row, config: withoutCallbackSecret(row.config) });
       });
 
       await onConfigChanged?.({

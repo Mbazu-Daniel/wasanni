@@ -135,7 +135,7 @@ function Bar({
         <span className="text-muted-foreground">{label}</span>
         <span className="font-mono text-foreground">{formatBytes(value)}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-2 overflow-hidden rounded-full bg-ink/[0.08]">
         <motion.div
           className={cn("h-full rounded-full bg-gradient-to-r", color)}
           initial={{ width: 0 }}

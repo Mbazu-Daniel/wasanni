@@ -1,10 +1,10 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { IconMail } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AuthField, AuthFrame } from "@/components/auth/auth-frame";
+import { looksLikeEmail } from "@/lib/utils";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [{ title: "Reset your password · Wasanni" }] }),
@@ -34,44 +34,60 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-ink px-5">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Reset your password</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {sent
-            ? "If that email exists, we sent a reset link. Check your inbox."
-            : "Enter your email and we will send you a reset link."}
-        </p>
-
-        {!sent && (
-          <form onSubmit={submit} className="mt-6 space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@studio.com"
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Sending…" : "Send reset link"}
-            </Button>
-          </form>
-        )}
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+    <AuthFrame
+      switchTo={
+        <>
+          Remembered it?{" "}
           <Link
             to="/sign-in"
             search={{ returnTo: undefined }}
-            className="text-blue-soft hover:underline"
+            className="ml-1 font-semibold text-blue hover:underline"
           >
-            Back to sign in
+            Sign in
           </Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <h1 className="auth-heading">
+        Reset your
+        <br />
+        <em>password.</em>
+      </h1>
+      <p className="mt-3 text-sm leading-6 text-ink/70">
+        {sent
+          ? "If that email exists, we sent a reset link. Check your inbox."
+          : "Enter your email and we will send you a reset link."}
+      </p>
+
+      {!sent && (
+        <form onSubmit={submit} className="mt-8 space-y-4">
+          <AuthField
+            id="email"
+            label="Email"
+            icon={IconMail}
+            type="email"
+            autoComplete="email"
+            placeholder="you@studio.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            valid={looksLikeEmail(email)}
+            required
+          />
+          <button type="submit" className="launch-primary-button w-full" disabled={busy}>
+            {busy ? "Sending…" : "Send reset link"}
+          </button>
+        </form>
+      )}
+
+      {sent && (
+        <button
+          type="button"
+          className="launch-outline-button mt-8 w-full"
+          onClick={() => setSent(false)}
+        >
+          Use a different email
+        </button>
+      )}
+    </AuthFrame>
   );
 }

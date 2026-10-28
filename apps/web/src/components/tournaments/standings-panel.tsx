@@ -82,7 +82,7 @@ export function TournamentStandingsPanel({
             {data.rows.map((row) => (
               <tr
                 key={row.participantId}
-                className="border-t border-border transition-colors hover:bg-white/[0.02]"
+                className="border-t border-border transition-colors hover:bg-ink/[0.04]"
               >
                 <td className="px-4 py-3 align-middle">
                   {row.position === 1 ? (
@@ -90,7 +90,7 @@ export function TournamentStandingsPanel({
                       1
                     </span>
                   ) : (
-                    <span className="grid size-7 place-items-center rounded-full bg-white/[0.04] font-mono text-xs text-muted-foreground">
+                    <span className="grid size-7 place-items-center rounded-full bg-ink/[0.06] font-mono text-xs text-muted-foreground">
                       {row.position}
                     </span>
                   )}

@@ -97,7 +97,7 @@ export function GameVersionsPanel({
       render: (version) => (
         <div className="flex items-center gap-2">
           {version.kind === "bundle" ? (
-            <IconPackage className="size-3.5 text-blue-soft" />
+            <IconPackage className="size-3.5 text-blue" />
           ) : (
             <IconFileCode className="size-3.5 text-cyan" />
           )}

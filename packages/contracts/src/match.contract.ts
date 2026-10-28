@@ -107,11 +107,6 @@ export const CompleteMatchBody = t.Object({
 });
 export type CompleteMatchBody = UnwrapSchema<typeof CompleteMatchBody>;
 
-export const PlatformWinnerBody = t.Object({
-  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
-});
-export type PlatformWinnerBody = UnwrapSchema<typeof PlatformWinnerBody>;
-
 export const MatchIdParams = t.Object({
   organizationId: t.String(),
   matchId: t.String(),
@@ -120,6 +115,12 @@ export type MatchIdParams = UnwrapSchema<typeof MatchIdParams>;
 
 export const PlatformMatchParams = t.Object({ matchId: t.String() });
 export type PlatformMatchParams = UnwrapSchema<typeof PlatformMatchParams>;
+
+export const PlatformWinnerParams = t.Object({
+  matchId: t.String(),
+  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
+});
+export type PlatformWinnerParams = UnwrapSchema<typeof PlatformWinnerParams>;
 
 export const MatchParticipants = t.Object({
   match: MatchView,

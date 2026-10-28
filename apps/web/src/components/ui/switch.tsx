@@ -21,7 +21,7 @@ export function Switch({
         checked={checked}
         disabled={disabled}
         onChange={(event) => onCheckedChange(event.target.checked)}
-        className="peer size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-border bg-white/[0.06] transition-colors checked:border-pink/60 checked:bg-pink/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="peer size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-border bg-ink/[0.08] transition-colors checked:border-pink/60 checked:bg-pink/30 disabled:cursor-not-allowed disabled:opacity-50"
       />
       {label && <span className="text-xs text-muted-foreground">{label}</span>}
     </label>

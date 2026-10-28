@@ -2,8 +2,8 @@ import { t, type UnwrapSchema } from "elysia";
 
 export const WEBHOOK_EVENTS = [
   "score.submitted",
+  "score.expired",
   "score.hidden",
-  "score.rejected",
   "session.created",
   "session.ended",
   "webhook.test",
@@ -13,8 +13,8 @@ export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
 export const WebhookEventSchema = t.Union([
   t.Literal("score.submitted"),
+  t.Literal("score.expired"),
   t.Literal("score.hidden"),
-  t.Literal("score.rejected"),
   t.Literal("session.created"),
   t.Literal("session.ended"),
   t.Literal("webhook.test"),

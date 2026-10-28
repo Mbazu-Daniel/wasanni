@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Tabs } from "@/components/ui/tabs";
+import type { ScoreFlagRule, ScoreGameType } from "@wasanni/contracts";
 
 export type ConfigRow = {
   id: string;
@@ -25,11 +26,13 @@ export type ConfigRow = {
   updatedAt: string;
 };
 
-type VerificationMode = "none" | "hmac" | "callback" | "both";
+type VerificationMode = "none" | "callback";
 
 type ConfigShape = {
   sessionDurationSeconds?: number;
   rules?: {
+    gameType?: ScoreGameType;
+    checks?: ScoreFlagRule[];
     maxScore?: number;
     maxScorePerSecond?: number;
   };
@@ -45,6 +48,8 @@ type ConfigShape = {
 
 function buildConfig(form: {
   sessionDurationMinutes: string;
+  gameType: ScoreGameType;
+  checks: ScoreFlagRule[];
   maxScore: string;
   maxScorePerSecond: string;
   verificationMode: VerificationMode;
@@ -63,6 +68,9 @@ function buildConfig(form: {
 
   const rules: NonNullable<ConfigShape["rules"]> = {};
 
+  if (form.gameType !== "generic") rules.gameType = form.gameType;
+  if (form.checks.length > 0) rules.checks = form.checks;
+
   if (form.maxScore.trim()) {
     const value = Number(form.maxScore);
     if (Number.isFinite(value) && value >= 0) rules.maxScore = value;
@@ -80,7 +88,7 @@ function buildConfig(form: {
       mode: form.verificationMode,
     };
 
-    if (form.verificationMode === "callback" || form.verificationMode === "both") {
+    if (form.verificationMode === "callback") {
       const callback: NonNullable<ConfigShape["scoreVerification"]>["callback"] = {};
 
       if (form.callbackUrl.trim()) callback.url = form.callbackUrl.trim();
@@ -123,6 +131,8 @@ export function ConfigEditorModal({
   const [busy, setBusy] = React.useState(false);
 
   const [sessionDurationMinutes, setSessionDurationMinutes] = React.useState("");
+  const [gameType, setGameType] = React.useState<ScoreGameType>("generic");
+  const [checks, setChecks] = React.useState<ScoreFlagRule[]>(["max_score", "score_rate"]);
   const [maxScore, setMaxScore] = React.useState("");
   const [maxScorePerSecond, setMaxScorePerSecond] = React.useState("");
   const [verificationMode, setVerificationMode] =
@@ -146,6 +156,8 @@ export function ConfigEditorModal({
           ? ""
           : String(Math.round(shape.sessionDurationSeconds / 60)),
       );
+      setGameType(shape.rules?.gameType ?? "generic");
+      setChecks(shape.rules?.checks ?? ["max_score", "score_rate"]);
       setMaxScore(
         shape.rules?.maxScore === undefined ? "" : String(shape.rules.maxScore),
       );
@@ -154,7 +166,7 @@ export function ConfigEditorModal({
           ? ""
           : String(shape.rules.maxScorePerSecond),
       );
-      setVerificationMode(shape.scoreVerification?.mode ?? "none");
+      setVerificationMode(shape.scoreVerification?.mode === "callback" ? "callback" : "none");
       setCallbackUrl(shape.scoreVerification?.callback?.url ?? "");
       setCallbackSecret(shape.scoreVerification?.callback?.secret ?? "");
       setCallbackTimeoutMs(
@@ -167,6 +179,8 @@ export function ConfigEditorModal({
       setName("");
       setIsDefault(false);
       setSessionDurationMinutes("");
+      setGameType("generic");
+      setChecks(["max_score", "score_rate"]);
       setMaxScore("");
       setMaxScorePerSecond("");
       setVerificationMode("none");
@@ -184,6 +198,8 @@ export function ConfigEditorModal({
     if (view === "form") {
       return buildConfig({
         sessionDurationMinutes,
+        gameType,
+        checks,
         maxScore,
         maxScorePerSecond,
         verificationMode,
@@ -227,13 +243,13 @@ export function ConfigEditorModal({
       if (existing) {
         await apiFetch(`${path}/${existing.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ name: name.trim(), config, isDefault }),
+          data: JSON.stringify({ name: name.trim(), config, isDefault }),
         });
         toast.success("Config updated");
       } else {
         await apiFetch(path, {
           method: "POST",
-          body: JSON.stringify({ name: name.trim(), config, isDefault }),
+          data: JSON.stringify({ name: name.trim(), config, isDefault }),
         });
         toast.success("Config created");
       }
@@ -248,8 +264,13 @@ export function ConfigEditorModal({
     }
   }
 
-  const showCallbackFields =
-    verificationMode === "callback" || verificationMode === "both";
+  const showCallbackFields = verificationMode === "callback";
+
+  const toggleCheck = (check: ScoreFlagRule) => {
+    setChecks((current) =>
+      current.includes(check) ? current.filter((value) => value !== check) : [...current, check],
+    );
+  };
 
   return (
     <Dialog
@@ -350,6 +371,40 @@ export function ConfigEditorModal({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="config-game-type">Game type</Label>
+                <Select
+                  value={gameType}
+                  onValueChange={(value) => setGameType(value as ScoreGameType)}
+                  options={[
+                    { value: "generic", label: "Generic" },
+                    { value: "match3", label: "Match-3" },
+                    { value: "endless_runner", label: "Endless runner" },
+                    { value: "block_puzzle", label: "Block puzzle" },
+                    { value: "pool", label: "Pool" },
+                    { value: "racing", label: "Racing" },
+                    { value: "shooter", label: "Shooter" },
+                    { value: "board", label: "Board game" },
+                    { value: "arcade", label: "Arcade" },
+                  ]}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Choose the game format so its score review settings are visible together.
+                </p>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Flag scores when</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs">
+                    <Switch checked={checks.includes("max_score")} onCheckedChange={() => toggleCheck("max_score")} />
+                    <span>Maximum score is exceeded</span>
+                  </label>
+                  <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs">
+                    <Switch checked={checks.includes("score_rate")} onCheckedChange={() => toggleCheck("score_rate")} />
+                    <span>Score rate is too high</span>
+                  </label>
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="config-max-score">Max score</Label>
                 <Input
@@ -387,24 +442,18 @@ export function ConfigEditorModal({
                 onValueChange={(value) => setVerificationMode(value as VerificationMode)}
                 options={[
                   { value: "none", label: "None — accept and flag" },
-                  { value: "hmac", label: "HMAC — client signs each score" },
-                  { value: "callback", label: "Callback — your server verifies" },
-                  { value: "both", label: "Both — HMAC then callback" },
+                  { value: "callback", label: "Callback — your server reviews" },
                 ]}
               />
               <p className="text-xs text-muted-foreground">
                 {verificationMode === "none"
                   ? "Every score is stored. Rules can flag it, but it is never rejected."
-                  : verificationMode === "hmac"
-                    ? "Session creation returns a signing key. The client must send an HMAC-SHA256 signature."
-                    : verificationMode === "callback"
-                      ? "Wasanni POSTs each score to your endpoint. A false response rejects it."
-                      : "The client signs the score and your server confirms it. Both must pass."}
+                  : "Wasanni POSTs each score to your endpoint. Its response is recorded as a flag; it never removes the score."}
               </p>
             </div>
 
             {showCallbackFields && (
-              <div className="space-y-3 rounded-lg border border-border bg-white/[0.02] p-3">
+              <div className="space-y-3 rounded-lg border border-border bg-ink/[0.04] p-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="callback-url">Callback URL</Label>
                   <Input
@@ -424,8 +473,8 @@ export function ConfigEditorModal({
                     placeholder="A long random string"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Wasanni signs the callback with this secret. Verify the
-                    signature before trusting the request.
+                    Wasanni signs the callback so your server can verify that
+                    the review request came from Wasanni.
                   </p>
                 </div>
                 <div className="space-y-1.5">

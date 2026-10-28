@@ -33,11 +33,14 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         ...(rateLimit === undefined ? {} : { beforeHandle: rateLimit("scoreSubmit") }),
         body: SubmitScoreBody,
         response: { 201: ScoreSingle },
-        detail: { tags: ["scores"], summary: "Send the score of a game session" },
+        detail: {
+          tags: ["scores"],
+          summary: "Send the score of a game session (game session token)",
+        },
       },
     )
     .post(
-      "/api/v1/platform/sessions/:sessionId/score",
+      "/api/v1/sessions/:sessionId/score",
       async ({ principal, params, body, status }) => {
         const score = await service.submitFromServer(organizationScope(principal), {
           platformId: principal.platformId,
@@ -51,11 +54,14 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         params: GameSessionIdParams,
         body: SubmitScoreBody,
         response: { 201: ScoreSingle },
-        detail: { tags: ["scores"], summary: "Record the score of a game session" },
+        detail: {
+          tags: ["scores"],
+          summary: "Record the score of a game session (platform api key)",
+        },
       },
     )
     .post(
-      "/api/v1/platform/players/:externalUserId/scores/hide",
+      "/api/v1/players/:externalUserId/scores/hide",
       async ({ principal, params, body, status }) => {
         const hidden = await service.hideForPlayer(organizationScope(principal), {
           platformId: principal.platformId,
@@ -69,6 +75,9 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         params: PlayerScoresParams,
         body: t.Optional(HideScoresBody),
         response: { 200: HideScoresResult },
-        detail: { tags: ["scores"], summary: "Hide the scores of a player" },
+        detail: {
+          tags: ["scores"],
+          summary: "Hide the scores of a player (platform api key)",
+        },
       },
     );

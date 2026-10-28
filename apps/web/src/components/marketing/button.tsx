@@ -14,7 +14,7 @@ const buttonVariants = cva(
           "border border-blue-soft/30 bg-white/[0.02] text-foreground hover:border-pink/50 hover:bg-white/[0.06]",
         ghost: "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]",
         gradient:
-          "bg-[linear-gradient(100deg,#ff2e88,#2e7bff)] text-white shadow-[0_0_34px_-8px_rgba(255,46,136,0.8)] hover:shadow-[0_0_54px_-6px_rgba(46,123,255,0.9)]",
+          "bg-[linear-gradient(100deg,#ff725e,#7259e8)] text-white shadow-[0_10px_34px_-12px_rgba(114,89,232,0.8)] hover:shadow-[0_16px_42px_-12px_rgba(114,89,232,0.9)]",
       },
       size: {
         sm: "h-9 px-4 text-xs",

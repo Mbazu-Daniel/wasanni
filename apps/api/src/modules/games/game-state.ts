@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { game, gameConfig, gameFile, gamePlatformAssignment } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
-import type { Scope } from "@wasanni/kit";
+import { encryptSecret, withoutCallbackSecret, callbackSecretOf, type Scope } from "@wasanni/kit";
 import type { AssignmentConfig, AssignmentState, GameState } from "./types.ts";
 
 export async function readGameState(
@@ -87,12 +87,14 @@ export async function readAssignmentConfig(
   scope: Scope,
   assignmentId: string,
   configId?: string,
+  encryptionKey?: string,
 ): Promise<AssignmentConfig | null> {
   const [row] = await db
     .select({
       id: gameConfig.id,
       config: gameConfig.config,
       schemaVersion: gameConfig.schemaVersion,
+      scoreVerificationCallbackSecretCiphertext: gameConfig.scoreVerificationCallbackSecretCiphertext,
     })
     .from(gameConfig)
     .where(
@@ -107,5 +109,14 @@ export async function readAssignmentConfig(
     )
     .limit(1);
 
-  return row ?? null;
+  if (row === undefined) return null;
+  const legacySecret = row.scoreVerificationCallbackSecretCiphertext === null
+    ? callbackSecretOf(row.config)
+    : null;
+  return {
+    ...row,
+    config: withoutCallbackSecret(row.config),
+    scoreVerificationCallbackSecretCiphertext: row.scoreVerificationCallbackSecretCiphertext ??
+      (legacySecret === null || encryptionKey === undefined ? null : encryptSecret(legacySecret, encryptionKey)),
+  };
 }

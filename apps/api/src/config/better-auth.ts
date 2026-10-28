@@ -151,7 +151,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         cancelPendingInvitationsOnReinvite: true,
         sendInvitationEmail: async ({ email, organization: invited, inviter, invitation }) => {
           const membership = await readMembership(db, invited.id, inviter.user.id);
-          const inviterName = membership?.displayName ?? inviter.user.name;
+          const inviterName = membership?.name ?? inviter.user.name;
           const url = `${env.PUBLIC_WEB_ORIGIN}/accept-invitation/${invitation.id}`;
 
           await sendMail({
@@ -164,7 +164,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         schema: {
           member: {
             additionalFields: {
-              displayName: {
+              name: {
                 type: "string",
                 required: false,
                 input: true,
