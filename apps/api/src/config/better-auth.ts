@@ -1,23 +1,14 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI, organization } from "better-auth/plugins";
 import * as schema from "@wasanni/db/schema";
 import { readMembership } from "@wasanni/db";
-import { internal, newId, sendDevEmail } from "@wasanni/kit";
-import type { IdPrefix, SendEmail } from "@wasanni/kit";
+import { InternalServerError, newId, sendDevEmail } from "@wasanni/kit";
+import type { SendEmail } from "@wasanni/kit";
 import { AUTH_ROUTE_PREFIX } from "../constants.ts";
 import type { ModuleDeps } from "../types.ts";
-import { ac, roles } from "../permissions.ts";
-
-const ID_PREFIX_BY_MODEL: Record<string, IdPrefix> = {
-  user: "usr",
-  session: "ses",
-  account: "acc",
-  verification: "ver",
-  organization: "wsp",
-  member: "wsm",
-  invitation: "ver",
-};
+import { ac, roles } from "../access.ts";
+import { createDatabaseAuditHooks, createOrganizationAuditHooks } from "./audit-hooks.ts";
 
 function credentialsFor(
   clientId: string | undefined,
@@ -27,28 +18,57 @@ function credentialsFor(
   return { clientId, clientSecret };
 }
 
+function resolveSender(deps: ModuleDeps): SendEmail {
+  const enqueuer = deps.enqueuer;
+
+  if (enqueuer === null || enqueuer === undefined) {
+    return (payload) => sendDevEmail(payload, deps.logger);
+  }
+
+  if (deps.env.ZEPTOMAIL_API_KEY === undefined) {
+    return (payload) => sendDevEmail(payload, deps.logger);
+  }
+
+  return async (payload) => {
+    await enqueuer.email(payload);
+  };
+}
+
 export function createBetterAuth(deps: ModuleDeps) {
   const { db, env } = deps;
 
   if (env.NODE_ENV === "production" && deps.sendEmail === undefined) {
-    throw internal("better-auth refuses to boot in production without an email transport");
+    throw new InternalServerError("better-auth refuses to boot in production without an email transport");
   }
 
-  const sendMail: SendEmail = deps.sendEmail ?? ((payload) => sendDevEmail(payload, deps.logger));
-
-  const sendConfirmationLink = (email: string, url: string): Promise<void> =>
-    sendMail({ to: email, subject: "Confirm your Wasanni email", url, purpose: "verify" });
+  const sendMail: SendEmail = deps.sendEmail ?? resolveSender(deps);
 
   const sendPasswordResetLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Reset your Wasanni password", url, purpose: "reset" });
 
+  const resetUrlForWeb = (url: string): string => {
+    const parsed = new URL(url);
+    const token = parsed.pathname.split("/").pop() ?? "";
+    const callback = parsed.searchParams.get("callbackURL");
+
+    const next = new URL("/reset-password", env.PUBLIC_WEB_ORIGIN);
+    next.searchParams.set("token", token);
+    if (callback !== null) next.searchParams.set("callbackURL", callback);
+
+    return next.toString();
+  };
+
   const google = credentialsFor(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET);
   const github = credentialsFor(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
+
+  const databaseHooks = createDatabaseAuditHooks(deps.audit);
+  const organizationHooks = createOrganizationAuditHooks(deps.audit);
 
   return betterAuth({
     appName: "Wasanni",
     basePath: AUTH_ROUTE_PREFIX,
     baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: [...env.WEB_ORIGINS],
     secret: env.SESSION_SECRET,
 
     database: drizzleAdapter(db, {
@@ -64,15 +84,23 @@ export function createBetterAuth(deps: ModuleDeps) {
       },
     }),
 
+    databaseHooks,
+
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
-      sendResetPassword: async ({ user, url }) => sendPasswordResetLink(user.email, url),
+      requireEmailVerification: false,
+      sendResetPassword: async ({ user, url }) =>
+        sendPasswordResetLink(user.email, resetUrlForWeb(url)),
+      sendChangeEmailVerification: async ({ newEmail, url }: { newEmail: string; url: string }) =>
+        sendMail({
+          to: newEmail,
+          subject: "Confirm your new Wasanni email",
+          url,
+          purpose: "changeEmail",
+        }),
     },
 
-    emailVerification: {
-      sendVerificationEmail: async ({ user, url }) => sendConfirmationLink(user.email, url),
-    },
+
 
     socialProviders: {
       ...(google ? { google } : {}),
@@ -88,25 +116,42 @@ export function createBetterAuth(deps: ModuleDeps) {
 
     advanced: {
       database: {
-        generateId: ({ model }) => {
-          const prefix = ID_PREFIX_BY_MODEL[model];
-          return prefix === undefined ? false : newId(prefix);
-        },
+        generateId: () => newId(),
         joins: true,
       },
     },
 
     plugins: [
+      {
+        id: "default-name-from-email",
+        hooks: {
+          before: [
+            {
+              matcher: (ctx) => (ctx.path ?? "").endsWith("/sign-up/email"),
+              handler: async (ctx) => {
+                const body = ctx.body as { name?: string; email?: string } | undefined;
+                if (!body?.name && body?.email) {
+                  return {
+                    context: {
+                      body: { ...body, name: body.email.split("@")[0] },
+                    },
+                  };
+                }
+              },
+            },
+          ],
+        },
+      } satisfies BetterAuthPlugin,
       organization({
         ac,
         roles,
-        allowUserToCreateOrganization: (user) => user.emailVerified === true,
-        requireEmailVerificationOnInvitation: true,
+        organizationHooks,
+        requireEmailVerificationOnInvitation: false,
         invitationExpiresIn: 60 * 60 * 24 * 7,
         cancelPendingInvitationsOnReinvite: true,
         sendInvitationEmail: async ({ email, organization: invited, inviter, invitation }) => {
           const membership = await readMembership(db, invited.id, inviter.user.id);
-          const inviterName = membership?.displayName ?? inviter.user.name;
+          const inviterName = membership?.name ?? inviter.user.name;
           const url = `${env.PUBLIC_WEB_ORIGIN}/accept-invitation/${invitation.id}`;
 
           await sendMail({
@@ -119,7 +164,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         schema: {
           member: {
             additionalFields: {
-              displayName: {
+              name: {
                 type: "string",
                 required: false,
                 input: true,
@@ -133,4 +178,3 @@ export function createBetterAuth(deps: ModuleDeps) {
   });
 }
 
-export type BetterAuth = ReturnType<typeof createBetterAuth>;

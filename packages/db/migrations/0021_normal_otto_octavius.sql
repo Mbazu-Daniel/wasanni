@@ -1,0 +1,1 @@
+ALTER TABLE "game_session" DROP COLUMN "score_signing_key_ciphertext";

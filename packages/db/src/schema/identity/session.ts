@@ -1,15 +1,15 @@
-import { pgTable, text, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "./user.ts";
 
 export const session = pgTable(
   "session",
   {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
-    activeOrganizationId: text("active_organization_id"),
+    activeOrganizationId: uuid("active_organization_id"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),

@@ -17,15 +17,15 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@wasanni/kit": ["./packages/kit/src/index.ts"],
       "@wasanni/kit/*": ["./packages/kit/src/*"],
+      "@wasanni/jobs": ["./packages/jobs/src/index.ts"],
       "@wasanni/db": ["./packages/db/src/index.ts"],
       "@wasanni/db/*": ["./packages/db/src/*"],
       "@wasanni/contracts": ["./packages/contracts/src/index.ts"]
     }
   },
   "include": ["apps/**/*.ts", "packages/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["node_modules", "**/dist"]
+  "exclude": ["node_modules", "**/dist", "apps/web"]
 }

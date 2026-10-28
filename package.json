@@ -4,22 +4,31 @@
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun run dev:api & bun run dev:worker",
+    "dev": "bun run dev:api & bun run dev:worker & bun run dev:realtime & bun run dev:web",
     "dev:api": "bun --watch apps/api/src/index.ts",
     "dev:worker": "bun --watch apps/worker/src/index.ts",
+    "dev:realtime": "bun --watch apps/realtime/src/index.ts",
+    "dev:web": "bun run --cwd apps/web dev",
     "typecheck": "tsc --noEmit",
+    "typecheck:web": "bun run --cwd apps/web typecheck",
     "test": "bun test",
     "db:generate": "bun run --cwd packages/db generate",
     "db:migrate": "bun run --cwd packages/db migrate",
     "db:studio": "bun run --cwd packages/db studio",
+    "agent:traces": "bun --env-file=.env scripts/agent-traces.ts",
+    "agent:studio": "bun --env-file=.env apps/api/src/mastra-server.ts",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
-    "ci": "bun run typecheck && bun test"
+    "ci": "bun run typecheck && bun run typecheck:web && bun test",
+    "mcp": "bun --env-file=.env apps/mcp/src/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.14",
-    "drizzle-kit": "^0.31.11",
-    "drizzle-orm": "^0.45.4",
-    "typescript": "^5.6.3"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@types/bun": "1.4.3",
+    "drizzle-kit": "0.31.11",
+    "drizzle-orm": "0.45.4",
+    "elysia": "1.4.30",
+    "fflate": "0.8.3",
+    "typescript": "7.0.2"
   }
 }

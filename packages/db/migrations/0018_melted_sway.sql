@@ -1,0 +1,2 @@
+ALTER TABLE "game_config" ADD COLUMN "score_verification_callback_secret_ciphertext" text;--> statement-breakpoint
+ALTER TABLE "game_session" ADD COLUMN "score_verification_callback_secret_ciphertext" text;

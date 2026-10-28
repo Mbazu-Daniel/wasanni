@@ -1,13 +1,15 @@
-import { badRequest } from "../errors/errors.ts";
-import type { Principal } from "../tenancy/types.ts";
+import { BadRequestError } from "../exceptions/index.ts";
+import type { GameSessionPrincipal, Principal } from "../tenancy/types.ts";
 import type { Scope } from "./types.ts";
 
-export function organizationScope(principal: Principal | null | undefined): Scope {
+export function organizationScope(
+  principal: Principal | GameSessionPrincipal | null | undefined,
+): Scope {
   const organizationId = principal?.organizationId.trim() ?? "";
 
   if (organizationId === "") {
-    throw badRequest("organization scope requires a principal with an organization");
+    throw new BadRequestError("organization scope requires a principal with an organization");
   }
 
-  return { organizationId };
+  return { scoped: true, organizationId };
 }

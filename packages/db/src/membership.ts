@@ -1,12 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import type { Db } from "./client.ts";
+import type { Db, MembershipRow } from "./types.ts";
 import { activeMember, member } from "./schema/organization/member.ts";
-
-export type MembershipRow = {
-  memberId: string;
-  role: string;
-  displayName: string | null;
-};
 
 export async function readMembership(
   db: Db,
@@ -17,7 +11,7 @@ export async function readMembership(
     .select({
       memberId: member.id,
       role: member.role,
-      displayName: member.displayName,
+      name: member.name,
     })
     .from(member)
     .where(

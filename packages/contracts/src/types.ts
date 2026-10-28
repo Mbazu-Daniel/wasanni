@@ -1,3 +1,13 @@
-import { ID_PREFIXES } from "./constants.ts";
+import { ACTIONS, RESOURCES, ROLE_NAMES } from "./constants.ts";
 
-export type IdPrefix = (typeof ID_PREFIXES)[number];
+export type Resource = (typeof RESOURCES)[number];
+
+export type Action = (typeof ACTIONS)[number];
+
+export type Permission = `${Resource}:${Action}`;
+
+export type RoleName = (typeof ROLE_NAMES)[number];
+
+export type PermissionGrant = Record<string, readonly string[] | undefined>;
+
+export type RolePermission = Record<string, string[]>;

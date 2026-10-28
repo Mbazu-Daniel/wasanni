@@ -1,48 +1,55 @@
-export const RESOURCES = ["organization", "member", "invitation"] as const;
+import { ACTIONS, RESOURCES } from "./constants.ts";
+import type { PermissionGrant } from "./types.ts";
 
-export type Resource = (typeof RESOURCES)[number];
+export function rolesIn(role: string): string[] {
+  return role
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+}
 
-export const ACTIONS = ["create", "read", "update", "delete", "cancel"] as const;
+export function flattenPermissions(grant: PermissionGrant): ReadonlySet<string> {
+  const permissions = new Set<string>();
 
-export type Action = (typeof ACTIONS)[number];
+  for (const [resource, actions] of Object.entries(grant)) {
+    if (!Array.isArray(actions)) continue;
+    for (const action of actions) permissions.add(`${resource}:${action}`);
+  }
 
-export type Permission = `${Resource}:${Action}`;
+  return permissions;
+}
 
-export const PERMISSION = {
-  organizationRead: "organization:read",
-  organizationUpdate: "organization:update",
-  organizationDelete: "organization:delete",
+export function listUnknownPermissions(grant: PermissionGrant): string[] {
+  const unknown: string[] = [];
 
-  memberRead: "member:read",
-  memberCreate: "member:create",
-  memberUpdate: "member:update",
-  memberDelete: "member:delete",
+  for (const [resource, actions] of Object.entries(grant)) {
+    if (!(RESOURCES as readonly string[]).includes(resource)) {
+      unknown.push(resource);
+      continue;
+    }
 
-  invitationRead: "invitation:read",
-  invitationCreate: "invitation:create",
-  invitationCancel: "invitation:cancel",
-} as const satisfies Record<string, Permission>;
+    if (!Array.isArray(actions)) continue;
 
-export const ROLE_NAMES = ["owner", "admin", "member"] as const;
+    for (const action of actions) {
+      if (!(ACTIONS as readonly string[]).includes(action)) {
+        unknown.push(`${resource}:${action}`);
+      }
+    }
+  }
 
-export type RoleName = (typeof ROLE_NAMES)[number];
+  return unknown;
+}
 
-const FULL = ["create", "read", "update", "delete"] as const;
+export function parsePermissionGrant(raw: string | null): PermissionGrant {
+  if (raw === null) return {};
 
-export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action[]>> = {
-  owner: {
-    organization: ["read", "update", "delete"],
-    member: FULL,
-    invitation: ["create", "read", "cancel"],
-  },
-  admin: {
-    organization: ["read", "update"],
-    member: ["create", "read", "update"],
-    invitation: ["create", "read", "cancel"],
-  },
-  member: {
-    organization: ["read"],
-    member: ["read"],
-    invitation: ["read"],
-  },
-};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+  return parsed as PermissionGrant;
+}

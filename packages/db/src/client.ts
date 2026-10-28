@@ -2,13 +2,28 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import * as schema from "./schema/index.ts";
 
-export type Db = ReturnType<typeof createDb>["db"];
+const POOLED_PORTS = ["6432", "6543"];
 
-export function createDb(url: string, opts?: { max?: number }) {
+export function isPooled(url: string): boolean {
+  if (url.includes("pgbouncer=true")) return true;
+  if (url.includes("prepare=false")) return true;
+
+  try {
+    return POOLED_PORTS.includes(new URL(url).port);
+  } catch {
+    return false;
+  }
+}
+
+export function createDb(
+  url: string,
+  opts?: { max?: number; preparedStatements?: boolean },
+) {
   const sql = postgres(url, {
     max: opts?.max ?? 10,
     idle_timeout: 30,
     connect_timeout: 10,
+    prepare: opts?.preparedStatements ?? !isPooled(url),
     onnotice: () => {},
   });
 

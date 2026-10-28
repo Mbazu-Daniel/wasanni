@@ -1,0 +1,14 @@
+{
+  "name": "@wasanni/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@wasanni/kit": "workspace:*",
+    "bullmq": "6.4.0",
+    "ioredis": "6.0.0"
+  }
+}

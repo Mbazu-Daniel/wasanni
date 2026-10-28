@@ -1,12 +1,24 @@
-import type { BetterAuth } from "../../config/better-auth.ts";
+import type { BetterAuth } from "../../config/types.ts";
 import { AUTH_ROUTE_PREFIX } from "../../constants.ts";
-import type { PrincipalApi } from "../../plugins/principal.ts";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { ErrorBodyModel } from "@wasanni/contracts";
 import { AuthModel } from "./model.ts";
 
-export const authRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
+export const createAuthRoutes = <T extends PrincipalApi>(
+  api: T,
+  auth: BetterAuth,
+  providers: string[],
+) =>
   api
     .all(`${AUTH_ROUTE_PREFIX}/*`, ({ request }) => auth.handler(request))
+    .get(
+      `${AUTH_ROUTE_PREFIX}/providers`,
+      () => ({ providers }),
+      {
+        detail: { tags: ["auth"], summary: "The social providers this server can sign in with" },
+        response: { 200: AuthModel.providers },
+      },
+    )
     .get(
       `${AUTH_ROUTE_PREFIX}/me`,
       ({ user, session }) => ({
@@ -26,5 +38,4 @@ export const authRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
       },
     );
 
-export { authApiDocument } from "./openapi.ts";
-export type { AuthApiDocument } from "./openapi.ts";
+export { buildAuthApiDocument } from "./openapi.ts";

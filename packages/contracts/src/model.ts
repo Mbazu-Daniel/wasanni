@@ -6,6 +6,8 @@ export const ErrorCodeModel = t.Union([
   t.Literal("forbidden"),
   t.Literal("not_found"),
   t.Literal("conflict"),
+  t.Literal("rate_limited"),
+  t.Literal("unprocessable"),
   t.Literal("internal"),
 ]);
 

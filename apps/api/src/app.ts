@@ -1,35 +1,167 @@
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
-import { AppError } from "@wasanni/kit";
-import { toErrorBody } from "@wasanni/contracts";
-import { authApiDocument, authRoutes } from "./modules/auth/index.ts";
-import { organizationRoutes } from "./modules/organization/index.ts";
-import { organizationService } from "./modules/organization/service.ts";
-import { memberRoutes } from "./modules/members/index.ts";
-import { memberService } from "./modules/members/service.ts";
+import { STATUS, toErrorBody } from "@wasanni/contracts";
+import {
+  createMemorySessionEventStore,
+  createMetrics,
+  createObjectStorage,
+  readStorageConfig,
+  readStorageLimits,
+} from "@wasanni/kit";
+import { buildAuthApiDocument, createAuthRoutes } from "./modules/auth/index.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
-import { principal, type PrincipalDeps } from "./plugins/principal.ts";
-import { healthRoutes } from "./routes/health.ts";
-import { requestContext, requestContextOf } from "./plugins/request-context.ts";
-import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
+import { createPrincipalPlugin } from "./plugins/principal.ts";
+import { createRateLimiter } from "./plugins/rate-limit.ts";
+import type { PrincipalDeps } from "./plugins/types.ts";
+import { createHealthRoutes } from "./routes/health.ts";
+import { failureOf } from "./failures.ts";
+import { createRequestContextPlugin, requestContextOf } from "./plugins/request-context.ts";
+import { createPlatformRoutes } from "./modules/platform/index.ts";
+import { createPlatformService } from "./modules/platform/service.ts";
+import { createMemberRoutes } from "./modules/member/index.ts";
+import { createMemberService } from "./modules/member/service.ts";
+import { createApiKeyRoutes } from "./modules/api-key/index.ts";
+import { createApiKeyService } from "./modules/api-key/service.ts";
+import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
+import { createAgentModule } from "./modules/agent/index.ts";
+import { createAgentRuntime } from "./modules/agent/mastra.ts";
+import { createOrganizationModule } from "./modules/organization/index.ts";
+import { createUsageService } from "./modules/usage/usage.service.ts";
+import { createRoleRoutes } from "./modules/role/index.ts";
+import { createRoleService } from "./modules/role/service.ts";
+import { createAgentGamePort, createGamesRoutes } from "./modules/games/index.ts";
+import { createTemplatesRoutes } from "./modules/templates/index.ts";
+import { createPlayRoutes, createPlayServices } from "./modules/play/index.ts";
+import { createScoreVerifier } from "./modules/play/score-verifier.ts";
+import { createCompetition } from "./modules/competition/index.ts";
+import { createAuditRoutes } from "./modules/audit/index.ts";
+import { createAuditService } from "./modules/audit/service.ts";
+import { createAuditPlugin } from "./plugins/audit.ts";
+import { createWebhooksRoutes } from "./modules/webhook/index.ts";
+import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
+import { createDocsRoutes } from "./modules/docs/index.ts";
+import {
+  AUTH_ROUTE_PREFIX,
+  DOCS_PATH,
+  LEADERBOARD_RATE_LIMIT_PER_MINUTE,
+  METRICS_PATH,
+} from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
 
+const ROUTE_ID = /^[a-z]{3}_[A-Za-z0-9]+$/;
+
+const routeLabel = (path: string): string =>
+  path
+    .replace(/\/org_[A-Za-z0-9]+/g, "/:organizationId")
+    .split("/")
+    .map((segment) => (ROUTE_ID.test(segment) ? ":id" : segment))
+    .join("/");
+
 export async function createApp(deps: AppDeps) {
-  const moduleDeps: ModuleDeps = { db: deps.db, env: deps.env, logger: deps.logger };
+  const audit = createAuditService(deps.db, deps.logger);
+
+  const moduleDeps: ModuleDeps = {
+    db: deps.db,
+    env: deps.env,
+    logger: deps.logger,
+    audit,
+    enqueuer: deps.enqueuer ?? null,
+  };
   const betterAuth = createBetterAuth(moduleDeps);
 
   const principalDeps: PrincipalDeps = { db: deps.db, auth: betterAuth };
-  const base = principal(principalDeps);
+  const base = createPrincipalPlugin(principalDeps);
+
+  const rateLimit = createRateLimiter(
+    deps.redis ?? null,
+    {
+      scoreSubmit: {
+        limit: deps.env.SCORE_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ sessionPrincipal }) =>
+          sessionPrincipal === undefined ? null : `rl:score:${sessionPrincipal.sessionId}`,
+      },
+      sessionCreate: {
+        limit: deps.env.SESSION_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ principal }) =>
+          principal?.kind === "platform" ? `rl:sess:${principal.apiKeyId}` : null,
+      },
+      leaderboardRead: {
+        limit: LEADERBOARD_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ principal }) =>
+          principal?.kind === "platform" ? `rl:lb:${principal.apiKeyId}` : null,
+      },
+    },
+    deps.logger,
+  );
+
+  const usage = createUsageService(deps.db, {
+    logger: deps.logger,
+    enabled: deps.env.USAGE_METERING_ENABLED,
+  });
+
+  const verifier = deps.env.SCORE_VERIFICATION_ENABLED
+    ? createScoreVerifier(deps.logger, deps.env.ALLOW_PRIVATE_OUTBOUND_URLS)
+    : null;
+
+  const metrics = createMetrics();
+  metrics.counter("wasanni_http_requests_total", "HTTP requests handled by the API");
+
+  const storage = deps.storage ?? createObjectStorage(readStorageConfig(deps.env));
+  const events = deps.events ?? createMemorySessionEventStore();
+  const enqueuer = deps.enqueuer ?? null;
+  const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
+  const competition = createCompetition(deps.db, usage);
+  const platforms = createPlatformService(deps.db);
+  const play = createPlayServices({
+    db: deps.db,
+    storage,
+    events,
+    dispatcher,
+    enqueuer,
+    realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
+    matchRecorder: competition.matches,
+    verifier,
+    usage,
+    encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+  });
+
+  const platformProvider =
+    deps.env.AGENT_API_KEY !== undefined &&
+    deps.env.AGENT_BASE_URL !== undefined &&
+    deps.env.AGENT_MODEL !== undefined
+      ? {
+          apiKey: deps.env.AGENT_API_KEY,
+          baseUrl: deps.env.AGENT_BASE_URL,
+          model: deps.env.AGENT_MODEL,
+        }
+      : null;
+
+  const socialProviders = [
+    ...(deps.env.GOOGLE_CLIENT_ID !== undefined && deps.env.GOOGLE_CLIENT_SECRET !== undefined
+      ? ["google"]
+      : []),
+    ...(deps.env.GITHUB_CLIENT_ID !== undefined && deps.env.GITHUB_CLIENT_SECRET !== undefined
+      ? ["github"]
+      : []),
+  ];
 
   return new Elysia({ name: "wasanni-api" })
-    .use(requestContext(deps.logger))
+    .use(createRequestContextPlugin(deps.logger))
     .use(
       cors({
         origin: deps.corsOrigins,
         credentials: true,
         methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+        allowedHeaders: [
+          "Content-Type",
+          "Authorization",
+          "X-Request-Id",
+          "X-API-Key",
+        ],
         exposeHeaders: ["X-Request-Id", "Set-Cookie"],
       }),
     )
@@ -38,7 +170,7 @@ export async function createApp(deps: AppDeps) {
         path: DOCS_PATH,
         exclude: { paths: [`${AUTH_ROUTE_PREFIX}/*`] },
         documentation: {
-          ...(await authApiDocument(betterAuth)),
+          ...(await buildAuthApiDocument(betterAuth)),
           info: {
             title: "Wasanni API",
             version: deps.version,
@@ -47,17 +179,8 @@ export async function createApp(deps: AppDeps) {
         },
       }),
     )
-    .use(authRoutes(base, betterAuth))
-    .use(memberRoutes(base, { auth: betterAuth, service: memberService(deps.db) }))
-    .use(organizationRoutes(base, { auth: betterAuth, service: organizationService(deps.db) }))
-    .use(healthRoutes(deps))
     .onError(({ error, code: lifecycleCode, set, request }) => {
       const { requestId } = requestContextOf(request);
-
-      if (error instanceof AppError) {
-        set.status = error.status;
-        return toErrorBody(error, requestId);
-      }
 
       if (lifecycleCode === "VALIDATION") {
         set.status = 422;
@@ -76,20 +199,109 @@ export async function createApp(deps: AppDeps) {
         return toErrorBody({ code: "not_found", message: "route not found" }, requestId);
       }
 
-      deps.logger.error("unhandled error", { err: error, requestId });
-      set.status = 500;
-      return toErrorBody({ code: "internal", message: "internal error" }, requestId);
+      const failure = failureOf(error);
+      if (failure.status === STATUS.internal) {
+        deps.logger.error("unhandled error", { err: error, requestId });
+      }
+
+      set.status = failure.status;
+      return toErrorBody(failure.source, requestId);
     })
+    .use(createAuditPlugin(audit))
+    .use(createAuthRoutes(base, betterAuth, socialProviders))
+    .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
+    .use(createPlatformRoutes(base, { service: platforms }))
+    .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
+    .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
+    .use(createUsageRoutes(base, { service: usage }))
+    .use(
+      createAgentModule(base, {
+        db: deps.db,
+        logger: deps.logger,
+        usage,
+        audit,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        allowPrivateOutbound: deps.env.ALLOW_PRIVATE_OUTBOUND_URLS,
+        runtime: createAgentRuntime(
+          deps.env.DATABASE_URL,
+          deps.env.AGENT_OTEL_ENDPOINT,
+        ),
+        platformProvider,
+        games: createAgentGamePort({
+          db: deps.db,
+          storage,
+          config: readStorageLimits(deps.env),
+        }),
+        integrator: {
+          brackets: competition.brackets,
+          leaderboards: play.leaderboards,
+          matches: competition.matches,
+          participants: competition.participants,
+          platforms,
+          scores: play.scores,
+          standings: competition.standings,
+          tournaments: competition.tournaments,
+        },
+      }),
+    )
+    .use(createOrganizationModule(base, deps.db))
+    .use(
+      createGamesRoutes(base, {
+        db: deps.db,
+        storage,
+        config: readStorageLimits(deps.env),
+        enqueuer,
+        usage,
+        redis: deps.redis ?? null,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        onConfigChanged: async (input) => {
+          await enqueuer?.scoreRecheck(input);
+        },
+      }),
+    )
+    .use(
+      createTemplatesRoutes(base, {
+        db: deps.db,
+        storage,
+        config: readStorageLimits(deps.env),
+      }),
+    )
+    .use(
+      createWebhooksRoutes(base, {
+        db: deps.db,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        dispatcher,
+      }),
+    )
+    .use(competition.mount(base))
+    .use(createPlayRoutes(base, { services: play, rateLimit }))
+    .use(createHealthRoutes(deps))
+    .use(createDocsRoutes())
+    .get(
+      METRICS_PATH,
+      ({ set }) => {
+        set.headers["content-type"] = "text/plain; version=0.0.4; charset=utf-8";
+        return metrics.render();
+      },
+      { detail: { tags: ["ops"], hide: true } },
+    )
+    .use(createAuditRoutes(base, { service: audit }))
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
+      const path = new URL(request.url).pathname;
+
       deps.logger.info("http", {
         requestId,
         method: request.method,
-        path: new URL(request.url).pathname,
+        path,
         status: set.status ?? 200,
         durationMs: Math.round(performance.now() - startedAt),
       });
+
+      metrics.inc("wasanni_http_requests_total", {
+        method: request.method,
+        route: routeLabel(path),
+        status: String(set.status ?? 200),
+      });
     });
 }
-
-export type App = ReturnType<typeof createApp>;

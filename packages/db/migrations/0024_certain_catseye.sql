@@ -1,0 +1,2 @@
+ALTER TABLE "agent_session" ADD COLUMN "pinned" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE INDEX "agent_session_organization_pinned_ix" ON "agent_session" USING btree ("organization_id","pinned");

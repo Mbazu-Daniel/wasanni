@@ -11,4 +11,20 @@ export type UserPrincipal = BasePrincipal & {
   role: string;
 };
 
-export type Principal = UserPrincipal;
+export type PlatformPrincipal = BasePrincipal & {
+  kind: "platform";
+  platformId: string;
+  apiKeyId: string;
+};
+
+export type GameSessionPrincipal = {
+  kind: "gameSession";
+  sessionId: string;
+  organizationId: string;
+  platformId: string;
+  gameId: string;
+  externalUserId: string;
+  mode: string | null;
+};
+
+export type Principal = UserPrincipal | PlatformPrincipal;
