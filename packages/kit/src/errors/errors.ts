@@ -1,5 +1,5 @@
-import { STATUS } from "./constants.ts";
-import type { ErrorCode } from "./types.ts";
+import { STATUS } from "@wasanni/contracts";
+import type { ErrorCode } from "@wasanni/contracts";
 
 export class AppError extends Error {
   readonly code: ErrorCode;
@@ -28,9 +28,6 @@ export const forbidden = (message = "forbidden") => new AppError("forbidden", me
 export const notFound = (message = "not found") => new AppError("not_found", message);
 
 export const conflict = (message: string) => new AppError("conflict", message);
-
-export const rateLimited = (message = "rate limited") =>
-  new AppError("rate_limited", message);
 
 export const internal = (message = "internal error") =>
   new AppError("internal", message);
