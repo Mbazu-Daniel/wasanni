@@ -1,18 +1,11 @@
 import { sql } from "drizzle-orm";
-import type { Db } from "@wasanni/db";
-import type { Env, Logger, ObjectStorage } from "@wasanni/kit";
-import type { AuditService } from "../../../api/src/modules/audit/service.ts";
-import type { ScoreArchivePartition, ScoreArchiveRow } from "../types.ts";
+import type {
+  ArchivePartitionsDeps,
+  ScoreArchivePartition,
+  ScoreArchiveRow,
+} from "../types.ts";
 
 const HOUR_MS = 3_600_000;
-
-export type ArchivePartitionsDeps = {
-  db: Db;
-  storage: ObjectStorage;
-  audit: AuditService;
-  env: Env;
-  logger: Logger;
-};
 
 const pad = (value: number): string => String(value).padStart(2, "0");
 

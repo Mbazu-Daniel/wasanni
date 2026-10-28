@@ -1,21 +1,11 @@
 import { t, type UnwrapSchema } from "elysia";
 import { BracketView } from "./match.contract.ts";
 
-export const TOURNAMENT_FORMATS = ["leaderboard", "bracket"] as const;
-
 export const TournamentFormat = t.Union([
   t.Literal("leaderboard"),
   t.Literal("bracket"),
 ]);
 export type TournamentFormat = UnwrapSchema<typeof TournamentFormat>;
-
-export const TOURNAMENT_STATUSES = [
-  "draft",
-  "open",
-  "running",
-  "completed",
-  "cancelled",
-] as const;
 
 export const TournamentStatus = t.Union([
   t.Literal("draft"),
@@ -25,14 +15,6 @@ export const TournamentStatus = t.Union([
   t.Literal("cancelled"),
 ]);
 export type TournamentStatus = UnwrapSchema<typeof TournamentStatus>;
-
-export const PARTICIPANT_STATUSES = [
-  "registered",
-  "active",
-  "withdrawn",
-  "eliminated",
-  "winner",
-] as const;
 
 export const ParticipantStatus = t.Union([
   t.Literal("registered"),
@@ -206,15 +188,15 @@ export type PlatformTournamentParams = UnwrapSchema<
 
 export const StandingsRow = t.Object({
   position: t.Number(),
-  participantId: t.Optional(t.String()),
+  participantId: t.String(),
   externalUserId: t.String(),
   displayName: t.Union([t.String(), t.Null()]),
-  seed: t.Optional(t.Union([t.Number(), t.Null()])),
-  status: t.Optional(t.String()),
+  seed: t.Union([t.Number(), t.Null()]),
+  status: t.String(),
   score: t.Union([t.Number(), t.Null()]),
   flagged: t.Boolean(),
-  flags: t.Optional(t.Array(t.String())),
-  submittedAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Null()])),
+  flags: t.Array(t.String()),
+  submittedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
 });
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
 

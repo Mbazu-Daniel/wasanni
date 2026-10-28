@@ -59,6 +59,7 @@ export const createMemberRoutes = <T extends PrincipalApi>(
         organizationScope(principal),
         params.memberId,
         body.role,
+        principal.role,
       );
 
       return { member };

@@ -6,6 +6,40 @@ import type { Redis } from "@wasanni/kit";
 const PREFIX = "usage:live:bandwidth:";
 
 export function createUsageFlushProcessor(db: Db, redis: Redis) {
+  const countBandwidth = async (
+    organizationId: string,
+    period: Date,
+    amount: number,
+  ): Promise<boolean> => {
+    try {
+      await db
+        .insert(usageCounter)
+        .values({
+          organizationId,
+          platformId: null,
+          periodStart: period,
+          metric: "bandwidth_bytes",
+          value: amount,
+        })
+        .onConflictDoUpdate({
+          target: [
+            usageCounter.organizationId,
+            usageCounter.platformId,
+            usageCounter.periodStart,
+            usageCounter.metric,
+          ],
+          set: {
+            value: sql`${usageCounter.value} + ${amount}`,
+            updatedAt: new Date(),
+          },
+        });
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return async function flush(): Promise<{ keys: number; bytes: number }> {
     const keys: string[] = [];
     let cursor = "0";
@@ -34,35 +68,10 @@ export function createUsageFlushProcessor(db: Db, redis: Redis) {
       const period = new Date(rest.slice(separator + 1));
       if (Number.isNaN(period.getTime())) continue;
 
-      try {
-        await db
-          .insert(usageCounter)
-          .values({
-            organizationId,
-            platformId: null,
-            periodStart: period,
-            metric: "bandwidth_bytes",
-            value: amount,
-          })
-          .onConflictDoUpdate({
-            target: [
-              usageCounter.organizationId,
-              usageCounter.platformId,
-              usageCounter.periodStart,
-              usageCounter.metric,
-            ],
-            set: {
-              value: sql`${usageCounter.value} + ${amount}`,
-              updatedAt: new Date(),
-            },
-          });
+      if (!(await countBandwidth(organizationId, period, amount))) continue;
 
-        flushed += 1;
-        bytes += amount;
-      } catch {
-        // bandwidth is an approximation, and a lost minute of it is cheaper
-        // than refusing a game file
-      }
+      flushed += 1;
+      bytes += amount;
     }
 
     return { keys: flushed, bytes };

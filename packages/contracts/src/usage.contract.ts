@@ -84,7 +84,7 @@ export type UsageQuery = UnwrapSchema<typeof UsageQuery>;
 
 export const UsageQuotaParams = t.Object({
   organizationId: t.String(),
-  metric: t.String(),
+  metric: UsageMetricModel,
 });
 export type UsageQuotaParams = UnwrapSchema<typeof UsageQuotaParams>;
 
@@ -140,3 +140,19 @@ export const UsageStorageView = t.Object({
   total: t.Number(),
 });
 export type UsageStorageView = UnwrapSchema<typeof UsageStorageView>;
+
+export const OrganizationExport = t.Object({
+  exportedAt: t.String({ format: "date-time" }),
+  organization: t.Object({
+    id: t.String(),
+    name: t.String(),
+    slug: t.String(),
+  }),
+  counts: t.Record(t.String(), t.Number()),
+  limits: t.Object({
+    sessions: t.Number(),
+    scores: t.Number(),
+  }),
+  data: t.Record(t.String(), t.Array(t.Unknown())),
+});
+export type OrganizationExport = UnwrapSchema<typeof OrganizationExport>;

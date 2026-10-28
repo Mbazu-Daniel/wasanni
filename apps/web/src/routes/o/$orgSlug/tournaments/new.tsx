@@ -13,10 +13,12 @@ import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/primitives/page-header";
 import type { TournamentFormat, TournamentRow } from "@/lib/tournament-types";
 
-type GameRow = { id: string; name: string; slug: string };
-type PlatformRow = { id: string; name: string; slug: string };
-type Assignment = { id: string; gameId: string; platformId: string; status: string };
-type Config = { id: string; name: string; isDefault: boolean; revision: number };
+import type {
+  GameConfigView,
+  GameView,
+  OrgAssignmentView,
+} from "@/lib/game-types";
+import type { PlatformView } from "@/lib/platform-types";
 
 export const Route = createFileRoute("/o/$orgSlug/tournaments/new")({
   head: () => ({ meta: [{ title: "Create a tournament · Wasanni" }] }),
@@ -49,7 +51,7 @@ function NewTournamentPage() {
   const { data: games = [] } = useQuery({
     queryKey: ["games", organizationId],
     queryFn: () =>
-      apiFetch<{ games: GameRow[] }>(
+      apiFetch<{ games: GameView[] }>(
         `/api/v1/organizations/${organizationId}/games`,
       ).then((response) => response.games),
   });
@@ -57,7 +59,7 @@ function NewTournamentPage() {
   const { data: platforms = [] } = useQuery({
     queryKey: ["platforms", organizationId],
     queryFn: () =>
-      apiFetch<{ platforms: PlatformRow[] }>(
+      apiFetch<{ platforms: PlatformView[] }>(
         `/api/v1/organizations/${organizationId}/platforms`,
       ).then((response) => response.platforms),
   });
@@ -65,7 +67,7 @@ function NewTournamentPage() {
   const { data: assignments = [] } = useQuery({
     queryKey: ["assignments", organizationId, gameId],
     queryFn: () =>
-      apiFetch<{ assignments: Assignment[] }>(
+      apiFetch<{ assignments: OrgAssignmentView[] }>(
         `/api/v1/organizations/${organizationId}/assignments`,
       ).then((response) => response.assignments),
     enabled: gameId !== "",
@@ -74,7 +76,7 @@ function NewTournamentPage() {
   const { data: configs = [] } = useQuery({
     queryKey: ["configs", organizationId, gameId, assignmentId],
     queryFn: () =>
-      apiFetch<{ configs: Config[] }>(
+      apiFetch<{ configs: GameConfigView[] }>(
         `/api/v1/organizations/${organizationId}/games/${gameId}/assignments/${assignmentId}/configs`,
       ).then((response) => response.configs),
     enabled: gameId !== "" && assignmentId !== "",

@@ -1,5 +1,7 @@
 import type { AuditSource } from "@wasanni/contracts";
-import type { AuditService } from "./service.ts";
+import type { createAuditService } from "./service.ts";
+
+export type AuditService = ReturnType<typeof createAuditService>;
 
 export type AuditActor =
   | { type: "user"; userId: string }

@@ -256,6 +256,32 @@ templates that are ready, because a counter would drift.
 `USAGE_METERING_ENABLED=false` turns the counting off and lets every quota
 check pass.
 
+Two more reads sit on the same counters. The first counts one metric per day
+between two dates, with the empty days filled in, and the second breaks the
+storage down by game and template:
+
+```bash
+curl -s "localhost:3000/api/v1/organizations/$ORG/usage/daily?metric=sessions_created&from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z" -b cookies.txt
+curl -s localhost:3000/api/v1/organizations/$ORG/usage/storage -b cookies.txt
+```
+
+`GET /api/v1/organizations/$ORG/usage` also takes `?period=YYYY-MM` to read a
+month other than the current one.
+
+## Organization export
+
+An owner can take every row an organization owns as one JSON file:
+
+```bash
+curl -s -XPOST localhost:3000/api/v1/organizations/$ORG/export -b cookies.txt -o wasanni.json
+```
+
+The file holds the members, the invitations, the platforms, the games, the
+files, the assignments, the configs, the tournaments, the participants, the
+matches, the sessions and the scores, with a count for each. Sessions and
+scores stop at ten thousand rows each, and the `limits` say so. The files in
+the bucket are not part of it.
+
 ## Server-side score verification
 
 A game can ask the api to check a score before it accepts it. The config of a

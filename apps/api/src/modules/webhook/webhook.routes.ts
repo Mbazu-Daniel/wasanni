@@ -11,6 +11,7 @@ import {
   WebhookDeliveryList,
   WebhookIdParams,
   WebhookParams,
+  WebhookTestAccepted,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
@@ -100,6 +101,7 @@ export const createWebhookRoutes = <T extends PrincipalApi>(
       {
         organizationAuth: PERMISSION.webhookRead,
         params: WebhookIdParams,
+        response: { 202: WebhookTestAccepted },
         detail: { tags: ["webhooks"], summary: "Send a test event to a webhook" },
       },
     )

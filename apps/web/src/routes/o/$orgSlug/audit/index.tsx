@@ -13,6 +13,7 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
+import { useCursorPage } from "@/lib/use-cursor-page";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -99,27 +100,24 @@ function AuditPage() {
   const [action, setAction] = React.useState("");
   const [resourceType, setResourceType] = React.useState("");
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
-  const [history, setHistory] = React.useState<(string | null)[]>([null]);
-  const [pageIndex, setPageIndex] = React.useState(0);
-  const activeCursor = history[pageIndex] ?? null;
+  const page = useCursorPage();
 
   React.useEffect(() => {
-    setHistory([null]);
-    setPageIndex(0);
-  }, [source, action, resourceType]);
+    page.reset();
+  }, [source, action, resourceType, page.reset]);
 
   const { data, isLoading } = useQuery({
     queryKey: [
       "audit",
       organizationId,
-      { source, action, resourceType, cursor: activeCursor },
+      { source, action, resourceType, cursor: page.cursor },
     ],
     queryFn: () => {
       const params = new URLSearchParams();
       if (source) params.set("source", source);
       if (action) params.set("action", action);
       if (resourceType) params.set("resourceType", resourceType);
-      if (activeCursor) params.set("cursor", activeCursor);
+      if (page.cursor) params.set("cursor", page.cursor);
       params.set("limit", "50");
 
       return apiFetch<AuditListResponse>(
@@ -317,14 +315,14 @@ function AuditPage() {
       {rows.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
-            Page {pageIndex + 1}
+            Page {page.pageIndex + 1}
           </span>
           <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPageIndex((value) => Math.max(value - 1, 0))}
-              disabled={pageIndex === 0}
+              onClick={page.previous}
+              disabled={!page.hasPrevious}
             >
               <IconChevronLeft className="size-3.5" />
               Previous
@@ -337,8 +335,7 @@ function AuditPage() {
                 const cursor = data?.page.cursor;
                 if (!cursor) return;
 
-                setHistory((prev) => [...prev.slice(0, pageIndex + 1), cursor]);
-                setPageIndex((value) => value + 1);
+                page.next(cursor);
               }}
             >
               Next

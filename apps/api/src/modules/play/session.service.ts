@@ -9,11 +9,18 @@ import {
 } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { BadRequestError, InternalServerError, newId, newOpaqueToken, NotFoundError, sha256Hex } from "@wasanni/kit";
+import {
+  BadRequestError,
+  InternalServerError,
+  newId,
+  newOpaqueToken,
+  NotFoundError,
+  readGameConfig,
+  sha256Hex,
+} from "@wasanni/kit";
 import type {
   CreatedGameSession,
   GameSessionView,
-  ScoreVerificationMode,
 } from "@wasanni/contracts";
 import { REALTIME_PATH } from "@wasanni/contracts";
 import {
@@ -22,11 +29,6 @@ import {
   readCurrentGameFile,
   readGameState,
 } from "../games/game-state.ts";
-import {
-  DEFAULT_SESSION_DURATION_SECONDS,
-  MAX_SESSION_DURATION_SECONDS,
-  MIN_SESSION_DURATION_SECONDS,
-} from "./constants.ts";
 import type { GameSessionRow, SessionCreateInput, SessionServiceDeps } from "./types.ts";
 
 const toView = (row: GameSessionRow): GameSessionView => ({
@@ -50,32 +52,6 @@ const toView = (row: GameSessionRow): GameSessionView => ({
   endedAt: row.endedAt === null ? null : row.endedAt.toISOString(),
   createdAt: row.createdAt.toISOString(),
 });
-
-const readVerificationMode = (config: Record<string, unknown>): ScoreVerificationMode => {
-  const block = config.scoreVerification;
-
-  if (typeof block !== "object" || block === null) return "none";
-
-  const mode = (block as Record<string, unknown>).mode;
-
-  if (mode === "hmac" || mode === "callback" || mode === "both") return mode;
-
-  return "none";
-};
-
-const readSessionDuration = (config: Record<string, unknown>): number => {
-  const value = config.sessionDurationSeconds;
-
-  if (typeof value !== "number" || !Number.isInteger(value)) {
-    return DEFAULT_SESSION_DURATION_SECONDS;
-  }
-
-  if (value < MIN_SESSION_DURATION_SECONDS || value > MAX_SESSION_DURATION_SECONDS) {
-    return DEFAULT_SESSION_DURATION_SECONDS;
-  }
-
-  return value;
-};
 
 export async function readGameSessionRow(
   db: Db,
@@ -245,7 +221,9 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         gameFileId = file.id;
       }
 
-      const mode = deps.verifier === null ? "none" : readVerificationMode(config.config);
+      const settings = readGameConfig(config.config);
+
+      const mode = deps.verifier === null ? "none" : settings.verificationMode;
 
       let signingKeyCiphertext: string | null = null;
       let signingKeyPlaintext: string | null = null;
@@ -264,7 +242,7 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         });
       }
 
-      const durationSeconds = readSessionDuration(config.config);
+      const durationSeconds = settings.sessionDurationSeconds;
       const expiresAt = new Date(Date.now() + durationSeconds * 1000);
       const sessionToken = newOpaqueToken(32);
       const tournamentId = input.body.tournamentId ?? null;

@@ -6,6 +6,7 @@ import type { Scope } from "@wasanni/kit";
 import {
   BadRequestError,
   buildObjectKey,
+  confirmPendingUpload,
   type ObjectStorage,
   type StorageLimits,
 } from "@wasanni/kit";
@@ -90,23 +91,20 @@ export function createTemplateBundleService(
 
       if (row.pendingObjectKey === null) throw new BadRequestError("there is no upload to confirm");
 
-      if (row.pendingExpiresAt !== null && row.pendingExpiresAt.getTime() < Date.now()) {
-        await markFailed(scope, templateId);
-        throw new BadRequestError("the upload url has expired");
+      if (row.pendingSizeBytes === null || row.pendingContentType === null) {
+        throw new BadRequestError("there is no upload to confirm");
       }
 
-      const object = await storage.headObject(row.pendingObjectKey);
-      if (object === null) throw new BadRequestError("the uploaded object was not found");
-
-      if (object.sizeBytes !== row.pendingSizeBytes) {
-        await markFailed(scope, templateId);
-        throw new BadRequestError("the uploaded object does not have the declared size");
-      }
-
-      if (object.contentType !== row.pendingContentType) {
-        await markFailed(scope, templateId);
-        throw new BadRequestError("the uploaded object does not have the declared content type");
-      }
+      await confirmPendingUpload(
+        storage,
+        {
+          objectKey: row.pendingObjectKey,
+          sizeBytes: row.pendingSizeBytes,
+          contentType: row.pendingContentType,
+          expiresAt: row.pendingExpiresAt,
+        },
+        () => markFailed(scope, templateId),
+      );
 
       const previousKey = row.objectKey;
 

@@ -7,8 +7,6 @@ import {
   IconLink,
   IconKey,
   IconWebhook,
-  IconPlayerPlay,
-  IconTrophy,
   IconMedal,
   IconSwords,
   IconList,
@@ -66,13 +64,6 @@ const groups: { label: string | null; items: NavItem[] }[] = [
       { label: "Assignments", to: "/o/$orgSlug/assignments", icon: IconLink },
       { label: "API keys", to: "/o/$orgSlug/keys", icon: IconKey },
       { label: "Webhooks", to: "/o/$orgSlug/webhooks", icon: IconWebhook },
-    ],
-  },
-  {
-    label: "Play",
-    items: [
-      { label: "Sessions", icon: IconPlayerPlay },
-      { label: "Leaderboards", icon: IconTrophy },
     ],
   },
   {

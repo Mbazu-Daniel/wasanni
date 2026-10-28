@@ -135,7 +135,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .get(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants",
       async ({ principal, params }) => ({
-        participants: await deps.tournaments.listParticipants(
+        participants: await deps.participants.listParticipants(
           organizationScope(principal),
           params.tournamentId,
         ),
@@ -150,7 +150,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants",
       async ({ principal, params, body, status }) => {
-        const participant = await deps.tournaments.register(
+        const participant = await deps.participants.register(
           organizationScope(principal),
           {
             tournamentId: params.tournamentId,
@@ -174,7 +174,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .delete(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants/:participantId",
       async ({ principal, params, status }) => {
-        await deps.tournaments.withdraw(
+        await deps.participants.withdraw(
           organizationScope(principal),
           params.tournamentId,
           { participantId: params.participantId },

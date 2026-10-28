@@ -19,6 +19,7 @@ export type Env = {
   readonly REDIS_URL: string;
   readonly SESSION_SECRET: string;
   readonly PUBLIC_WEB_ORIGIN: string;
+  readonly WEB_ORIGINS: readonly string[];
   readonly BETTER_AUTH_URL: string;
   readonly GOOGLE_CLIENT_ID: string | undefined;
   readonly GOOGLE_CLIENT_SECRET: string | undefined;

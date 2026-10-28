@@ -127,7 +127,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         });
       }
 
-      verificationFlags = verdict.flags as ScoreFlag[];
+      verificationFlags = verdict.flags;
       verificationStatus = verdict.kind === "passed" ? "passed" : "unavailable";
     }
 

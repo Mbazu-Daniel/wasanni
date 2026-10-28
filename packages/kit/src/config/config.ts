@@ -172,6 +172,11 @@ export function parseEnv(raw: RawEnv): Env {
   const problems = new Problems();
 
   const port = readPort(raw, problems, "PORT");
+  const publicWebOrigin = readString(raw, problems, "PUBLIC_WEB_ORIGIN", DEFAULT_WEB_ORIGIN);
+  const webOrigins = publicWebOrigin
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 
   const parsed: Env = {
     NODE_ENV: readEnum(raw, problems, "NODE_ENV", NODE_ENVS, DEFAULT_NODE_ENV),
@@ -180,7 +185,8 @@ export function parseEnv(raw: RawEnv): Env {
     DATABASE_URL: readString(raw, problems, "DATABASE_URL"),
     REDIS_URL: readString(raw, problems, "REDIS_URL"),
     SESSION_SECRET: readSecret(raw, problems, "SESSION_SECRET"),
-    PUBLIC_WEB_ORIGIN: readString(raw, problems, "PUBLIC_WEB_ORIGIN", DEFAULT_WEB_ORIGIN),
+    PUBLIC_WEB_ORIGIN: webOrigins[0] ?? DEFAULT_WEB_ORIGIN,
+    WEB_ORIGINS: webOrigins,
     BETTER_AUTH_URL: readString(raw, problems, "BETTER_AUTH_URL", `http://localhost:${port}`),
     GOOGLE_CLIENT_ID: readOptional(raw, "GOOGLE_CLIENT_ID"),
     GOOGLE_CLIENT_SECRET: readOptional(raw, "GOOGLE_CLIENT_SECRET"),

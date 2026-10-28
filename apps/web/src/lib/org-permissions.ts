@@ -1,4 +1,4 @@
-export type RoleName = "owner" | "admin" | "member";
+import type { RoleName } from "./role-types";
 
 const ROLE_RANK: Record<RoleName, number> = {
   owner: 3,
@@ -16,10 +16,6 @@ export function atLeast(role: string, minimum: RoleName): boolean {
 
 export function canManageMembers(role: string): boolean {
   return atLeast(role, "admin");
-}
-
-export function canManageOrganization(role: string): boolean {
-  return atLeast(role, "owner");
 }
 
 export function canChangeRole(actorRole: string, targetRole: string): boolean {

@@ -49,5 +49,3 @@ export function createMetrics() {
     },
   };
 }
-
-export type Metrics = ReturnType<typeof createMetrics>;

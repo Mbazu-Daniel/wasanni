@@ -9,7 +9,6 @@ import {
   useScroll,
   useSpring,
   useTransform,
-  type MotionValue,
 } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -306,13 +305,3 @@ export function ShimmerText({
   );
 }
 
-export function useScrollValue(
-  target: React.RefObject<HTMLElement | null>,
-  offset: ["start end", "end start"] | ["start start", "end start"] = [
-    "start end",
-    "end start",
-  ],
-): MotionValue<number> {
-  const { scrollYProgress } = useScroll({ target, offset });
-  return scrollYProgress;
-}

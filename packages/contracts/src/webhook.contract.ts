@@ -74,6 +74,9 @@ export const WebhookDeliveryList = t.Object({
 export type WebhookDeliveryList = UnwrapSchema<typeof WebhookDeliveryList>;
 
 export const WebhookConfigList = t.Object({ webhooks: t.Array(WebhookConfigView) });
+
+export const WebhookTestAccepted = t.Object({ queued: t.Number() });
+export type WebhookTestAccepted = UnwrapSchema<typeof WebhookTestAccepted>;
 export type WebhookConfigList = UnwrapSchema<typeof WebhookConfigList>;
 
 export const CreatedWebhook = t.Object({

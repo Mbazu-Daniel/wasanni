@@ -7,6 +7,7 @@ import {
   BadRequestError,
   buildObjectKey,
   ConflictError,
+  confirmPendingUpload,
   InternalServerError,
   newId,
   NotFoundError,
@@ -166,23 +167,16 @@ export function createGameFileService(
         throw new ConflictError("this game file upload has already failed");
       }
 
-      if (row.uploadExpiresAt !== null && row.uploadExpiresAt.getTime() < Date.now()) {
-        await markFileFailed(scope, row);
-        throw new BadRequestError("the upload url has expired");
-      }
-
-      const object = await storage.headObject(row.objectKey);
-      if (object === null) throw new BadRequestError("the uploaded object was not found");
-
-      if (object.sizeBytes !== row.sizeBytes) {
-        await markFileFailed(scope, row);
-        throw new BadRequestError("the uploaded object does not have the declared size");
-      }
-
-      if (object.contentType !== row.contentType) {
-        await markFileFailed(scope, row);
-        throw new BadRequestError("the uploaded object does not have the declared content type");
-      }
+      const { etag } = await confirmPendingUpload(
+        storage,
+        {
+          objectKey: row.objectKey,
+          sizeBytes: row.sizeBytes,
+          contentType: row.contentType,
+          expiresAt: row.uploadExpiresAt,
+        },
+        () => markFileFailed(scope, row),
+      );
 
       if (row.kind === "bundle") {
         if (enqueuer === null) {
@@ -191,7 +185,7 @@ export function createGameFileService(
 
         await db
           .update(gameFile)
-          .set({ status: "extracting", etag: object.etag })
+          .set({ status: "extracting", etag })
           .where(scopeTo(scope, gameFile, eq(gameFile.id, row.id)));
 
         await enqueuer.gameBundleExtract({
@@ -199,7 +193,7 @@ export function createGameFileService(
           fileId: row.id,
         });
 
-        return toView({ ...row, status: "extracting", etag: object.etag });
+        return toView({ ...row, status: "extracting", etag });
       }
 
       await db.transaction(async (tx) => {
@@ -219,7 +213,7 @@ export function createGameFileService(
           .update(gameFile)
           .set({
             status: "ready",
-            etag: object.etag,
+            etag,
             isCurrent: true,
             readyAt: new Date(),
           })
