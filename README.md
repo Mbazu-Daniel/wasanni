@@ -75,6 +75,7 @@ generated SQL by hand and commit it.
 | `apps/api` | Elysia HTTP server, `/api/v1` routes, OpenAPI document, composition root |
 | `apps/worker` | Background jobs: webhook delivery, mail, session archiving, sweeps |
 | `apps/realtime` | WebSocket gateway: one room per game session, peer relay, score forwarding |
+| `apps/web` | The marketing site: a TanStack Start app that renders the landing page |
 | `packages/contracts` | Entity vocabulary and wire schemas. Depends on `elysia` only. |
 | `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope, the object storage |
 | `packages/db` | Drizzle schema, migrations, the Postgres adapter |
