@@ -1,0 +1,30 @@
+import type { BetterAuth } from "../../config/better-auth.ts";
+import { AUTH_ROUTE_PREFIX } from "../../constants.ts";
+import type { PrincipalApi } from "../../plugins/principal.ts";
+import { ErrorBodyModel } from "@wasanni/contracts";
+import { AuthModel } from "./model.ts";
+
+export const authRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
+  api
+    .all(`${AUTH_ROUTE_PREFIX}/*`, ({ request }) => auth.handler(request))
+    .get(
+      `${AUTH_ROUTE_PREFIX}/me`,
+      ({ user, session }) => ({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: user.emailVerified,
+          image: user.image ?? null,
+        },
+        session: { id: session.id, expiresAt: session.expiresAt.toISOString() },
+      }),
+      {
+        auth: true,
+        detail: { tags: ["auth"], summary: "The authenticated user" },
+        response: { 200: AuthModel.me, 401: ErrorBodyModel },
+      },
+    );
+
+export { authApiDocument } from "./openapi.ts";
+export type { AuthApiDocument } from "./openapi.ts";

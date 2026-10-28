@@ -1,0 +1,11 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    { "idx": 0, "version": "7", "when": 1791585089649, "tag": "0000_dark_tempest", "breakpoints": true },
+    { "idx": 1, "version": "7", "when": 1791623818390, "tag": "0001_charming_la_nuit", "breakpoints": true },
+    { "idx": 2, "version": "7", "when": 1791700000000, "tag": "0002_careful_shaman", "breakpoints": true },
+    { "idx": 3, "version": "7", "when": 1791800000000, "tag": "0003_sturdy_oracle", "breakpoints": true },
+    { "idx": 4, "version": "7", "when": 1791900000000, "tag": "0004_true_richard_fisk", "breakpoints": true }
+  ]
+}
