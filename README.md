@@ -380,8 +380,8 @@ secret in place. Deploy the new key afterwards, then remove the old one.
 
 | Script | Does |
 |---|---|
-| `bun run dev` | API + worker, both watching |
-| `bun run typecheck` | `tsc --noEmit` across the workspace |
+| `bun run dev` | api, worker, realtime and web, each watching, through `turbo run dev` |
+| `bun run typecheck` | `tsc --noEmit` over apps, packages and tests, then the web app's own `tsc` through `turbo run typecheck` |
 | `bun test` | Unit + integration tests |
 | `bun run db:generate` | Generate a migration from the Drizzle schema |
 | `bun run db:migrate` | Apply pending migrations |
@@ -390,6 +390,10 @@ secret in place. Deploy the new key afterwards, then remove the old one.
 | `bun run agent:studio` | Mastra's HTTP API on `MASTRA_STUDIO_PORT` (4111) for https://studio.mastra.io |
 | `bun run mcp` | The stdio MCP server: the platform api as tools, as the organization of `WASANNI_API_KEY` |
 | `bun run ci` | `typecheck` then `test` |
+
+Turborepo runs the tasks of the package you name, so one app can be started or
+checked alone: `bunx turbo run dev --filter=@wasanni/worker`,
+`bunx turbo run typecheck --filter=@wasanni/web`.
 
 `tests/db/*` runs against a real Postgres and **skips** when `DATABASE_URL` is
 unset. A green `bun test` with no database is not a verified change.
