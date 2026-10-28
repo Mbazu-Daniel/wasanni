@@ -8,6 +8,8 @@ import type {
 } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import type { Enqueuer } from "@wasanni/jobs";
+import type { Redis } from "@wasanni/kit";
+import type { UsageService } from "../usage/types.ts";
 import type {
   game,
   gameConfig,
@@ -83,6 +85,8 @@ export type GamesDeps = {
   storage: ObjectStorage;
   config: StorageLimits;
   enqueuer?: Enqueuer | null;
+  usage?: UsageService | null;
+  redis?: Redis | null;
   onConfigChanged?: (input: {
     organizationId: string;
     configId: string;

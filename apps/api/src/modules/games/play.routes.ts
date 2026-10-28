@@ -2,9 +2,15 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { gameFile } from "@wasanni/db/schema";
 import { NotFoundError, resolveContent, type ObjectStorage } from "@wasanni/kit";
+import type { Redis } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
+import { currentPeriodStart } from "../usage/usage.service.ts";
+import type { UsageService } from "../usage/types.ts";
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
+
+export const bandwidthKey = (organizationId: string, period: Date): string =>
+  `usage:live:bandwidth:${organizationId}:${period.toISOString()}`;
 
 const crossOriginHeaders = (enabled: boolean): Record<string, string> =>
   enabled
@@ -19,6 +25,8 @@ export const createPlayRoutes = <T extends PrincipalApi>(
   api: T,
   db: Db,
   storage: ObjectStorage,
+  usage: UsageService | null,
+  redis: Redis | null,
 ) =>
   api.get(
     "/play/:gameId/:fileId/*",
@@ -55,6 +63,22 @@ export const createPlayRoutes = <T extends PrincipalApi>(
         }
 
         throw new NotFoundError("game file not found");
+      }
+
+      const bytes = object.contentLength ?? 0;
+
+      if (bytes > 0 && usage !== null) {
+        await usage.checkQuota({
+          organizationId: row.organizationId,
+          metric: "bandwidth_bytes",
+          amount: bytes,
+        });
+
+        if (redis !== null) {
+          await redis
+            .incrby(bandwidthKey(row.organizationId, currentPeriodStart()), bytes)
+            .catch(() => undefined);
+        }
       }
 
       return new Response(object.stream, {

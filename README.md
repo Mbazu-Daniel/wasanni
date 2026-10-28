@@ -221,6 +221,61 @@ The game is then served from `/play/:gameId/:fileId/`:
 A `.zip` without `kind: "bundle"` is read as a bundle anyway; a bundle that is
 not a `.zip` filename, or a `.zip` declared `kind: "single"`, is refused.
 
+## Usage and quotas
+
+Every session, score, match and tournament is counted for the organization it
+belongs to, per platform, per month:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/usage -b cookies.txt
+curl -s localhost:3000/api/v1/platform/usage -H "x-api-key: $KEY"
+```
+
+A quota is a monthly ceiling on one metric. Set one, and the api refuses the
+event with a 429 once the month reaches it:
+
+```bash
+curl -s -XPUT localhost:3000/api/v1/organizations/$ORG/quotas \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"metric":"sessions_created","limitValue":10000}'
+```
+
+Bandwidth is counted in Redis and flushed to the database every minute, so a
+quota on `bandwidth_bytes` stops the game files a minute after the limit is
+reached. Storage is not a counter: it is computed from the game files and
+templates that are ready, because a counter would drift.
+
+`USAGE_METERING_ENABLED=false` turns the counting off and lets every quota
+check pass.
+
+## Server-side score verification
+
+A game can ask the api to check a score before it accepts it. The config of a
+game assignment carries the block:
+
+```json
+{ "scoreVerification": { "mode": "hmac" } }
+```
+
+`hmac` signs the score with a key the session hands out when it opens, so the
+game server proves the score is its own:
+
+```bash
+curl -s -XPOST localhost:3000/api/v1/platform/sessions \
+  -H 'content-type: application/json' -H "x-api-key: $KEY" \
+  -d '{"gameId":"'$GAME'","externalUserId":"player-1"}'
+```
+
+The answer carries `scoreSigningKey` once. The client signs
+`"{sessionId}|{score}"` with it and sends the signature with the score. A
+signature that does not match is refused with a 422 and no score is written,
+and the platform is told through a `score.rejected` webhook.
+
+`callback` asks a url of the platform whether a score is valid; `both` does
+both. A verifier that does not answer leaves the score in place, flagged
+`verification_unavailable` — a game server outage is not a reason to drop
+scores. The default is `none`: every score is accepted, as before.
+
 ## Custom roles
 
 An organization can name its own roles. A role is a grant — the same shape an

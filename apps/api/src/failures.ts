@@ -28,7 +28,14 @@ const DELEGATED: Readonly<Record<string, ErrorCode>> = {
 
 export function failureOf(error: unknown): Failure {
   if (error instanceof HttpError) {
-    return { status: error.status, source: { code: error.code, message: error.message } };
+    return {
+      status: error.status,
+      source: {
+        code: error.code,
+        message: error.message,
+        ...(error.details === undefined ? {} : { details: error.details }),
+      },
+    };
   }
 
   const delegated = error as DelegatedError | null;

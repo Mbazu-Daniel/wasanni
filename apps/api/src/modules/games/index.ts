@@ -25,7 +25,7 @@ export const createGamesRoutes = <T extends PrincipalApi>(api: T, deps: GamesDep
   createGameFileRoutes(api, { service: files });
   createAssignmentRoutes(api, { service: assignments });
   createGameConfigRoutes(api, { service: configs });
-  createPlayRoutes(api, deps.db, deps.storage);
+  createPlayRoutes(api, deps.db, deps.storage, deps.usage ?? null, deps.redis ?? null);
 
   return api;
 };

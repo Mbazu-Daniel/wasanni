@@ -23,11 +23,14 @@ import { createMemberRoutes } from "./modules/member/index.ts";
 import { createMemberService } from "./modules/member/service.ts";
 import { createApiKeyRoutes } from "./modules/api-key/index.ts";
 import { createApiKeyService } from "./modules/api-key/service.ts";
+import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
+import { createUsageService } from "./modules/usage/usage.service.ts";
 import { createRoleRoutes } from "./modules/role/index.ts";
 import { createRoleService } from "./modules/role/service.ts";
 import { createGamesRoutes } from "./modules/games/index.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes } from "./modules/play/index.ts";
+import { createScoreVerifier } from "./modules/play/score-verifier.ts";
 import { createCompetition } from "./modules/competition/index.ts";
 import { createAuditRoutes } from "./modules/audit/index.ts";
 import { createAuditService } from "./modules/audit/service.ts";
@@ -91,6 +94,15 @@ export async function createApp(deps: AppDeps) {
     deps.logger,
   );
 
+  const usage = createUsageService(deps.db, {
+    logger: deps.logger,
+    enabled: deps.env.USAGE_METERING_ENABLED,
+  });
+
+  const verifier = deps.env.SCORE_VERIFICATION_ENABLED
+    ? createScoreVerifier(deps.env, deps.logger)
+    : null;
+
   const metrics = createMetrics();
   metrics.counter("wasanni_http_requests_total", "HTTP requests handled by the API");
 
@@ -98,7 +110,7 @@ export async function createApp(deps: AppDeps) {
   const events = deps.events ?? createMemorySessionEventStore();
   const enqueuer = deps.enqueuer ?? null;
   const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
-  const competition = createCompetition(deps.db);
+  const competition = createCompetition(deps.db, usage);
 
   return new Elysia({ name: "wasanni-api" })
     .use(createRequestContextPlugin(deps.logger))
@@ -164,12 +176,15 @@ export async function createApp(deps: AppDeps) {
     .use(createPlatformRoutes(base, { service: createPlatformService(deps.db) }))
     .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
     .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
+    .use(createUsageRoutes(base, { service: usage }))
     .use(
       createGamesRoutes(base, {
         db: deps.db,
         storage,
         config: readStorageLimits(deps.env),
         enqueuer,
+        usage,
+        redis: deps.redis ?? null,
         onConfigChanged: async (input) => {
           await enqueuer?.scoreRecheck(input);
         },
@@ -199,6 +214,8 @@ export async function createApp(deps: AppDeps) {
         realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
         matchRecorder: competition.matches,
         rateLimit,
+        verifier,
+        usage,
       }),
     )
     .use(createHealthRoutes(deps))

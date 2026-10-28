@@ -12,7 +12,29 @@ export const SCORE_FLAGS = [
   "resubmitted",
   "max_score_exceeded",
   "score_rate_exceeded",
+  "verification_unavailable",
+  "hmac_verified",
+  "callback_verified",
 ] as const;
+
+export const SCORE_VERIFICATION_MODES = ["none", "hmac", "callback", "both"] as const;
+export type ScoreVerificationMode = (typeof SCORE_VERIFICATION_MODES)[number];
+
+export const SCORE_VERIFICATION_STATUSES = ["not_required", "passed", "unavailable"] as const;
+export type ScoreVerificationStatus = (typeof SCORE_VERIFICATION_STATUSES)[number];
+
+export const ScoreVerificationModeModel = t.Union([
+  t.Literal("none"),
+  t.Literal("hmac"),
+  t.Literal("callback"),
+  t.Literal("both"),
+]);
+
+export const ScoreVerificationStatusModel = t.Union([
+  t.Literal("not_required"),
+  t.Literal("passed"),
+  t.Literal("unavailable"),
+]);
 
 export type ScoreFlag = (typeof SCORE_FLAGS)[number];
 
@@ -29,6 +51,7 @@ export const ScoreView = t.Object({
   flagged: t.Boolean(),
   flags: t.Array(t.String()),
   source: ScoreSource,
+  verificationStatus: ScoreVerificationStatusModel,
   submittedAt: t.String({ format: "date-time" }),
 });
 export type ScoreView = UnwrapSchema<typeof ScoreView>;
@@ -38,6 +61,7 @@ export type ScoreSingle = UnwrapSchema<typeof ScoreSingle>;
 
 export const SubmitScoreBody = t.Object({
   score: t.Number({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+  signature: t.Optional(t.String({ maxLength: 512 })),
   endSession: t.Optional(t.Boolean()),
 });
 export type SubmitScoreBody = UnwrapSchema<typeof SubmitScoreBody>;
