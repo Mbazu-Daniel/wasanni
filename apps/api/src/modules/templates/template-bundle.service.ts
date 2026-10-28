@@ -4,7 +4,7 @@ import { template } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
-  badRequest,
+  BadRequestError,
   buildObjectKey,
   type ObjectStorage,
   type StorageLimits,
@@ -48,11 +48,11 @@ export function createTemplateBundleService(
           input.body.contentType as (typeof TEMPLATE_CONTENT_TYPES)[number],
         )
       ) {
-        throw badRequest("unsupported template content type");
+        throw new BadRequestError("unsupported template content type");
       }
 
       if (input.body.sizeBytes < 1 || input.body.sizeBytes > config.maxBundleBytes) {
-        throw badRequest("the template bundle is outside the size this api accepts");
+        throw new BadRequestError("the template bundle is outside the size this api accepts");
       }
 
       const upload = await storage.createUploadTarget({
@@ -80,7 +80,7 @@ export function createTemplateBundleService(
         .where(scopeTo(scope, template, eq(template.id, row.id)))
         .returning();
 
-      if (updated === undefined) throw badRequest("template not found");
+      if (updated === undefined) throw new BadRequestError("template not found");
 
       return { template: toTemplateView(updated), upload };
     },
@@ -88,24 +88,24 @@ export function createTemplateBundleService(
     async completeUpload(scope: Scope, templateId: string): Promise<TemplateView> {
       const row = await readTemplateRow(db, scope, templateId);
 
-      if (row.pendingObjectKey === null) throw badRequest("there is no upload to confirm");
+      if (row.pendingObjectKey === null) throw new BadRequestError("there is no upload to confirm");
 
       if (row.pendingExpiresAt !== null && row.pendingExpiresAt.getTime() < Date.now()) {
         await markFailed(scope, templateId);
-        throw badRequest("the upload url has expired");
+        throw new BadRequestError("the upload url has expired");
       }
 
       const object = await storage.headObject(row.pendingObjectKey);
-      if (object === null) throw badRequest("the uploaded object was not found");
+      if (object === null) throw new BadRequestError("the uploaded object was not found");
 
       if (object.sizeBytes !== row.pendingSizeBytes) {
         await markFailed(scope, templateId);
-        throw badRequest("the uploaded object does not have the declared size");
+        throw new BadRequestError("the uploaded object does not have the declared size");
       }
 
       if (object.contentType !== row.pendingContentType) {
         await markFailed(scope, templateId);
-        throw badRequest("the uploaded object does not have the declared content type");
+        throw new BadRequestError("the uploaded object does not have the declared content type");
       }
 
       const previousKey = row.objectKey;
@@ -126,7 +126,7 @@ export function createTemplateBundleService(
         .where(scopeTo(scope, template, eq(template.id, row.id)))
         .returning();
 
-      if (updated === undefined) throw badRequest("template not found");
+      if (updated === undefined) throw new BadRequestError("template not found");
 
       if (previousKey !== null && previousKey !== row.pendingObjectKey) {
         await storage.deleteObject(previousKey).catch(() => undefined);
@@ -139,7 +139,7 @@ export function createTemplateBundleService(
       const row = await readTemplateRow(db, scope, templateId);
 
       if (row.status !== "ready" || row.objectKey === null) {
-        throw badRequest("the template has no bundle to download");
+        throw new BadRequestError("the template has no bundle to download");
       }
 
       return storage.createDownloadUrl({

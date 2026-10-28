@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { notFound, type ObjectStorage, type SessionEvent, type SessionEventStore } from "@wasanni/kit";
+import { NotFoundError, type ObjectStorage, type SessionEvent, type SessionEventStore } from "@wasanni/kit";
 import type { ReplayView } from "./types.ts";
 
 export function createReplayService(
@@ -34,7 +34,7 @@ export function createReplayService(
         )
         .limit(1);
 
-      if (score === undefined) throw notFound("score not found");
+      if (score === undefined) throw new NotFoundError("score not found");
 
       if (score.archiveKey === null) {
         return { source: "redis", events: await events.readAll(sessionId) };

@@ -2,6 +2,7 @@ import type { Db } from "@wasanni/db";
 import type { Enqueuer } from "@wasanni/jobs";
 import type { Env, Logger, ObjectStorage, SendEmail, SessionEventStore } from "@wasanni/kit";
 import type { ErrorSource } from "@wasanni/contracts";
+import type { AuditService } from "./modules/audit/service.ts";
 
 export type AppDeps = {
   logger: Logger;
@@ -20,6 +21,7 @@ export type ModuleDeps = {
   db: Db;
   env: Env;
   logger: Logger;
+  audit: AuditService;
   sendEmail?: SendEmail;
   enqueuer?: Enqueuer | null;
 };

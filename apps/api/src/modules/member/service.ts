@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { activeMember, member, user } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { notFound } from "@wasanni/kit";
+import { NotFoundError } from "@wasanni/kit";
 import type { MemberView } from "@wasanni/contracts";
 
 import type { MemberRow } from "./types.ts";
@@ -69,7 +69,7 @@ export function createMemberService(db: Db) {
         )
         .returning(columns);
 
-      if (row === undefined) throw notFound("member not found");
+      if (row === undefined) throw new NotFoundError("member not found");
       return toView(row);
     },
   };

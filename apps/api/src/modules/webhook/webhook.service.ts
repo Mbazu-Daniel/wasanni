@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { webhookConfig } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, notFound } from "@wasanni/kit";
+import { ConflictError, NotFoundError } from "@wasanni/kit";
 import type { UpdateWebhookBody, WebhookConfigView } from "@wasanni/contracts";
 import { assertPlatform, assertUrlFree, readWebhook, toWebhookView } from "./webhook-state.ts";
 
@@ -54,11 +54,11 @@ export function createWebhookService(db: Db) {
           .where(scopeTo(scope, webhookConfig, eq(webhookConfig.id, current.id)))
           .returning();
 
-        if (row === undefined) throw notFound("webhook not found");
+        if (row === undefined) throw new NotFoundError("webhook not found");
         return toWebhookView(row);
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw conflict("this platform already has a webhook for that url");
+          throw new ConflictError("this platform already has a webhook for that url");
         }
         throw error;
       }
@@ -72,7 +72,7 @@ export function createWebhookService(db: Db) {
         .where(scopeTo(scope, webhookConfig, eq(webhookConfig.id, current.id)))
         .returning({ id: webhookConfig.id });
 
-      if (removed.length === 0) throw notFound("webhook not found");
+      if (removed.length === 0) throw new NotFoundError("webhook not found");
     },
   };
 }

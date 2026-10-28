@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { HealthModel, ReadyModel, REALTIME_PATH, toErrorBody } from "@wasanni/contracts";
-import { AppError, internal, unauthenticated } from "@wasanni/kit";
+import { HttpError, InternalServerError, UnauthorizedError } from "@wasanni/kit";
 import { resolveRealtimeSession } from "./auth.ts";
 import { createGateway } from "./gateway.ts";
 import type { RealtimeContext, RealtimeDeps, RealtimeSession } from "./types.ts";
@@ -8,7 +8,7 @@ import type { RealtimeContext, RealtimeDeps, RealtimeSession } from "./types.ts"
 const sessionOf = (frame: unknown): RealtimeSession => {
   const session = (frame as RealtimeContext).realtimeSession;
 
-  if (session === undefined) throw internal("realtime socket is missing its session");
+  if (session === undefined) throw new InternalServerError("realtime socket is missing its session");
 
   return session;
 };
@@ -27,7 +27,7 @@ export function createRealtimeApp(deps: RealtimeDeps) {
       async beforeHandle(context) {
         const sessionId = (context.params as { sessionId?: string }).sessionId;
 
-        if (sessionId === undefined) throw unauthenticated("a session id is required");
+        if (sessionId === undefined) throw new UnauthorizedError("a session id is required");
 
         const session = await resolveRealtimeSession(deps.db, sessionId, context.request);
 
@@ -76,7 +76,7 @@ export function createRealtimeApp(deps: RealtimeDeps) {
     .onError(({ error, code, set, request }) => {
       const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
-      if (error instanceof AppError) {
+      if (error instanceof HttpError) {
         if (error.status >= 500) deps.logger.error("realtime error", { err: error });
         set.status = error.status;
         return toErrorBody({ code: error.code, message: error.message }, requestId);

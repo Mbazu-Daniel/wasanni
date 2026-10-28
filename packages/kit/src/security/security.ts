@@ -6,7 +6,7 @@ import {
   randomBytes,
 } from "node:crypto";
 import { API_KEY_PREFIX, API_KEY_RANDOM_BYTES } from "./constants.ts";
-import { internal } from "../errors/errors.ts";
+import { InternalServerError } from "../exceptions/index.ts";
 
 export function newOpaqueToken(bytes = 32): string {
   return randomBytes(bytes).toString("base64url");
@@ -55,7 +55,7 @@ export function decryptSecret(payload: string, keyMaterial: string): string {
   const parts = payload.split(".");
 
   if (parts.length !== 4 || parts[0] !== "v1") {
-    throw internal("the secret payload is malformed");
+    throw new InternalServerError("the secret payload is malformed");
   }
 
   const decipher = createDecipheriv(
@@ -72,6 +72,6 @@ export function decryptSecret(payload: string, keyMaterial: string): string {
       decipher.final(),
     ]).toString("utf8");
   } catch {
-    throw internal("the secret payload does not authenticate");
+    throw new InternalServerError("the secret payload does not authenticate");
   }
 }

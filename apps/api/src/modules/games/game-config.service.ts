@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { gameConfig, gamePlatformAssignment } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, internal, newId, notFound } from "@wasanni/kit";
+import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 import type { GameConfigView } from "@wasanni/contracts";
 import type { GameConfigCreateInput, GameConfigRow, GameConfigUpdateInput } from "./types.ts";
 
@@ -45,7 +45,7 @@ export function createGameConfigService(
       )
       .limit(1);
 
-    if (row === undefined) throw notFound("assignment not found");
+    if (row === undefined) throw new NotFoundError("assignment not found");
   };
 
   const getConfig = async (
@@ -67,7 +67,7 @@ export function createGameConfigService(
       )
       .limit(1);
 
-    if (row === undefined) throw notFound("game config not found");
+    if (row === undefined) throw new NotFoundError("game config not found");
     return row;
   };
 
@@ -119,12 +119,12 @@ export function createGameConfigService(
             })
             .returning();
 
-          if (row === undefined) throw internal("game config insert returned no row");
+          if (row === undefined) throw new InternalServerError("game config insert returned no row");
           return toView(row);
         });
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw conflict("this assignment already has a config with that name");
+          throw new ConflictError("this assignment already has a config with that name");
         }
         throw error;
       }
@@ -170,7 +170,7 @@ export function createGameConfigService(
           .returning();
 
         if (row === undefined) {
-          throw conflict("this game config was changed by someone else");
+          throw new ConflictError("this game config was changed by someone else");
         }
         return toView(row);
       });

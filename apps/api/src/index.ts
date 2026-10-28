@@ -4,6 +4,7 @@ import {
   createRedis,
   createRedisSessionEventStore,
   isRedisReady,
+  preflight,
 } from "@wasanni/kit";
 import { createDb, pingDatabase } from "@wasanni/db";
 import {
@@ -25,7 +26,10 @@ const logger = createLogger({
   bindings: { service: "api" },
 });
 
-const { db, sql } = createDb(cfg.DATABASE_URL, { max: 20 });
+const checks = await preflight(cfg, logger);
+logger.info("preflight ready", checks);
+
+const { db, sql } = createDb(cfg.DATABASE_URL, { max: cfg.DB_POOL_MAX });
 const redis = createRedis(cfg.REDIS_URL);
 const events = createRedisSessionEventStore(redis);
 

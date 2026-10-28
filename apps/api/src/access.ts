@@ -26,6 +26,7 @@ const statement: { [K in Resource]: Action[] } = {
   webhook: resolveResourceActions("webhook"),
   tournament: resolveResourceActions("tournament"),
   match: resolveResourceActions("match"),
+  audit: resolveResourceActions("audit"),
 };
 
 export const ac = createAccessControl(statement);

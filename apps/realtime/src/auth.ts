@@ -1,6 +1,6 @@
 import type { Db } from "@wasanni/db";
 import { readGameSessionByToken } from "@wasanni/db";
-import { forbidden, sha256Hex, unauthenticated } from "@wasanni/kit";
+import { ForbiddenError, sha256Hex, UnauthorizedError } from "@wasanni/kit";
 import type { RealtimeSession } from "./types.ts";
 
 const readToken = (request: Request): string => {
@@ -20,15 +20,15 @@ export async function resolveRealtimeSession(
 ): Promise<RealtimeSession> {
   const token = readToken(request);
 
-  if (token === "") throw unauthenticated("a session token is required");
+  if (token === "") throw new UnauthorizedError("a session token is required");
 
   const session = await readGameSessionByToken(db, sha256Hex(token));
-  if (session === null) throw unauthenticated("the session token is not valid");
-  if (session.id !== sessionId) throw forbidden("the session token belongs to another session");
-  if (session.status === "ended") throw forbidden("the game session has ended");
-  if (session.status === "expired") throw forbidden("the game session has expired");
+  if (session === null) throw new UnauthorizedError("the session token is not valid");
+  if (session.id !== sessionId) throw new ForbiddenError("the session token belongs to another session");
+  if (session.status === "ended") throw new ForbiddenError("the game session has ended");
+  if (session.status === "expired") throw new ForbiddenError("the game session has expired");
   if (session.expiresAt.getTime() <= Date.now()) {
-    throw forbidden("the game session has expired");
+    throw new ForbiddenError("the game session has expired");
   }
 
   return {

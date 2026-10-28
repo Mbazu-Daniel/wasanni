@@ -4,12 +4,12 @@ import { gameFile } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
-  badRequest,
+  BadRequestError,
   buildObjectKey,
-  conflict,
-  internal,
+  ConflictError,
+  InternalServerError,
   newId,
-  notFound,
+  NotFoundError,
   type ObjectStorage,
   type StorageLimits,
 } from "@wasanni/kit";
@@ -49,7 +49,7 @@ export function createGameFileService(
       .where(scopeTo(scope, gameFile, eq(gameFile.id, fileId), eq(gameFile.gameId, gameId)))
       .limit(1);
 
-    if (row === undefined) throw notFound("game file not found");
+    if (row === undefined) throw new NotFoundError("game file not found");
     return row;
   };
 
@@ -78,9 +78,9 @@ export function createGameFileService(
     ): Promise<GameFileUpload> {
       const owner = await readGameState(db, scope, input.gameId);
 
-      if (owner === null) throw notFound("game not found");
+      if (owner === null) throw new NotFoundError("game not found");
       if (owner.hosting !== "hosted") {
-        throw badRequest("an external game does not accept game files");
+        throw new BadRequestError("an external game does not accept game files");
       }
 
       if (
@@ -88,11 +88,11 @@ export function createGameFileService(
           input.body.contentType as (typeof GAME_FILE_CONTENT_TYPES)[number],
         )
       ) {
-        throw badRequest("unsupported game file content type");
+        throw new BadRequestError("unsupported game file content type");
       }
 
       if (input.body.sizeBytes < 1 || input.body.sizeBytes > config.maxBundleBytes) {
-        throw badRequest("the game file is outside the size this api accepts");
+        throw new BadRequestError("the game file is outside the size this api accepts");
       }
 
       const fileId = newId();
@@ -125,7 +125,7 @@ export function createGameFileService(
         })
         .returning();
 
-      if (row === undefined) throw internal("game file insert returned no row");
+      if (row === undefined) throw new InternalServerError("game file insert returned no row");
 
       return { file: toView(row), upload };
     },
@@ -139,25 +139,25 @@ export function createGameFileService(
 
       if (row.status === "ready") return toView(row);
       if (row.status === "failed") {
-        throw conflict("this game file upload has already failed");
+        throw new ConflictError("this game file upload has already failed");
       }
 
       if (row.uploadExpiresAt !== null && row.uploadExpiresAt.getTime() < Date.now()) {
         await markFileFailed(scope, row);
-        throw badRequest("the upload url has expired");
+        throw new BadRequestError("the upload url has expired");
       }
 
       const object = await storage.headObject(row.objectKey);
-      if (object === null) throw badRequest("the uploaded object was not found");
+      if (object === null) throw new BadRequestError("the uploaded object was not found");
 
       if (object.sizeBytes !== row.sizeBytes) {
         await markFileFailed(scope, row);
-        throw badRequest("the uploaded object does not have the declared size");
+        throw new BadRequestError("the uploaded object does not have the declared size");
       }
 
       if (object.contentType !== row.contentType) {
         await markFileFailed(scope, row);
-        throw badRequest("the uploaded object does not have the declared content type");
+        throw new BadRequestError("the uploaded object does not have the declared content type");
       }
 
       await db.transaction(async (tx) => {
@@ -190,7 +190,7 @@ export function createGameFileService(
         .where(scopeTo(scope, gameFile, eq(gameFile.id, row.id)))
         .limit(1);
 
-      if (updated === undefined) throw notFound("game file not found");
+      if (updated === undefined) throw new NotFoundError("game file not found");
       return toView(updated);
     },
 
@@ -200,7 +200,7 @@ export function createGameFileService(
       fileId: string,
     ): Promise<string> {
       const row = await getFile(scope, gameId, fileId);
-      if (row.status !== "ready") throw badRequest("this game file is not ready");
+      if (row.status !== "ready") throw new BadRequestError("this game file is not ready");
 
       return storage.createDownloadUrl({
         key: row.objectKey,
@@ -218,7 +218,7 @@ export function createGameFileService(
         owner?.status === "active" &&
         owner.hosting === "hosted"
       ) {
-        throw conflict("the current file of an active hosted game cannot be deleted");
+        throw new ConflictError("the current file of an active hosted game cannot be deleted");
       }
 
       await db.delete(gameFile).where(scopeTo(scope, gameFile, eq(gameFile.id, row.id)));

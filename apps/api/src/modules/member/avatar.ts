@@ -1,5 +1,5 @@
 import type { AvatarUploadTicket } from "@wasanni/contracts";
-import { badRequest, newId, notFound, type ObjectStorage } from "@wasanni/kit";
+import { BadRequestError, newId, NotFoundError, type ObjectStorage } from "@wasanni/kit";
 import {
   AVATAR_EXTENSIONS,
   AVATAR_KEY_PATTERN,
@@ -14,7 +14,7 @@ export function resolveAvatarKey(
   contentType: string,
 ): string {
   const extension = AVATAR_EXTENSIONS[contentType];
-  if (extension === undefined) throw badRequest("unsupported avatar content type");
+  if (extension === undefined) throw new BadRequestError("unsupported avatar content type");
 
   return `members/${organizationId}/${memberId}/${newId()}.${extension}`;
 }
@@ -25,11 +25,11 @@ export function assertAvatarKey(
   memberId: string,
 ): void {
   if (!AVATAR_KEY_PATTERN.test(key)) {
-    throw notFound("that avatar key is not one this api issued");
+    throw new NotFoundError("that avatar key is not one this api issued");
   }
 
   if (!key.startsWith(`members/${organizationId}/${memberId}/`)) {
-    throw notFound("that avatar key belongs to another member");
+    throw new NotFoundError("that avatar key belongs to another member");
   }
 }
 
@@ -40,7 +40,7 @@ export async function createAvatarUploadTicket(
   contentType: string,
 ): Promise<AvatarUploadTicket> {
   if (!AVATAR_TYPES.includes(contentType as (typeof AVATAR_TYPES)[number])) {
-    throw badRequest("unsupported avatar content type");
+    throw new BadRequestError("unsupported avatar content type");
   }
 
   const key = resolveAvatarKey(organizationId, memberId, contentType);

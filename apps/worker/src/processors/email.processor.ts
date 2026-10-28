@@ -1,4 +1,4 @@
-import { internal, type Env, type Logger } from "@wasanni/kit";
+import { InternalServerError, type Env, type Logger } from "@wasanni/kit";
 import type { EmailJob } from "@wasanni/jobs";
 
 const ZEPTOMAIL_ENDPOINT = "https://api.zeptomail.com/v1.1/email";
@@ -57,7 +57,7 @@ export function createEmailProcessor(env: Env, logger: Logger) {
     const token = env.ZEPTOMAIL_API_KEY;
 
     if (token === undefined) {
-      throw internal("ZEPTOMAIL_API_KEY is not configured");
+      throw new InternalServerError("ZEPTOMAIL_API_KEY is not configured");
     }
 
     const response = await fetch(ZEPTOMAIL_ENDPOINT, {
@@ -74,7 +74,7 @@ export function createEmailProcessor(env: Env, logger: Logger) {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       logger.warn("email.rejected", { status: response.status, purpose: job.purpose });
-      throw internal(`zeptomail ${response.status}: ${text.slice(0, 300)}`);
+      throw new InternalServerError(`zeptomail ${response.status}: ${text.slice(0, 300)}`);
     }
 
     return { ok: true };

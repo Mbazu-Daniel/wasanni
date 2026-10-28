@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { game, gamePlatformAssignment, platform } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, internal, newId, notFound } from "@wasanni/kit";
+import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 import type { AssignmentView } from "@wasanni/contracts";
 import type { AssignmentCreateInput, AssignmentRow } from "./types.ts";
 
@@ -57,7 +57,7 @@ export function createAssignmentService(db: Db) {
         .where(scopeTo(scope, game, eq(game.id, input.gameId)))
         .limit(1);
 
-      if (ownedGame === undefined) throw notFound("game not found");
+      if (ownedGame === undefined) throw new NotFoundError("game not found");
 
       const [ownedPlatform] = await db
         .select({ id: platform.id })
@@ -65,7 +65,7 @@ export function createAssignmentService(db: Db) {
         .where(scopeTo(scope, platform, eq(platform.id, input.platformId)))
         .limit(1);
 
-      if (ownedPlatform === undefined) throw notFound("platform not found");
+      if (ownedPlatform === undefined) throw new NotFoundError("platform not found");
 
       try {
         const [row] = await db
@@ -81,13 +81,13 @@ export function createAssignmentService(db: Db) {
           .returning();
 
         if (row === undefined) {
-          throw internal("game platform assignment insert returned no row");
+          throw new InternalServerError("game platform assignment insert returned no row");
         }
 
         return toView(row);
       } catch (error) {
         if (isUniqueViolation(error)) {
-          throw conflict("this game is already assigned to that platform");
+          throw new ConflictError("this game is already assigned to that platform");
         }
         throw error;
       }
@@ -110,7 +110,7 @@ export function createAssignmentService(db: Db) {
         )
         .returning({ id: gamePlatformAssignment.id });
 
-      if (removed.length === 0) throw notFound("assignment not found");
+      if (removed.length === 0) throw new NotFoundError("assignment not found");
     },
   };
 }

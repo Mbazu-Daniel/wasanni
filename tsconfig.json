@@ -17,7 +17,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@wasanni/kit": ["./packages/kit/src/index.ts"],
       "@wasanni/kit/*": ["./packages/kit/src/*"],

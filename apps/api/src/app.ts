@@ -25,16 +25,22 @@ import { createGamesRoutes } from "./modules/games/index.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes } from "./modules/play/index.ts";
 import { createCompetition } from "./modules/competition/index.ts";
+import { createAuditRoutes } from "./modules/audit/index.ts";
+import { createAuditService } from "./modules/audit/service.ts";
+import { createAuditPlugin } from "./plugins/audit.ts";
 import { createWebhooksRoutes } from "./modules/webhook/index.ts";
 import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
 import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
 
 export async function createApp(deps: AppDeps) {
+  const audit = createAuditService(deps.db, deps.logger);
+
   const moduleDeps: ModuleDeps = {
     db: deps.db,
     env: deps.env,
     logger: deps.logger,
+    audit,
     enqueuer: deps.enqueuer ?? null,
   };
   const betterAuth = createBetterAuth(moduleDeps);
@@ -106,6 +112,7 @@ export async function createApp(deps: AppDeps) {
       set.status = failure.status;
       return toErrorBody(failure.source, requestId);
     })
+    .use(createAuditPlugin(audit))
     .use(createAuthRoutes(base, betterAuth))
     .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
     .use(createPlatformRoutes(base, { service: createPlatformService(deps.db) }))
@@ -146,6 +153,7 @@ export async function createApp(deps: AppDeps) {
       }),
     )
     .use(createHealthRoutes(deps))
+    .use(createAuditRoutes(base, { service: audit }))
     .onAfterResponse(({ request, set }) => {
       const { requestId, startedAt } = requestContextOf(request);
       deps.logger.info("http", {

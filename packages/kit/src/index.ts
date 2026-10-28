@@ -2,7 +2,7 @@ export * from "./config/types.ts";
 export * from "./config/constants.ts";
 export * from "./config/config.ts";
 
-export * from "./errors/errors.ts";
+export * from "./exceptions/index.ts";
 
 export * from "./email/types.ts";
 export * from "./email/constants.ts";
@@ -15,6 +15,8 @@ export * from "./events/memory.ts";
 export * from "./logger/types.ts";
 export * from "./logger/constants.ts";
 export * from "./logger/logger.ts";
+
+export * from "./preflight/preflight.ts";
 
 export * from "./publicid/constants.ts";
 export * from "./publicid/publicid.ts";

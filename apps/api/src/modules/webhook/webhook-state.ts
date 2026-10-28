@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { platform, webhookConfig } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, notFound } from "@wasanni/kit";
+import { ConflictError, NotFoundError } from "@wasanni/kit";
 import type { WebhookConfigView } from "@wasanni/contracts";
 import type { WebhookRow } from "./types.ts";
 
@@ -41,7 +41,7 @@ export async function readWebhook(
     )
     .limit(1);
 
-  if (row === undefined) throw notFound("webhook not found");
+  if (row === undefined) throw new NotFoundError("webhook not found");
   return row;
 }
 
@@ -56,7 +56,7 @@ export async function assertPlatform(
     .where(scopeTo(scope, platform, eq(platform.id, platformId)))
     .limit(1);
 
-  if (row === undefined) throw notFound("platform not found");
+  if (row === undefined) throw new NotFoundError("platform not found");
 }
 
 export async function assertUrlFree(
@@ -78,6 +78,6 @@ export async function assertUrlFree(
     .limit(1);
 
   if (clash.length > 0) {
-    throw conflict("this platform already has a webhook for that url");
+    throw new ConflictError("this platform already has a webhook for that url");
   }
 }

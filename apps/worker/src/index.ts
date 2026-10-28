@@ -3,6 +3,7 @@ import {
   createObjectStorage,
   createRedis,
   createRedisSessionEventStore,
+  preflight,
   readEnv,
   readStorageConfig,
 } from "@wasanni/kit";
@@ -27,7 +28,10 @@ const logger = createLogger({
   bindings: { service: "worker" },
 });
 
-const { db, sql } = createDb(cfg.DATABASE_URL, { max: 20 });
+const checks = await preflight(cfg, logger);
+logger.info("preflight ready", checks);
+
+const { db, sql } = createDb(cfg.DATABASE_URL, { max: cfg.DB_POOL_MAX_WORKER });
 const redis = createRedis(cfg.REDIS_URL);
 const storage = createObjectStorage(readStorageConfig(cfg));
 const events = createRedisSessionEventStore(redis);

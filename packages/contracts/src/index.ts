@@ -18,3 +18,4 @@ export * from "./realtime.contract.ts";
 export * from "./webhook.contract.ts";
 export * from "./tournament.contract.ts";
 export * from "./match.contract.ts";
+export * from "./audit.contract.ts";
