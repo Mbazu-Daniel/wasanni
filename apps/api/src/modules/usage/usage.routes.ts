@@ -1,9 +1,13 @@
 import {
   OrganizationIdParams,
+  UsageDailyQuery,
+  UsageDailyView,
+  UsageStorageView,
   PERMISSION,
   PlatformUsageView,
   SetUsageQuotaBody,
   UsageParams,
+  UsageQuery,
   UsageQuotaList,
   UsageQuotaParams,
   UsageView,
@@ -20,9 +24,11 @@ export const createUsageRoutes = <T extends PrincipalApi>(
   api
     .get(
       "/api/v1/organizations/:organizationId/usage",
-      async ({ principal }) => {
+      async ({ principal, query }) => {
         const scope = organizationScope(principal);
-        const period = currentPeriodStart();
+        const period = query.period === undefined
+          ? currentPeriodStart()
+          : new Date(`${query.period}-01T00:00:00.000Z`);
 
         const [counters, storageBytes] = await Promise.all([
           service.listForPeriod(scope.organizationId, period),
@@ -38,15 +44,48 @@ export const createUsageRoutes = <T extends PrincipalApi>(
       {
         organizationAuth: PERMISSION.auditRead,
         params: UsageParams,
+        query: UsageQuery,
         response: { 200: UsageView },
         detail: { tags: ["usage"], summary: "Read the usage of an organization" },
       },
     )
     .get(
+      "/api/v1/organizations/:organizationId/usage/daily",
+      async ({ principal, query }) => {
+        const rows = await service.dailyBreakdown({
+          organizationId: principal.organizationId,
+          metric: query.metric,
+          from: new Date(query.from),
+          to: new Date(query.to),
+        });
+
+        return { metric: query.metric, rows };
+      },
+      {
+        organizationAuth: PERMISSION.auditRead,
+        params: UsageParams,
+        query: UsageDailyQuery,
+        response: { 200: UsageDailyView },
+        detail: { tags: ["usage"], summary: "Daily breakdown for a metric" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/usage/storage",
+      async ({ principal }) => service.storageBreakdown(principal.organizationId),
+      {
+        organizationAuth: PERMISSION.auditRead,
+        params: UsageParams,
+        response: { 200: UsageStorageView },
+        detail: { tags: ["usage"], summary: "Storage breakdown by game and template" },
+      },
+    )
+    .get(
       "/api/v1/platform/usage",
-      async ({ principal }) => {
+      async ({ principal, query }) => {
         const scope = organizationScope(principal);
-        const period = currentPeriodStart();
+        const period = query.period === undefined
+          ? currentPeriodStart()
+          : new Date(`${query.period}-01T00:00:00.000Z`);
 
         const [sessions, scores, matches, tournaments] = await Promise.all([
           service.read({

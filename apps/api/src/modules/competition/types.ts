@@ -70,7 +70,13 @@ export type CompleteMatchInput = {
   winnerExternal?: { platformId: string; externalUserId: string };
 };
 
-export type WithdrawTarget =
+export type MatchListFilter = {
+  gameId?: string;
+  tournamentId?: string;
+  status?: MatchRow["status"];
+  cursor?: string;
+  limit?: number;
+};export type WithdrawTarget =
   | { participantId: string }
   | { platformId: string; externalUserId: string };
 

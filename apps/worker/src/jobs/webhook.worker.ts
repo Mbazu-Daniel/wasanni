@@ -19,7 +19,10 @@ export function createWebhookWorker(
         throw new InternalServerError(`unexpected webhook job: ${job.name}`);
       }
 
-      return deliver(job.data);
+      const attempt = job.attemptsMade + 1;
+      const isFinalAttempt = attempt >= (job.opts.attempts ?? 1);
+
+      return deliver(job.data, attempt, isFinalAttempt);
     },
     {
       connection,

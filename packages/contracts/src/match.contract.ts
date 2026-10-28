@@ -136,3 +136,22 @@ export const MatchParticipants = t.Object({
   participants: t.Array(MatchParticipantView),
 });
 export type MatchParticipants = UnwrapSchema<typeof MatchParticipants>;
+
+export const MatchListQuery = t.Object({
+  gameId: t.Optional(t.String()),
+  tournamentId: t.Optional(t.String()),
+  status: t.Optional(MatchStatus),
+  cursor: t.Optional(t.String()),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 200 })),
+});
+export type MatchListQuery = UnwrapSchema<typeof MatchListQuery>;
+
+export const MatchList = t.Object({
+  data: t.Array(MatchParticipants),
+  page: t.Object({
+    limit: t.Number(),
+    hasMore: t.Boolean(),
+    cursor: t.Union([t.String(), t.Null()]),
+  }),
+});
+export type MatchList = UnwrapSchema<typeof MatchList>;

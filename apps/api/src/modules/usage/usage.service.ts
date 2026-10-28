@@ -11,6 +11,15 @@ export const currentPeriodStart = (now = new Date()): Date =>
 export const periodEnd = (start: Date): Date =>
   new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
 
+const DAILY_SOURCES = {
+  sessions_created: { table: "game_session", column: "started_at" },
+  scores_submitted: { table: "game_session_score", column: "submitted_at" },
+  matches_created: { table: "match", column: "created_at" },
+  tournaments_created: { table: "tournament", column: "created_at" },
+} as const;
+
+export type DailyMetric = keyof typeof DAILY_SOURCES;
+
 export function createUsageService(db: Db, deps: UsageServiceDeps) {
   const { logger, enabled } = deps;
 
@@ -118,8 +127,108 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
     }
   };
 
+  const dailyBreakdown = async (input: {
+    organizationId: string;
+    metric: DailyMetric;
+    from: Date;
+    to: Date;
+  }): Promise<{ date: string; value: number }[]> => {
+    const source = DAILY_SOURCES[input.metric];
+
+    const rows = (await db.execute(sql`
+      select
+        to_char(date_trunc('day', ${sql.raw(source.column)}), 'YYYY-MM-DD') as day,
+        count(*)::int as value
+      from ${sql.raw(source.table)}
+      where organization_id = ${input.organizationId}
+        and ${sql.raw(source.column)} >= ${input.from.toISOString()}::timestamptz
+        and ${sql.raw(source.column)} <= ${input.to.toISOString()}::timestamptz
+      group by day
+      order by day
+    `)) as { day: string; value: number }[];
+
+    const byDate = new Map(rows.map((row) => [row.day, Number(row.value)]));
+
+    const series: { date: string; value: number }[] = [];
+    const cursor = new Date(input.from);
+    cursor.setUTCHours(0, 0, 0, 0);
+
+    while (cursor <= input.to) {
+      const date = cursor.toISOString().slice(0, 10);
+      series.push({ date, value: byDate.get(date) ?? 0 });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    return series;
+  };
+
+  const storageBreakdown = async (organizationId: string) => {
+    const games = (await db.execute(sql`
+      select
+        g.id,
+        g.name,
+        g.slug,
+        coalesce(sum(gf.size_bytes), 0)::bigint as size_bytes,
+        count(gf.id)::int as file_count
+      from game g
+      left join game_file gf
+        on gf.game_id = g.id
+        and gf.status = 'ready'
+        and gf.is_current = true
+      where g.organization_id = ${organizationId}
+      group by g.id, g.name, g.slug
+      having coalesce(sum(gf.size_bytes), 0) > 0
+      order by size_bytes desc
+    `)) as {
+      id: string;
+      name: string;
+      slug: string;
+      size_bytes: string | number;
+      file_count: number;
+    }[];
+
+    const templates = (await db.execute(sql`
+      select t.id, t.name, t.slug, coalesce(t.size_bytes, 0)::bigint as size_bytes
+      from template t
+      where t.organization_id = ${organizationId}
+        and t.status = 'ready'
+        and t.size_bytes is not null
+        and t.size_bytes > 0
+      order by t.size_bytes desc
+    `)) as { id: string; name: string; slug: string; size_bytes: string | number }[];
+
+    const totalGames = games.reduce((sum, row) => sum + Number(row.size_bytes), 0);
+    const totalTemplates = templates.reduce(
+      (sum, row) => sum + Number(row.size_bytes),
+      0,
+    );
+
+    return {
+      games: games.map((row) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        sizeBytes: Number(row.size_bytes),
+        fileCount: Number(row.file_count),
+      })),
+      templates: templates.map((row) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        sizeBytes: Number(row.size_bytes),
+      })),
+      totalGames,
+      totalTemplates,
+      total: totalGames + totalTemplates,
+    };
+  };
+
   return {
     incr,
+
+    dailyBreakdown,
+
+    storageBreakdown,
 
     total,
 

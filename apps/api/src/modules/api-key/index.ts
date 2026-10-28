@@ -4,6 +4,8 @@ import {
   ApiKeySingle,
   CreateApiKeyBody,
   CreatedApiKeySingle,
+  OrgApiKeyList,
+  OrganizationIdParams,
   PERMISSION,
   PlatformIdParams,
   UpdateApiKeyBody,
@@ -14,6 +16,18 @@ import type { ApiKeyDeps } from "./types.ts";
 
 export const createApiKeyRoutes = <T extends PrincipalApi>(api: T, { service }: ApiKeyDeps) =>
   api
+    .get(
+      "/api/v1/organizations/:organizationId/keys",
+      async ({ principal }) => ({
+        keys: await service.listForOrganization(organizationScope(principal)),
+      }),
+      {
+        organizationAuth: PERMISSION.apiKeyRead,
+        params: OrganizationIdParams,
+        response: { 200: OrgApiKeyList },
+        detail: { tags: ["api-keys"], summary: "List every api key of an organization" },
+      },
+    )
     .get(
       "/api/v1/organizations/:organizationId/platforms/:platformId/keys",
       async ({ principal, params }) => ({

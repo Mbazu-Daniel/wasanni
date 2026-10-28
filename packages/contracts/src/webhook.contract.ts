@@ -40,6 +40,39 @@ export type WebhookConfigView = UnwrapSchema<typeof WebhookConfigView>;
 export const WebhookConfigSingle = t.Object({ webhook: WebhookConfigView });
 export type WebhookConfigSingle = UnwrapSchema<typeof WebhookConfigSingle>;
 
+export const OrgWebhookView = t.Object({
+  ...WebhookConfigView.properties,
+  platformName: t.Union([t.String(), t.Null()]),
+  platformSlug: t.Union([t.String(), t.Null()]),
+});
+export type OrgWebhookView = UnwrapSchema<typeof OrgWebhookView>;
+
+export const OrgWebhookList = t.Object({ webhooks: t.Array(OrgWebhookView) });
+export type OrgWebhookList = UnwrapSchema<typeof OrgWebhookList>;
+
+export const WebhookDeliveryView = t.Object({
+  id: t.String(),
+  eventId: t.String(),
+  eventType: t.String(),
+  attempt: t.Number(),
+  status: t.Union([
+    t.Literal("delivered"),
+    t.Literal("failed"),
+    t.Literal("retrying"),
+  ]),
+  statusCode: t.Union([t.Number(), t.Null()]),
+  responseBody: t.Union([t.String(), t.Null()]),
+  error: t.Union([t.String(), t.Null()]),
+  durationMs: t.Union([t.Number(), t.Null()]),
+  createdAt: t.String({ format: "date-time" }),
+});
+export type WebhookDeliveryView = UnwrapSchema<typeof WebhookDeliveryView>;
+
+export const WebhookDeliveryList = t.Object({
+  deliveries: t.Array(WebhookDeliveryView),
+});
+export type WebhookDeliveryList = UnwrapSchema<typeof WebhookDeliveryList>;
+
 export const WebhookConfigList = t.Object({ webhooks: t.Array(WebhookConfigView) });
 export type WebhookConfigList = UnwrapSchema<typeof WebhookConfigList>;
 
@@ -67,6 +100,12 @@ export const UpdateWebhookBody = t.Object(
   { minProperties: 1 },
 );
 export type UpdateWebhookBody = UnwrapSchema<typeof UpdateWebhookBody>;
+
+export const OrganizationWebhookIdParams = t.Object({
+  organizationId: t.String(),
+  webhookId: t.String(),
+});
+export type OrganizationWebhookIdParams = UnwrapSchema<typeof OrganizationWebhookIdParams>;
 
 export const WebhookParams = t.Object({
   organizationId: t.String(),

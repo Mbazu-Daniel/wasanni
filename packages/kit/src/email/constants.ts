@@ -1,1 +1,1 @@
-export const EMAIL_PURPOSES = ["verify", "reset", "invitation"] as const;
+export const EMAIL_PURPOSES = ["verify", "reset", "invitation", "changeEmail"] as const;

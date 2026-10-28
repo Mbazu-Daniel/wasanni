@@ -24,6 +24,7 @@ import { createMemberService } from "./modules/member/service.ts";
 import { createApiKeyRoutes } from "./modules/api-key/index.ts";
 import { createApiKeyService } from "./modules/api-key/service.ts";
 import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
+import { createOrganizationModule } from "./modules/organization/index.ts";
 import { createUsageService } from "./modules/usage/usage.service.ts";
 import { createRoleRoutes } from "./modules/role/index.ts";
 import { createRoleService } from "./modules/role/service.ts";
@@ -177,6 +178,7 @@ export async function createApp(deps: AppDeps) {
     .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
     .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
     .use(createUsageRoutes(base, { service: usage }))
+    .use(createOrganizationModule(base, deps.db))
     .use(
       createGamesRoutes(base, {
         db: deps.db,
@@ -201,6 +203,7 @@ export async function createApp(deps: AppDeps) {
       createWebhooksRoutes(base, {
         db: deps.db,
         encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        dispatcher,
       }),
     )
     .use(competition.mount(base))

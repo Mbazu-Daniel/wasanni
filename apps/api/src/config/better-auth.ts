@@ -46,6 +46,18 @@ export function createBetterAuth(deps: ModuleDeps) {
   const sendPasswordResetLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Reset your Wasanni password", url, purpose: "reset" });
 
+  const resetUrlForWeb = (url: string): string => {
+    const parsed = new URL(url);
+    const token = parsed.pathname.split("/").pop() ?? "";
+    const callback = parsed.searchParams.get("callbackURL");
+
+    const next = new URL("/reset-password", env.PUBLIC_WEB_ORIGIN);
+    next.searchParams.set("token", token);
+    if (callback !== null) next.searchParams.set("callbackURL", callback);
+
+    return next.toString();
+  };
+
   const google = credentialsFor(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET);
   const github = credentialsFor(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
 
@@ -77,7 +89,15 @@ export function createBetterAuth(deps: ModuleDeps) {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
-      sendResetPassword: async ({ user, url }) => sendPasswordResetLink(user.email, url),
+      sendResetPassword: async ({ user, url }) =>
+        sendPasswordResetLink(user.email, resetUrlForWeb(url)),
+      sendChangeEmailVerification: async ({ newEmail, url }: { newEmail: string; url: string }) =>
+        sendMail({
+          to: newEmail,
+          subject: "Confirm your new Wasanni email",
+          url,
+          purpose: "changeEmail",
+        }),
     },
 
 

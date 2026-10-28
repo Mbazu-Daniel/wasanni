@@ -1,5 +1,5 @@
-import { and, asc, eq, inArray, ne } from "drizzle-orm";
-import type { MatchParticipantView, MatchView } from "@wasanni/contracts";
+import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import type { MatchList, MatchParticipantView, MatchView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import { game, match, matchParticipant } from "@wasanni/db/schema";
@@ -15,6 +15,7 @@ import { readTournamentRow } from "./tournament.service.ts";
 import type {
   CompleteMatchInput,
   CreateMatchInput,
+  MatchListFilter,
   MatchRow,
   RecordParticipantScoreInput,
 } from "./types.ts";
@@ -44,6 +45,24 @@ async function requireGame(db: Db, scope: Scope, gameId: string): Promise<void> 
 
   if (row === undefined) throw new NotFoundError("game not found");
 }
+
+const encodeCursor = (row: MatchRow): string =>
+  Buffer.from(`${row.createdAt.toISOString()}|${row.id}`, "utf8").toString(
+    "base64url",
+  );
+
+const decodeCursor = (cursor: string): { createdAt: Date; id: string } | null => {
+  const [createdAt, id] = Buffer.from(cursor, "base64url")
+    .toString("utf8")
+    .split("|");
+
+  if (createdAt === undefined || id === undefined) return null;
+
+  const parsed = new Date(createdAt);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return { createdAt: parsed, id };
+};
 
 export function createMatchService(db: Db, usage: UsageService | null) {
   const complete = async (
@@ -241,6 +260,70 @@ export function createMatchService(db: Db, usage: UsageService | null) {
 
     async get(scope: Scope, matchId: string): Promise<MatchView> {
       return toMatchView(await readMatchRow(db, scope, matchId));
+    },
+
+    async listForOrganization(
+      scope: Scope,
+      filter: MatchListFilter = {},
+    ): Promise<MatchList> {
+      const limit = Math.min(Math.max(filter.limit ?? 50, 1), 200);
+      const cursor =
+        filter.cursor === undefined ? null : decodeCursor(filter.cursor);
+
+      const conditions = [
+        filter.gameId === undefined ? undefined : eq(match.gameId, filter.gameId),
+        filter.tournamentId === undefined
+          ? undefined
+          : eq(match.tournamentId, filter.tournamentId),
+        filter.status === undefined ? undefined : eq(match.status, filter.status),
+      ];
+
+      if (cursor !== null) {
+        conditions.push(
+          sql`(${match.createdAt}, ${match.id}) < (${cursor.createdAt.toISOString()}::timestamptz, ${cursor.id}::uuid)`,
+        );
+      }
+
+      const rows = await db
+        .select()
+        .from(match)
+        .where(scopeTo(scope, match, ...conditions))
+        .orderBy(desc(match.createdAt), desc(match.id))
+        .limit(limit + 1);
+
+      const hasMore = rows.length > limit;
+      const page = hasMore ? rows.slice(0, limit) : rows;
+      const matchIds = page.map((row) => row.id);
+
+      const seated =
+        matchIds.length === 0
+          ? []
+          : await db
+              .select()
+              .from(matchParticipant)
+              .where(inArray(matchParticipant.matchId, matchIds))
+              .orderBy(asc(matchParticipant.slot));
+
+      const byMatch = new Map<string, typeof seated>();
+      for (const participant of seated) {
+        const list = byMatch.get(participant.matchId) ?? [];
+        list.push(participant);
+        byMatch.set(participant.matchId, list);
+      }
+
+      const last = page[page.length - 1];
+
+      return {
+        data: page.map((row) => ({
+          match: toMatchView(row),
+          participants: (byMatch.get(row.id) ?? []).map(toMatchParticipantView),
+        })),
+        page: {
+          limit,
+          hasMore,
+          cursor: hasMore && last !== undefined ? encodeCursor(last) : null,
+        },
+      };
     },
 
     async listParticipants(

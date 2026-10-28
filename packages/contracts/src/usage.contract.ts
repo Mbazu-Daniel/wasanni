@@ -77,8 +77,66 @@ export type SetUsageQuotaBody = UnwrapSchema<typeof SetUsageQuotaBody>;
 export const UsageParams = t.Object({ organizationId: t.String() });
 export type UsageParams = UnwrapSchema<typeof UsageParams>;
 
+export const UsageQuery = t.Object({
+  period: t.Optional(t.String({ pattern: "^\\d{4}-\\d{2}$" })),
+});
+export type UsageQuery = UnwrapSchema<typeof UsageQuery>;
+
 export const UsageQuotaParams = t.Object({
   organizationId: t.String(),
   metric: t.String(),
 });
 export type UsageQuotaParams = UnwrapSchema<typeof UsageQuotaParams>;
+
+export const UsageDailyMetric = t.Union([
+  t.Literal("sessions_created"),
+  t.Literal("scores_submitted"),
+  t.Literal("matches_created"),
+  t.Literal("tournaments_created"),
+]);
+export type UsageDailyMetric = UnwrapSchema<typeof UsageDailyMetric>;
+
+export const UsageDailyQuery = t.Object({
+  metric: UsageDailyMetric,
+  from: t.String({ format: "date-time" }),
+  to: t.String({ format: "date-time" }),
+});
+export type UsageDailyQuery = UnwrapSchema<typeof UsageDailyQuery>;
+
+export const UsageDailyRow = t.Object({
+  date: t.String(),
+  value: t.Number(),
+});
+export type UsageDailyRow = UnwrapSchema<typeof UsageDailyRow>;
+
+export const UsageDailyView = t.Object({
+  metric: UsageDailyMetric,
+  rows: t.Array(UsageDailyRow),
+});
+export type UsageDailyView = UnwrapSchema<typeof UsageDailyView>;
+
+export const UsageStorageGame = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+  sizeBytes: t.Number(),
+  fileCount: t.Number(),
+});
+export type UsageStorageGame = UnwrapSchema<typeof UsageStorageGame>;
+
+export const UsageStorageTemplate = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+  sizeBytes: t.Number(),
+});
+export type UsageStorageTemplate = UnwrapSchema<typeof UsageStorageTemplate>;
+
+export const UsageStorageView = t.Object({
+  games: t.Array(UsageStorageGame),
+  templates: t.Array(UsageStorageTemplate),
+  totalGames: t.Number(),
+  totalTemplates: t.Number(),
+  total: t.Number(),
+});
+export type UsageStorageView = UnwrapSchema<typeof UsageStorageView>;

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { IconLogout, IconUser, IconSettings } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
 import { fetchSession } from "@/lib/session";
@@ -7,6 +7,7 @@ import { fetchSession } from "@/lib/session";
 export function UserMenu() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { orgSlug } = useParams({ from: "/o/$orgSlug" });
   const { data: session } = useQuery({
     queryKey: ["session"],
     queryFn: fetchSession,
@@ -36,13 +37,14 @@ export function UserMenu() {
           <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <div className="my-1 h-px bg-border" />
-        <span
-          title="Not built yet"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/40"
+        <Link
+          to="/o/$orgSlug/settings/account"
+          params={{ orgSlug }}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/[0.06]"
         >
           <IconUser className="size-3.5" />
           Account
-        </span>
+        </Link>
         <span
           title="Not built yet"
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/40"

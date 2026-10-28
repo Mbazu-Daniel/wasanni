@@ -1,7 +1,9 @@
 import {
   AvatarUploadTicketSingle,
   MemberIdParams,
+  MemberList,
   MemberSingle,
+  OrganizationIdParams,
   PERMISSION,
   RequestAvatarUpload,
   SetMemberAvatar,
@@ -66,6 +68,33 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       body: SetMemberRole,
       response: { 200: MemberSingle },
       detail: { tags: ["members"], summary: "Give a member a role" },
+    })
+    .get("/api/v1/organizations/:organizationId/members", async ({ principal }) => ({
+      members: await service.list(organizationScope(principal)),
+    }), {
+      organizationAuth: PERMISSION.memberRead,
+      params: OrganizationIdParams,
+      response: { 200: MemberList },
+      detail: { tags: ["members"], summary: "List the members of an organization" },
+    })
+    .patch("/api/v1/organizations/:organizationId/members/:memberId", async ({
+      principal,
+      params,
+      body,
+    }) => {
+      const member = await service.setDisplayName(
+        organizationScope(principal),
+        params.memberId,
+        body.displayName,
+      );
+
+      return { member };
+    }, {
+      organizationAuth: PERMISSION.memberUpdate,
+      params: MemberIdParams,
+      body: UpdateMemberDisplayName,
+      response: { 200: MemberSingle },
+      detail: { tags: ["members"], summary: "Rename a member of the organization" },
     })
     .post("/api/v1/organizations/:organizationId/members/me/avatar", async ({
       principal,

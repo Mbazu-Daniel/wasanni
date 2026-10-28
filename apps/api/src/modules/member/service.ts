@@ -37,6 +37,17 @@ export function createMemberService(db: Db) {
       return row === undefined ? null : toView(row);
     },
 
+    async list(scope: Scope): Promise<MemberView[]> {
+      const rows = await db
+        .select(columns)
+        .from(member)
+        .innerJoin(user, eq(member.userId, user.id))
+        .where(scopeTo(scope, member, activeMember))
+        .orderBy(member.createdAt);
+
+      return rows.map(toView);
+    },
+
     async setDisplayName(
       scope: Scope,
       memberId: string,

@@ -4,6 +4,8 @@ import {
   AssignmentSingle,
   CreateAssignmentBody,
   GameIdParams,
+  OrgAssignmentList,
+  OrganizationIdParams,
   PERMISSION,
   PlatformIdParams,
 } from "@wasanni/contracts";
@@ -16,6 +18,18 @@ export const createAssignmentRoutes = <T extends PrincipalApi>(
   { service }: AssignmentRouteDeps,
 ) =>
   api
+    .get(
+      "/api/v1/organizations/:organizationId/assignments",
+      async ({ principal }) => ({
+        assignments: await service.listForOrganization(principal.organizationId),
+      }),
+      {
+        organizationAuth: PERMISSION.assignmentRead,
+        params: OrganizationIdParams,
+        response: { 200: OrgAssignmentList },
+        detail: { tags: ["assignments"], summary: "List every assignment in an organization" },
+      },
+    )
     .get(
       "/api/v1/organizations/:organizationId/games/:gameId/assignments",
       async ({ principal, params }) => ({

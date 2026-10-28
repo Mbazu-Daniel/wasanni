@@ -13,9 +13,11 @@ import {
   IconSwords,
   IconList,
   IconChartBar,
+  IconCode,
   IconUsers,
   IconBuilding,
   IconUser,
+  IconAlertTriangle,
   IconChevronLeft,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -26,7 +28,23 @@ type IconComponent = typeof IconLayoutDashboard;
 type NavItem = {
   label: string;
   icon: IconComponent;
-  to?: "/o/$orgSlug/overview" | "/o/$orgSlug/games";
+  to?:
+    | "/o/$orgSlug/overview"
+    | "/o/$orgSlug/games"
+    | "/o/$orgSlug/platforms"
+    | "/o/$orgSlug/assignments"
+    | "/o/$orgSlug/templates"
+    | "/o/$orgSlug/tournaments"
+    | "/o/$orgSlug/keys"
+    | "/o/$orgSlug/webhooks"
+    | "/o/$orgSlug/matches"
+    | "/o/$orgSlug/audit"
+    | "/o/$orgSlug/developer"
+    | "/o/$orgSlug/usage"
+    | "/o/$orgSlug/settings/organization"
+    | "/o/$orgSlug/settings/danger"
+    | "/o/$orgSlug/settings/members"
+    | "/o/$orgSlug/settings/account";
 };
 
 const groups: { label: string | null; items: NavItem[] }[] = [
@@ -38,16 +56,16 @@ const groups: { label: string | null; items: NavItem[] }[] = [
     label: "Build",
     items: [
       { label: "Games", to: "/o/$orgSlug/games", icon: IconDeviceGamepad2 },
-      { label: "Templates", icon: IconLayout },
+      { label: "Templates", to: "/o/$orgSlug/templates", icon: IconLayout },
     ],
   },
   {
     label: "Distribute",
     items: [
-      { label: "Platforms", icon: IconBroadcast },
-      { label: "Assignments", icon: IconLink },
-      { label: "API keys", icon: IconKey },
-      { label: "Webhooks", icon: IconWebhook },
+      { label: "Platforms", to: "/o/$orgSlug/platforms", icon: IconBroadcast },
+      { label: "Assignments", to: "/o/$orgSlug/assignments", icon: IconLink },
+      { label: "API keys", to: "/o/$orgSlug/keys", icon: IconKey },
+      { label: "Webhooks", to: "/o/$orgSlug/webhooks", icon: IconWebhook },
     ],
   },
   {
@@ -60,23 +78,25 @@ const groups: { label: string | null; items: NavItem[] }[] = [
   {
     label: "Compete",
     items: [
-      { label: "Tournaments", icon: IconMedal },
-      { label: "Matches", icon: IconSwords },
+      { label: "Tournaments", to: "/o/$orgSlug/tournaments", icon: IconMedal },
+      { label: "Matches", to: "/o/$orgSlug/matches", icon: IconSwords },
     ],
   },
   {
     label: "Observe",
     items: [
-      { label: "Audit", icon: IconList },
-      { label: "Usage", icon: IconChartBar },
+      { label: "Audit", to: "/o/$orgSlug/audit", icon: IconList },
+      { label: "Usage", to: "/o/$orgSlug/usage", icon: IconChartBar },
+      { label: "Developer", to: "/o/$orgSlug/developer", icon: IconCode },
     ],
   },
   {
     label: "Settings",
     items: [
-      { label: "Members", icon: IconUsers },
-      { label: "Organization", icon: IconBuilding },
-      { label: "Account", icon: IconUser },
+      { label: "Members", to: "/o/$orgSlug/settings/members", icon: IconUsers },
+      { label: "Organization", to: "/o/$orgSlug/settings/organization", icon: IconBuilding },
+      { label: "Account", to: "/o/$orgSlug/settings/account", icon: IconUser },
+      { label: "Danger zone", to: "/o/$orgSlug/settings/danger", icon: IconAlertTriangle },
     ],
   },
 ];
