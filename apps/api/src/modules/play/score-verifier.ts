@@ -1,77 +1,22 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-import type { CallbackConfig, Env, Logger } from "@wasanni/kit";
+import type { Logger } from "@wasanni/kit";
 import {
-  decryptSecret,
-  encryptSecret,
+  callbackEndpointOf,
+  callbackSecretOf,
   hmacSign,
-  randomBytesBase64Url,
-  readGameConfig,
+  assertSafeOutboundUrl,
 } from "@wasanni/kit";
-import type { ScoreFlag } from "@wasanni/contracts";
 import type {
   ScoreVerificationInput,
   ScoreVerificationVerdict,
 } from "./types.ts";
 
-export const SCORE_SIGNATURE_PAYLOAD = (sessionId: string, score: number): string =>
-  `${sessionId}|${score}`;
-
-const sameSignature = (expected: string, given: string): boolean => {
-  const left = Buffer.from(expected, "utf8");
-  const right = Buffer.from(given, "utf8");
-
-  if (left.length !== right.length) return false;
-
-  return timingSafeEqual(left, right);
-};
-
-export function createScoreVerifier(env: Env, logger: Logger) {
-  const createSigningKey = (): { plaintext: string; ciphertext: string } => {
-    const plaintext = randomBytesBase64Url(32);
-
-    return {
-      plaintext,
-      ciphertext: encryptSecret(plaintext, env.WEBHOOK_SECRET_ENCRYPTION_KEY),
-    };
-  };
-
-  const verifyHmac = (
-    input: ScoreVerificationInput,
-  ): ScoreVerificationVerdict | null => {
-    if (input.signingKeyCiphertext === null) {
-      return { kind: "failed", code: "signature_key_missing", reason: "the session has no signing key" };
-    }
-
-    if (input.signature === null) {
-      return { kind: "failed", code: "signature_missing", reason: "a signature is required" };
-    }
-
-    let key: string;
-
-    try {
-      key = decryptSecret(input.signingKeyCiphertext, env.WEBHOOK_SECRET_ENCRYPTION_KEY);
-    } catch {
-      return {
-        kind: "failed",
-        code: "signature_key_unreadable",
-        reason: "the session signing key could not be read",
-      };
-    }
-
-    const expected = createHmac("sha256", key)
-      .update(SCORE_SIGNATURE_PAYLOAD(input.sessionId, input.score))
-      .digest("base64url");
-
-    if (!sameSignature(expected, input.signature)) {
-      return { kind: "failed", code: "signature_mismatch", reason: "the signature does not match" };
-    }
-
-    return null;
-  };
-
+export function createScoreVerifier(
+  logger: Logger,
+  allowPrivateOutbound: boolean,
+) {
   const verifyCallback = async (
     input: ScoreVerificationInput,
-    callback: CallbackConfig,
+    callback: { url: string; timeoutMs: number | null },
   ): Promise<ScoreVerificationVerdict> => {
     const body = JSON.stringify({
       event: "score.verify",
@@ -83,12 +28,27 @@ export function createScoreVerifier(env: Env, logger: Logger) {
     });
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const signature = hmacSign(callback.secret, body, timestamp);
+
+    const callbackSecret = input.callbackSecret ?? callbackSecretOf(input.config);
+
+    if (callbackSecret === undefined || callbackSecret === null) {
+      return { kind: "failed", code: "callback_config_missing", reason: "the callback secret is missing" };
+    }
+
+    let callbackUrl: URL;
+
+    try {
+      callbackUrl = await assertSafeOutboundUrl(callback.url, allowPrivateOutbound);
+    } catch {
+      return { kind: "failed", code: "callback_config_invalid", reason: "the verifier url is not allowed" };
+    }
+
+    const signature = hmacSign(callbackSecret, body, timestamp);
 
     let response: Response;
 
     try {
-      response = await fetch(callback.url, {
+      response = await fetch(callbackUrl, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -152,44 +112,26 @@ export function createScoreVerifier(env: Env, logger: Logger) {
   };
 
   return {
-    createSigningKey,
-
     async verify(input: ScoreVerificationInput): Promise<ScoreVerificationVerdict> {
       if (input.mode === "none") return { kind: "passed", flags: [] };
 
-      const flags: ScoreFlag[] = [];
+      const callback = callbackEndpointOf(input.config);
 
-      if (input.mode === "hmac" || input.mode === "both") {
-        const failure = verifyHmac(input);
-
-        if (failure !== null) return failure;
-
-        flags.push("hmac_verified");
+      if (callback === null) {
+        return {
+          kind: "failed",
+          code: "callback_config_missing",
+          reason: "the callback mode is configured without a callback",
+        };
       }
 
-      if (input.mode === "callback" || input.mode === "both") {
-        const callback = readGameConfig(input.config).callback;
+      const result = await verifyCallback(input, callback);
 
-        if (callback === null) {
-          return {
-            kind: "failed",
-            code: "callback_config_missing",
-            reason: "the callback mode is configured without a callback",
-          };
-        }
+      if (result.kind === "failed") return result;
 
-        const result = await verifyCallback(input, callback);
+      if (result.kind === "unavailable") return result;
 
-        if (result.kind === "failed") return result;
-
-        if (result.kind === "unavailable") {
-          return { kind: "unavailable", flags: [...flags, ...result.flags], reason: result.reason };
-        }
-
-        flags.push(...result.flags);
-      }
-
-      return { kind: "passed", flags };
+      return result;
     },
   };
 }

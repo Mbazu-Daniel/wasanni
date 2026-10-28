@@ -11,7 +11,7 @@ export function createSweepProcessor(db: Db) {
       .update(gameSession)
       .set({ status: "expired" })
       .where(and(eq(gameSession.status, "active"), lt(gameSession.expiresAt, now)))
-      .returning({ id: gameSession.id });
+      .returning({ id: gameSession.id, organizationId: gameSession.organizationId });
 
     const purgedSessions = await db
       .delete(session)
@@ -25,6 +25,7 @@ export function createSweepProcessor(db: Db) {
 
     return {
       expiredSessions: expired.length,
+      expiredOrganizations: [...new Set(expired.map((row) => row.organizationId))],
       purgedAuthSessions: purgedSessions.length,
       purgedVerifications: purgedVerifications.length,
     };

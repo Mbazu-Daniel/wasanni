@@ -10,6 +10,7 @@ import {
 import { createDb } from "@wasanni/db";
 import {
   closeQueues,
+  createEnqueuer,
   createQueueConnection,
   createQueues,
   JOB,
@@ -40,12 +41,13 @@ const audit = createAuditService(db, logger);
 
 const connection = createQueueConnection(cfg.REDIS_URL);
 const queues = createQueues(connection);
+const enqueuer = createEnqueuer(queues);
 
 const workers = [
   createWebhookWorker(connection, db, cfg, logger),
   createEmailWorker(connection, cfg, logger),
   createArchiveWorker(connection, { db, storage, events, audit, env: cfg, logger }),
-  createDefaultWorker(connection, db, redis),
+  createDefaultWorker(connection, db, redis, enqueuer),
 ];
 
 for (const worker of workers) {
@@ -69,11 +71,7 @@ for (const worker of workers) {
   });
 }
 
-await queues.archive.upsertJobScheduler(
-  "score-pack",
-  { every: 5 * 60 * 1000 },
-  { name: JOB.SCORE_PACK, data: {} },
-);
+await queues.archive.removeJobScheduler("score-pack");
 
 await queues.archive.upsertJobScheduler(
   "score-partition-maintenance",
@@ -102,7 +100,6 @@ await queues.default.upsertJobScheduler(
 logger.info("worker started", {
   queues: [QUEUE.WEBHOOKS, QUEUE.EMAIL, QUEUE.ARCHIVE, QUEUE.DEFAULT],
   repeatable: [
-    JOB.SCORE_PACK,
     JOB.SCORE_ENSURE_PARTITIONS,
     JOB.SCORE_ARCHIVE_PARTITIONS,
     JOB.SESSION_SWEEP,

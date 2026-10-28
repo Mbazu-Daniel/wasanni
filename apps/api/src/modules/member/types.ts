@@ -5,10 +5,10 @@ export type MemberRow = {
   memberId: string;
   userId: string;
   email: string;
-  name: string;
+  memberName: string | null;
+  accountName: string;
   avatar: string | null;
   role: string;
-  displayName: string | null;
   joinedAt: Date;
 };
 

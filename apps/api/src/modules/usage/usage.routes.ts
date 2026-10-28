@@ -1,4 +1,5 @@
 import {
+  CallerPlatformParams,
   OrganizationIdParams,
   UsageDailyQuery,
   UsageDailyView,
@@ -12,7 +13,7 @@ import {
   UsageQuotaParams,
   UsageView,
 } from "@wasanni/contracts";
-import { organizationScope } from "@wasanni/kit";
+import { ForbiddenError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import { currentPeriodStart, periodEnd } from "./usage.service.ts";
 import type { UsageService } from "./types.ts";
@@ -57,6 +58,8 @@ export const createUsageRoutes = <T extends PrincipalApi>(
           metric: query.metric,
           from: new Date(query.from),
           to: new Date(query.to),
+          platformId: query.platformId,
+          gameId: query.gameId,
         });
 
         return { metric: query.metric, rows };
@@ -80,8 +83,11 @@ export const createUsageRoutes = <T extends PrincipalApi>(
       },
     )
     .get(
-      "/api/v1/platform/usage",
-      async ({ principal, query }) => {
+      "/api/v1/platforms/:platformId/usage",
+      async ({ principal, params, query }) => {
+        if (params.platformId !== principal.platformId) {
+          throw new ForbiddenError("this api key belongs to another platform");
+        }
         const scope = organizationScope(principal);
         const period = query.period === undefined
           ? currentPeriodStart()
@@ -126,8 +132,13 @@ export const createUsageRoutes = <T extends PrincipalApi>(
       },
       {
         platformAuth: PERMISSION.auditRead,
+        params: CallerPlatformParams,
+        query: UsageQuery,
         response: { 200: PlatformUsageView },
-        detail: { tags: ["usage"], summary: "Read the usage of the calling platform" },
+        detail: {
+          tags: ["usage"],
+          summary: "Read the usage of the calling platform (platform api key)",
+        },
       },
     )
     .get(

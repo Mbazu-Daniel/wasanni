@@ -19,7 +19,7 @@ export function createArchiveWorker(
   connection: QueueConnection,
   deps: ArchiveWorkerDeps,
 ) {
-  const pack = createPackProcessor(deps.db, deps.storage, deps.events);
+  const pack = createPackProcessor(deps.db, deps.storage, deps.events, deps.env);
   const recheck = createRecheckProcessor(deps.db);
   const ensure = createEnsurePartitionsProcessor(deps.db, deps.env, deps.logger);
   const extractBundle = createGameBundleProcessor(

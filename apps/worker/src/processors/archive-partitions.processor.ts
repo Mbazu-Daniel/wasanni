@@ -145,7 +145,7 @@ export function createArchivePartitionsProcessor(deps: ArchivePartitionsDeps) {
           organizationId: entry.organizationId,
           actor: { type: "system" },
           source: "worker",
-          action: "score.archive",
+          action: "score_partition.archived",
           resourceType: "score_partition",
           resourceId: partition.name,
           metadata: { path, rows: entry.rows, key: entry.key },

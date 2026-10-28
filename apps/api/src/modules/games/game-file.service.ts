@@ -23,6 +23,14 @@ import type { GameFileRow, GameFileUploadInput } from "./types.ts";
 const isZip = (contentType: string): boolean =>
   contentType === "application/zip" || contentType === "application/x-zip-compressed";
 
+const nextVersion = (latest: string | undefined): string => {
+  const match = /^(.+)-(\d+)$/.exec(latest ?? "");
+
+  return match === null
+    ? `${latest ?? "agent"}-1`
+    : `${match[1]}-${Number(match[2]) + 1}`;
+};
+
 const toView = (row: GameFileRow): GameFileView => ({
   id: row.id,
   organizationId: row.organizationId,
@@ -228,6 +236,84 @@ export function createGameFileService(
 
       if (updated === undefined) throw new NotFoundError("game file not found");
       return toView(updated);
+    },
+
+    async putPublishedBundle(
+      scope: Scope,
+      gameId: string,
+      input: { memberId: string; html: string },
+    ): Promise<GameFileView> {
+      const owner = await readGameState(db, scope, gameId);
+
+      if (owner === null) throw new NotFoundError("game not found");
+      if (owner.hosting !== "hosted") {
+        throw new BadRequestError("an external game does not accept game files");
+      }
+
+      const body = new TextEncoder().encode(input.html);
+
+      if (body.byteLength < 1 || body.byteLength > config.maxBundleBytes) {
+        throw new BadRequestError("the game file is outside the size this api accepts");
+      }
+
+      const [latest] = await db
+        .select({ version: gameFile.version })
+        .from(gameFile)
+        .where(scopeTo(scope, gameFile, eq(gameFile.gameId, gameId)))
+        .orderBy(desc(gameFile.createdAt))
+        .limit(1);
+
+      const fileId = newId();
+      const stored = await storage.putObject({
+        key: buildObjectKey({
+          location: "game-bundles",
+          organizationId: scope.organizationId,
+          segments: [gameId, fileId],
+          filename: "index.html",
+        }),
+        body,
+        contentType: "text/html",
+      });
+
+      await db.transaction(async (tx) => {
+        await tx
+          .update(gameFile)
+          .set({ isCurrent: false })
+          .where(
+            scopeTo(
+              scope,
+              gameFile,
+              eq(gameFile.gameId, gameId),
+              eq(gameFile.isCurrent, true),
+            ),
+          );
+
+        await tx.insert(gameFile).values({
+          id: fileId,
+          organizationId: scope.organizationId,
+          gameId,
+          version: nextVersion(latest?.version),
+          objectKey: stored.key,
+          sizeBytes: stored.sizeBytes,
+          contentType: "text/html",
+          etag: stored.etag,
+          status: "ready",
+          kind: "single",
+          entryPoint: "index.html",
+          isCurrent: true,
+          readyAt: new Date(),
+          uploadedByMemberId: input.memberId,
+        });
+      });
+
+      const [row] = await db
+        .select()
+        .from(gameFile)
+        .where(scopeTo(scope, gameFile, eq(gameFile.id, fileId)))
+        .limit(1);
+
+      if (row === undefined) throw new InternalServerError("game file insert returned no row");
+      return toView(row);
     },
 
     async createDownloadUrl(

@@ -16,11 +16,11 @@ import {
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import type { CompetitionRouteDeps } from "./types.ts";
+import type { CompetitionServices } from "./types.ts";
 
 export const createTournamentRoutes = <T extends PrincipalApi>(
   api: T,
-  deps: CompetitionRouteDeps,
+  deps: CompetitionServices,
 ) =>
   api
     .get(

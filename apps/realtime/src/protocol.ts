@@ -32,21 +32,9 @@ export function parseClientMessage(raw: unknown): RealtimeClientMessage | null {
       if (score < 0 || score > Number.MAX_SAFE_INTEGER) return null;
 
       const endSession = parsed.endSession;
-      const signature = parsed.signature;
-
-      if (signature !== undefined && typeof signature !== "string") return null;
-      if (signature !== undefined && signature.length > 512) return null;
-
-      if (endSession === undefined) {
-        return signature === undefined
-          ? { type: "score", score }
-          : { type: "score", score, signature };
-      }
+      if (endSession === undefined) return { type: "score", score };
       if (typeof endSession !== "boolean") return null;
-
-      return signature === undefined
-        ? { type: "score", score, endSession }
-        : { type: "score", score, signature, endSession };
+      return { type: "score", score, endSession };
     }
 
     default:

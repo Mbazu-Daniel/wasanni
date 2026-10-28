@@ -17,6 +17,7 @@ export type ArchivePartitionsDeps = {
 
 export type SweepResult = {
   expiredSessions: number;
+  expiredOrganizations: string[];
   purgedAuthSessions: number;
   purgedVerifications: number;
 };

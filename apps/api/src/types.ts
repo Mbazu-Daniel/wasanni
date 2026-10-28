@@ -40,3 +40,9 @@ export type DelegatedError = {
   name?: string;
   body?: { code?: string; message?: string };
 };
+
+export type DatabaseError = {
+  code?: unknown;
+  message?: string;
+  cause?: unknown;
+};

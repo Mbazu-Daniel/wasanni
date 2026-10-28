@@ -21,7 +21,6 @@ const toView = (row: GameRow): GameView => ({
   description: row.description,
   hosting: row.hosting,
   status: row.status,
-  replayEnabled: row.replayEnabled,
   createdAt: row.createdAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
 });
@@ -72,7 +71,6 @@ export function createGameService(db: Db, storage: ObjectStorage) {
             slug: input.slug,
             description: input.description ?? null,
             hosting: input.hosting,
-            replayEnabled: input.replayEnabled ?? true,
           })
           .returning();
 
@@ -91,9 +89,6 @@ export function createGameService(db: Db, storage: ObjectStorage) {
             ...(patch.name !== undefined ? { name: patch.name } : {}),
             ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
             ...(patch.description !== undefined ? { description: patch.description } : {}),
-            ...(patch.replayEnabled !== undefined
-              ? { replayEnabled: patch.replayEnabled }
-              : {}),
             updatedAt: new Date(),
           })
           .where(scopeTo(scope, game, eq(game.id, gameId)))

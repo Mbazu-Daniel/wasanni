@@ -26,6 +26,7 @@ const statement: { [K in Resource]: Action[] } = {
   webhook: resolveResourceActions("webhook"),
   tournament: resolveResourceActions("tournament"),
   match: resolveResourceActions("match"),
+  agent: resolveResourceActions("agent"),
   audit: resolveResourceActions("audit"),
   role: resolveResourceActions("role"),
 };
