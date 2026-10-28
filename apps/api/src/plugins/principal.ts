@@ -1,12 +1,15 @@
 import { Elysia } from "elysia";
-import type { ElysiaCustomStatusResponse } from "elysia";
 import type { Db } from "@wasanni/db";
-import { readActiveApiKey, readMembership, type MembershipRow } from "@wasanni/db";
-import { flattenPermissions, parsePermissionGrant, toErrorBody } from "@wasanni/contracts";
-import { hashApiKey, requirePermission } from "@wasanni/kit";
-import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
-import { requestContextOf } from "./request-context.ts";
-import { permissionsForRole } from "../permissions.ts";
+import {
+  readActiveApiKey,
+  readGameSessionByToken,
+  readMembership,
+  type MembershipRow,
+} from "@wasanni/db";
+import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
+import { hashApiKey, sha256Hex, unauthenticated, forbidden } from "@wasanni/kit";
+import type { GameSessionPrincipal, PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
+import { permissionsForRole, requirePermission } from "../permissions.ts";
 import type { BetterAuth } from "../config/better-auth.ts";
 
 export type PrincipalDeps = {
@@ -16,19 +19,15 @@ export type PrincipalDeps = {
 
 type Session = NonNullable<Awaited<ReturnType<BetterAuth["api"]["getSession"]>>>;
 
-type ErrorBody = ReturnType<typeof toErrorBody>;
-
-type ElysiaStatus =
-  | ElysiaCustomStatusResponse<401, ErrorBody, 401>
-  | ElysiaCustomStatusResponse<403, ErrorBody, 403>;
-
 type AuthResult = { user: Session["user"]; session: Session["session"] };
 
 type OrganizationAuthResult = { principal: UserPrincipal };
 
 type PlatformAuthResult = { principal: PlatformPrincipal };
 
-const principalFor = async (
+type SessionAuthResult = { sessionPrincipal: GameSessionPrincipal };
+
+const resolvePrincipal = async (
   db: Db,
   organizationId: string,
   session: Session,
@@ -52,49 +51,31 @@ const principalFor = async (
   };
 };
 
-export const principal = ({ db, auth }: PrincipalDeps) =>
+export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
   new Elysia({ name: "principal" })
     .macro({
       auth: {
-        async resolve({ request, status }): Promise<AuthResult | ElysiaStatus> {
-          const { requestId } = requestContextOf(request);
+        async resolve({ request }): Promise<AuthResult> {
           const session = await auth.api.getSession({ headers: request.headers });
 
-          if (session === null) {
-            return status(
-              401,
-              toErrorBody({ code: "unauthenticated", message: "unauthenticated" }, requestId),
-            );
-          }
+          if (session === null) throw unauthenticated();
 
           return { user: session.user, session: session.session };
         },
       },
 
       organizationAuth: (required: string | null) => ({
-        async resolve({ params, request, status }): Promise<OrganizationAuthResult | ElysiaStatus> {
-          const { requestId } = requestContextOf(request);
-
+        async resolve({ params, request }): Promise<OrganizationAuthResult> {
           const organizationId = (params as { organizationId?: string }).organizationId;
           if (!organizationId) {
             throw new Error("organizationAuth route is missing an :organizationId param");
           }
 
           const session = await auth.api.getSession({ headers: request.headers });
-          if (session === null) {
-            return status(
-              401,
-              toErrorBody({ code: "unauthenticated", message: "unauthenticated" }, requestId),
-            );
-          }
+          if (session === null) throw unauthenticated();
 
-          const resolved = await principalFor(db, organizationId, session);
-          if (resolved === null) {
-            return status(
-              403,
-              toErrorBody({ code: "forbidden", message: "not an organization member" }, requestId),
-            );
-          }
+          const resolved = await resolvePrincipal(db, organizationId, session);
+          if (resolved === null) throw forbidden("not an organization member");
 
           if (required !== null) requirePermission(resolved, required);
 
@@ -103,29 +84,15 @@ export const principal = ({ db, auth }: PrincipalDeps) =>
       }),
 
       platformAuth: (required: string | null) => ({
-        async resolve({ request, status }): Promise<PlatformAuthResult | ElysiaStatus> {
-          const { requestId } = requestContextOf(request);
-
+        async resolve({ request }): Promise<PlatformAuthResult> {
           const secret = request.headers.get("x-api-key");
           if (secret === null || secret === "") {
-            return status(
-              401,
-              toErrorBody(
-                { code: "unauthenticated", message: "an api key is required" },
-                requestId,
-              ),
-            );
+            throw unauthenticated("an api key is required");
           }
 
           const credential = await readActiveApiKey(db, hashApiKey(secret));
           if (credential === null) {
-            return status(
-              401,
-              toErrorBody(
-                { code: "unauthenticated", message: "the api key is not valid" },
-                requestId,
-              ),
-            );
+            throw unauthenticated("the api key is not valid");
           }
 
           const principal: PlatformPrincipal = {
@@ -141,6 +108,30 @@ export const principal = ({ db, auth }: PrincipalDeps) =>
           return { principal };
         },
       }),
+
+      sessionAuth: {
+        async resolve({ request }): Promise<SessionAuthResult> {
+          const header = request.headers.get("authorization");
+          const token = header === null ? "" : header.replace(/^Bearer\s+/i, "").trim();
+
+          if (token === "") throw unauthenticated("a session token is required");
+
+          const session = await readGameSessionByToken(db, sha256Hex(token));
+          if (session === null) throw unauthenticated("the session token is not valid");
+
+          return {
+            sessionPrincipal: {
+              kind: "gameSession",
+              sessionId: session.id,
+              organizationId: session.organizationId,
+              platformId: session.platformId,
+              gameId: session.gameId,
+              externalUserId: session.externalUserId,
+              mode: session.mode,
+            },
+          };
+        },
+      },
     });
 
-export type PrincipalApi = ReturnType<typeof principal>;
+export type PrincipalApi = ReturnType<typeof createPrincipalPlugin>;

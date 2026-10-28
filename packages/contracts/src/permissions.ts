@@ -1,8 +1,30 @@
-export const RESOURCES = ["organization", "member", "invitation", "platform", "apiKey"] as const;
+export const RESOURCES = [
+  "organization",
+  "member",
+  "invitation",
+  "platform",
+  "apiKey",
+  "game",
+  "gameFile",
+  "assignment",
+  "gameConfig",
+  "template",
+  "session",
+  "score",
+  "webhook",
+] as const;
 
 export type Resource = (typeof RESOURCES)[number];
 
-export const ACTIONS = ["create", "read", "update", "delete", "cancel"] as const;
+export const ACTIONS = [
+  "create",
+  "read",
+  "update",
+  "delete",
+  "cancel",
+  "publish",
+  "hide",
+] as const;
 
 export type Action = (typeof ACTIONS)[number];
 
@@ -31,6 +53,43 @@ export const PERMISSION = {
   apiKeyCreate: "apiKey:create",
   apiKeyUpdate: "apiKey:update",
   apiKeyDelete: "apiKey:delete",
+
+  gameRead: "game:read",
+  gameCreate: "game:create",
+  gameUpdate: "game:update",
+  gameDelete: "game:delete",
+  gamePublish: "game:publish",
+
+  gameFileRead: "gameFile:read",
+  gameFileCreate: "gameFile:create",
+  gameFileDelete: "gameFile:delete",
+
+  assignmentRead: "assignment:read",
+  assignmentCreate: "assignment:create",
+  assignmentDelete: "assignment:delete",
+
+  gameConfigRead: "gameConfig:read",
+  gameConfigCreate: "gameConfig:create",
+  gameConfigUpdate: "gameConfig:update",
+  gameConfigDelete: "gameConfig:delete",
+
+  templateRead: "template:read",
+  templateCreate: "template:create",
+  templateUpdate: "template:update",
+  templateDelete: "template:delete",
+
+  sessionRead: "session:read",
+  sessionCreate: "session:create",
+  sessionUpdate: "session:update",
+
+  scoreRead: "score:read",
+  scoreCreate: "score:create",
+  scoreHide: "score:hide",
+
+  webhookRead: "webhook:read",
+  webhookCreate: "webhook:create",
+  webhookUpdate: "webhook:update",
+  webhookDelete: "webhook:delete",
 } as const satisfies Record<string, Permission>;
 
 export const ROLE_NAMES = ["owner", "admin", "member"] as const;
@@ -55,6 +114,14 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     invitation: ["create", "read", "cancel"],
     platform: FULL,
     apiKey: FULL,
+    game: ["create", "read", "update", "delete", "publish"],
+    gameFile: ["create", "read", "delete"],
+    assignment: ["create", "read", "delete"],
+    gameConfig: FULL,
+    template: FULL,
+    session: ["create", "read", "update"],
+    score: ["create", "read", "hide"],
+    webhook: FULL,
   },
   admin: {
     organization: ["read", "update"],
@@ -62,6 +129,14 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     invitation: ["create", "read", "cancel"],
     platform: ["create", "read", "update"],
     apiKey: FULL,
+    game: ["create", "read", "update", "delete", "publish"],
+    gameFile: ["create", "read", "delete"],
+    assignment: ["create", "read", "delete"],
+    gameConfig: FULL,
+    template: FULL,
+    session: ["create", "read", "update"],
+    score: ["create", "read", "hide"],
+    webhook: FULL,
   },
   member: {
     organization: ["read"],
@@ -69,6 +144,14 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     invitation: ["read"],
     platform: ["read"],
     apiKey: ["read"],
+    game: ["read"],
+    gameFile: ["read"],
+    assignment: ["read"],
+    gameConfig: ["read"],
+    template: ["read"],
+    session: ["read"],
+    score: ["read"],
+    webhook: ["read"],
   },
 };
 
@@ -85,7 +168,7 @@ export function flattenPermissions(grant: PermissionGrant): ReadonlySet<string> 
   return permissions;
 }
 
-export function unknownPermissions(grant: PermissionGrant): string[] {
+export function listUnknownPermissions(grant: PermissionGrant): string[] {
   const unknown: string[] = [];
 
   for (const [resource, actions] of Object.entries(grant)) {

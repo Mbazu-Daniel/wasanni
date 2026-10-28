@@ -5,37 +5,19 @@ import {
   SetMemberAvatar,
   UpdateMemberDisplayName,
 } from "@wasanni/contracts";
-import {
-  avatarUrlFor,
-  badRequest,
-  notFound,
-  organizationScope,
-  presignAvatarUpload,
-  storageFromEnv,
-  type Env,
-  type StorageConfig,
-} from "@wasanni/kit";
+import { notFound, organizationScope, type ObjectStorage } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/principal.ts";
-import { assertMemberAvatarKey, type MemberService } from "./service.ts";
+import { assertAvatarKey, createAvatarUploadTicket } from "./avatar.ts";
+import type { MemberService } from "./service.ts";
 
 type MemberDeps = {
   service: MemberService;
-  env: Env;
+  storage: ObjectStorage;
 };
 
-function storageOf(env: Env): StorageConfig {
-  const storage = storageFromEnv(env);
-  if (storage === undefined) throw badRequest("avatar uploads are not configured");
-  return storage;
-}
-
-function keyBelongsTo(key: string, organizationId: string, memberId: string): boolean {
-  return key.startsWith(`members/${organizationId}/${memberId}/`);
-}
-
-export const memberRoutes = <T extends PrincipalApi>(
+export const createMemberRoutes = <T extends PrincipalApi>(
   api: T,
-  { service, env }: MemberDeps,
+  { service, storage }: MemberDeps,
 ) =>
   api
     .get("/api/v1/organizations/:organizationId/members/me", async ({ principal }) => {
@@ -72,13 +54,12 @@ export const memberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      const storage = storageOf(env);
-
-      const ticket = await presignAvatarUpload(storage, {
-        organizationId: principal.organizationId,
-        memberId: principal.memberId,
-        contentType: body.contentType,
-      });
+      const ticket = await createAvatarUploadTicket(
+        storage,
+        principal.organizationId,
+        principal.memberId,
+        body.contentType,
+      );
 
       return { upload: ticket };
     }, {
@@ -94,15 +75,12 @@ export const memberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      if (!keyBelongsTo(body.key, principal.organizationId, principal.memberId)) {
-        throw notFound("that avatar key belongs to another member");
-      }
-      assertMemberAvatarKey(body.key);
+      assertAvatarKey(body.key, principal.organizationId, principal.memberId);
 
       const member = await service.setAvatar(
         organizationScope(principal),
         principal.memberId,
-        avatarUrlFor(storageOf(env), body.key),
+        storage.publicUrl(body.key),
       );
 
       return { member };

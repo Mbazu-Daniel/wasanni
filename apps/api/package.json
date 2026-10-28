@@ -12,6 +12,7 @@
     "@elysiajs/openapi": "^1.3.0",
     "@wasanni/contracts": "workspace:*",
     "@wasanni/db": "workspace:*",
+    "@wasanni/jobs": "workspace:*",
     "@wasanni/kit": "workspace:*",
     "better-auth": "^1.6.22",
     "elysia": "^1.3.0",

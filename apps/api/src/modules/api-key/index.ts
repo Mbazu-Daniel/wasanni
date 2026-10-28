@@ -16,7 +16,7 @@ type ApiKeyDeps = {
   service: ApiKeyService;
 };
 
-export const apiKeyRoutes = <T extends PrincipalApi>(api: T, { service }: ApiKeyDeps) =>
+export const createApiKeyRoutes = <T extends PrincipalApi>(api: T, { service }: ApiKeyDeps) =>
   api
     .get(
       "/api/v1/organizations/:organizationId/platforms/:platformId/keys",

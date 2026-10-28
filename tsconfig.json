@@ -21,6 +21,7 @@
     "paths": {
       "@wasanni/kit": ["./packages/kit/src/index.ts"],
       "@wasanni/kit/*": ["./packages/kit/src/*"],
+      "@wasanni/jobs": ["./packages/jobs/src/index.ts"],
       "@wasanni/db": ["./packages/db/src/index.ts"],
       "@wasanni/db/*": ["./packages/db/src/*"],
       "@wasanni/contracts": ["./packages/contracts/src/index.ts"]

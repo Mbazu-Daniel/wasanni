@@ -17,6 +17,22 @@ function credentialsFor(
   return { clientId, clientSecret };
 }
 
+function resolveSender(deps: ModuleDeps): SendEmail {
+  const enqueuer = deps.enqueuer;
+
+  if (enqueuer === null || enqueuer === undefined) {
+    return (payload) => sendDevEmail(payload, deps.logger);
+  }
+
+  if (deps.env.ZEPTOMAIL_API_KEY === undefined) {
+    return (payload) => sendDevEmail(payload, deps.logger);
+  }
+
+  return async (payload) => {
+    await enqueuer.email(payload);
+  };
+}
+
 export function createBetterAuth(deps: ModuleDeps) {
   const { db, env } = deps;
 
@@ -24,7 +40,7 @@ export function createBetterAuth(deps: ModuleDeps) {
     throw internal("better-auth refuses to boot in production without an email transport");
   }
 
-  const sendMail: SendEmail = deps.sendEmail ?? ((payload) => sendDevEmail(payload, deps.logger));
+  const sendMail: SendEmail = deps.sendEmail ?? resolveSender(deps);
 
   const sendPasswordResetLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Reset your Wasanni password", url, purpose: "reset" });

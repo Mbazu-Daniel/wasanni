@@ -4,7 +4,7 @@ import type { PrincipalApi } from "../../plugins/principal.ts";
 import { ErrorBodyModel } from "@wasanni/contracts";
 import { AuthModel } from "./model.ts";
 
-export const authRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
+export const createAuthRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
   api
     .all(`${AUTH_ROUTE_PREFIX}/*`, ({ request }) => auth.handler(request))
     .get(
@@ -26,5 +26,5 @@ export const authRoutes = <T extends PrincipalApi>(api: T, auth: BetterAuth) =>
       },
     );
 
-export { authApiDocument } from "./openapi.ts";
+export { buildAuthApiDocument } from "./openapi.ts";
 export type { AuthApiDocument } from "./openapi.ts";

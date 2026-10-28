@@ -15,7 +15,7 @@ type PlatformDeps = {
   service: PlatformService;
 };
 
-export const platformRoutes = <T extends PrincipalApi>(api: T, { service }: PlatformDeps) =>
+export const createPlatformRoutes = <T extends PrincipalApi>(api: T, { service }: PlatformDeps) =>
   api
     .get("/api/v1/organizations/:organizationId/platforms", async ({ principal }) => ({
       platforms: await service.list(organizationScope(principal)),

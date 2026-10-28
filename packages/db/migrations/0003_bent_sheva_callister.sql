@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "game_config_default_ux" ON "game_config" USING btree ("assignment_id") WHERE "game_config"."is_default" = true;

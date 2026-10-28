@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { HealthModel, ReadyModel } from "@wasanni/contracts";
 import type { AppDeps } from "../types.ts";
 
-export const healthRoutes = (deps: AppDeps) =>
+export const createHealthRoutes = (deps: AppDeps) =>
   new Elysia({ name: "health" })
     .get(
       "/healthz",

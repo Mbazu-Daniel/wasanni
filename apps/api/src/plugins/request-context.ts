@@ -21,7 +21,7 @@ export function requestContextOf(request: Request): RequestContext {
   return context;
 }
 
-export const requestContext = (rootLogger: Logger) =>
+export const createRequestContextPlugin = (rootLogger: Logger) =>
   new Elysia({ name: "request-context" })
     .onRequest(({ request, set }) => {
       const inbound = request.headers.get("x-request-id");

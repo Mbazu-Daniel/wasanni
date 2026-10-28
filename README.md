@@ -35,6 +35,21 @@ curl localhost:3000/docs/json | jq '.paths | keys'
 `/docs` is the single document for everything the API serves — our own routes and
 better-auth's together, so an endpoint copied out of it is a live URL.
 
+```bash
+curl localhost:3001/healthz
+curl localhost:3001/readyz
+```
+
+`apps/realtime` listens on `REALTIME_PORT` (3001) and upgrades
+`/rt/:sessionId?token=…`. A session's create response carries that URL as
+`realtimeUrl`, token included.
+
+```js
+const socket = new WebSocket(realtimeUrl);
+socket.onmessage = (event) => console.log(JSON.parse(event.data));
+socket.send(JSON.stringify({ type: "score", score: 1200, endSession: true }));
+```
+
 A sign-up, at `debug` level, prints the link it would have emailed:
 
 ```bash
@@ -52,10 +67,12 @@ generated SQL by hand and commit it.
 | Path | What lives there |
 |---|---|
 | `apps/api` | Elysia HTTP server, `/api/v1` routes, OpenAPI document, composition root |
-| `apps/worker` | Background jobs |
+| `apps/worker` | Background jobs: webhook delivery, mail, session archiving, sweeps |
+| `apps/realtime` | WebSocket gateway: one room per game session, peer relay, score forwarding |
 | `packages/contracts` | Entity vocabulary and wire schemas. Depends on `elysia` only. |
-| `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope |
+| `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope, the object storage |
 | `packages/db` | Drizzle schema, migrations, the Postgres adapter |
+| `packages/jobs` | The queue names, the job payloads, the BullMQ queues and the enqueuer |
 
 Every module in `packages/` and `apps/` is a folder holding:
 
@@ -91,14 +108,39 @@ apps/api/src/modules/platform/
 apps/api/src/modules/api-key/
   index.ts       controller — api keys under /organizations/:organizationId/platforms
   service.ts     api key reads and writes
+
+apps/api/src/modules/games/
+  index.ts       controller — the games aggregate under /organizations/:organizationId
+  game.routes.ts / game.service.ts
+  game-file.routes.ts / game-file.service.ts
+  assignment.routes.ts / assignment.service.ts
+  game-config.routes.ts / game-config.service.ts
+
+apps/api/src/modules/templates/
+  index.ts       controller — templates under /organizations/:organizationId
+  template.routes.ts / template.service.ts
+  template-bundle.service.ts
+
+apps/api/src/modules/play/
+  index.ts       controller — game sessions, scores and leaderboards
+  session.routes.ts / session.service.ts
+  score.routes.ts / score.service.ts
+  leaderboard.routes.ts / leaderboard.service.ts
+  replay.routes.ts / replay.service.ts
+
+apps/api/src/modules/webhook/
+  index.ts       controller — webhook subscriptions under a platform
+  webhook.routes.ts / webhook.service.ts
+  webhook-dispatcher.ts
 ```
 
 `apps/api/src/config/better-auth.ts` holds the Better Auth instance and every
 plugin, outside the feature folders because three places read it.
 
 One Elysia instance is one controller. `Context` is never passed to a function.
-Schemas come from `t` in `elysia`. `auth`, `member`, `platform` and `apiKey` are
-the features. Full conventions: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Schemas come from `t` in `elysia`. `auth`, `member`, `platform`, `apiKey`,
+`games`, `templates`, `play` and `webhook` are the features. Full conventions:
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Organizations, members and invitations are served by the Better Auth
 organization plugin directly — `/api/v1/auth/*` carries `/organization/*`, so
@@ -123,6 +165,8 @@ marketing site is a separate origin and is not versioned by this API at all.
 | `/api/v1/auth/...` | Better Auth and `GET /me` |
 | `/api/v1/organizations` | the caller's organizations |
 | `/api/v1/organizations/:organizationId/...` | every tenant-scoped resource |
+| `/api/v1/platform/...` | the routes an api key calls |
+| `/api/v1/play/...` | the routes a session token calls |
 | `/docs` | one OpenAPI document describing all of the above |
 | `/api/v1/auth/reference` | Better Auth's own page for its endpoints |
 | `/healthz`, `/readyz` | the ops probes |

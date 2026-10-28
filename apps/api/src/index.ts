@@ -1,11 +1,23 @@
-import { env, createLogger, createRedis, isRedisReady } from "@wasanni/kit";
-import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
+import {
+  readEnv,
+  createLogger,
+  createRedis,
+  createRedisSessionEventStore,
+  isRedisReady,
+} from "@wasanni/kit";
 import { createDb, pingDatabase } from "@wasanni/db";
+import {
+  closeQueues,
+  createEnqueuer,
+  createQueueConnection,
+  createQueues,
+} from "@wasanni/jobs";
 import { createApp } from "./app.ts";
+import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
 import type { AppDeps } from "./types.ts";
 import pkg from "../package.json" with { type: "json" };
 
-const cfg = env();
+const cfg = readEnv();
 
 const logger = createLogger({
   level: cfg.LOG_LEVEL,
@@ -15,6 +27,11 @@ const logger = createLogger({
 
 const { db, sql } = createDb(cfg.DATABASE_URL, { max: 20 });
 const redis = createRedis(cfg.REDIS_URL);
+const events = createRedisSessionEventStore(redis);
+
+const queueConnection = createQueueConnection(cfg.REDIS_URL);
+const queues = createQueues(queueConnection);
+const enqueuer = createEnqueuer(queues);
 
 let redisWarned = false;
 
@@ -39,6 +56,8 @@ const deps: AppDeps = {
   corsOrigins: [cfg.PUBLIC_WEB_ORIGIN],
   db,
   env: cfg,
+  events,
+  enqueuer,
   ready: async () => {
     const [database, redisOk] = await Promise.all([
       pingDatabase(sql).catch(() => false),
@@ -74,8 +93,10 @@ async function shutdown(signal: string): Promise<void> {
   forceExit.unref();
 
   await app.stop();
-  await sql.end({ timeout: 5 });
+  await closeQueues(queues);
+  queueConnection.disconnect();
   redis.disconnect();
+  await sql.end({ timeout: 5 });
 
   logger.info("stopped");
   process.exit(0);
