@@ -2,18 +2,32 @@ import { t, type UnwrapSchema } from "elysia";
 
 export const ScoreVerificationCallback = t.Object({
   url: t.String({ format: "uri", maxLength: 2000 }),
-  secret: t.String({ minLength: 16, maxLength: 200 }),
+  secret: t.Optional(t.String({ minLength: 16, maxLength: 200 })),
   timeoutMs: t.Optional(t.Number({ minimum: 100, maximum: 10_000 })),
 });
 export type ScoreVerificationCallback = UnwrapSchema<typeof ScoreVerificationCallback>;
 
 export const ScoreVerificationConfig = t.Union([
   t.Object({ mode: t.Literal("none") }),
-  t.Object({ mode: t.Literal("hmac") }),
   t.Object({ mode: t.Literal("callback"), callback: ScoreVerificationCallback }),
-  t.Object({ mode: t.Literal("both"), callback: ScoreVerificationCallback }),
 ]);
 export type ScoreVerificationConfig = UnwrapSchema<typeof ScoreVerificationConfig>;
+
+export const SCORE_GAME_TYPES = [
+  "generic",
+  "match3",
+  "endless_runner",
+  "block_puzzle",
+  "pool",
+  "racing",
+  "shooter",
+  "board",
+  "arcade",
+] as const;
+export type ScoreGameType = (typeof SCORE_GAME_TYPES)[number];
+
+export const SCORE_FLAG_RULES = ["max_score", "score_rate"] as const;
+export type ScoreFlagRule = (typeof SCORE_FLAG_RULES)[number];
 
 export const GameConfigView = t.Object({
   id: t.String(),

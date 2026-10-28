@@ -6,6 +6,8 @@ export const USAGE_METRICS = [
   "matches_created",
   "tournaments_created",
   "bandwidth_bytes",
+  "ai_runs",
+  "ai_cost_micros",
 ] as const;
 
 export type UsageMetric = (typeof USAGE_METRICS)[number];
@@ -20,6 +22,8 @@ export const UsageMetricModel = t.Union([
   t.Literal("matches_created"),
   t.Literal("tournaments_created"),
   t.Literal("bandwidth_bytes"),
+  t.Literal("ai_runs"),
+  t.Literal("ai_cost_micros"),
 ]);
 export type UsageMetricModel = UnwrapSchema<typeof UsageMetricModel>;
 
@@ -100,6 +104,8 @@ export const UsageDailyQuery = t.Object({
   metric: UsageDailyMetric,
   from: t.String({ format: "date-time" }),
   to: t.String({ format: "date-time" }),
+  platformId: t.Optional(t.String()),
+  gameId: t.Optional(t.String()),
 });
 export type UsageDailyQuery = UnwrapSchema<typeof UsageDailyQuery>;
 

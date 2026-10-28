@@ -25,7 +25,6 @@ export const GameView = t.Object({
   description: t.Union([t.String(), t.Null()]),
   hosting: GameHosting,
   status: GameStatus,
-  replayEnabled: t.Boolean(),
   createdAt: t.String({ format: "date-time" }),
   updatedAt: t.String({ format: "date-time" }),
 });
@@ -42,7 +41,6 @@ export const CreateGameBody = t.Object({
   slug: GameSlug,
   description: t.Optional(t.String({ maxLength: 1000 })),
   hosting: GameHosting,
-  replayEnabled: t.Optional(t.Boolean()),
 });
 export type CreateGameBody = UnwrapSchema<typeof CreateGameBody>;
 
@@ -51,7 +49,6 @@ export const UpdateGameBody = t.Object(
     name: t.Optional(t.String({ minLength: 1, maxLength: 120 })),
     slug: t.Optional(GameSlug),
     description: t.Optional(t.Union([t.String({ maxLength: 1000 }), t.Null()])),
-    replayEnabled: t.Optional(t.Boolean()),
   },
   { minProperties: 1 },
 );
@@ -68,3 +65,6 @@ export const GameIdParams = t.Object({
   gameId: t.String(),
 });
 export type GameIdParams = UnwrapSchema<typeof GameIdParams>;
+
+export const PlatformGameParams = t.Object({ gameId: t.String() });
+export type PlatformGameParams = UnwrapSchema<typeof PlatformGameParams>;

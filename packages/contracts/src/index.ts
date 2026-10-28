@@ -21,3 +21,5 @@ export * from "./tournament.contract.ts";
 export * from "./match.contract.ts";
 export * from "./audit.contract.ts";
 export * from "./usage.contract.ts";
+export * from "./agent.contract.ts";
+export * from "./docs.contract.ts";

@@ -37,7 +37,6 @@ export const CreatedGameSession = t.Object({
   session: GameSessionView,
   sessionToken: t.String(),
   realtimeUrl: t.String(),
-  scoreSigningKey: t.Optional(t.String()),
 });
 export type CreatedGameSession = UnwrapSchema<typeof CreatedGameSession>;
 

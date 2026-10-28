@@ -37,6 +37,7 @@ export * from "./scope/scope.ts";
 
 export * from "./security/constants.ts";
 export * from "./security/security.ts";
+export * from "./security/outbound-url.ts";
 
 export * from "./storage/types.ts";
 export * from "./storage/constants.ts";

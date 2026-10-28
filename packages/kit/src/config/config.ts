@@ -198,6 +198,8 @@ export function parseEnv(raw: RawEnv): Env {
     R2_BUCKET_NAME: readOptional(raw, "R2_BUCKET_NAME"),
     R2_PUBLIC_ID: readOptional(raw, "R2_PUBLIC_ID"),
     R2_CUSTOM_DOMAIN: readOptional(raw, "R2_CUSTOM_DOMAIN"),
+    STORAGE_ENDPOINT: readOptional(raw, "STORAGE_ENDPOINT"),
+    STORAGE_FORCE_PATH_STYLE: readBoolean(raw, problems, "STORAGE_FORCE_PATH_STYLE", false),
     STORAGE_UPLOAD_URL_TTL_SECONDS: readNumber(
       raw,
       problems,
@@ -232,6 +234,16 @@ export function parseEnv(raw: RawEnv): Env {
     ),
     EMAIL_FROM_NAME: readString(raw, problems, "EMAIL_FROM_NAME", DEFAULT_EMAIL_FROM_NAME),
     ZEPTOMAIL_API_KEY: readOptional(raw, "ZEPTOMAIL_API_KEY"),
+    AGENT_API_KEY: readOptional(raw, "AGENT_API_KEY"),
+    AGENT_BASE_URL: readOptional(raw, "AGENT_BASE_URL"),
+    AGENT_MODEL: readOptional(raw, "AGENT_MODEL"),
+    AGENT_OTEL_ENDPOINT: readOptional(raw, "AGENT_OTEL_ENDPOINT"),
+    ALLOW_PRIVATE_OUTBOUND_URLS: readBoolean(
+      raw,
+      problems,
+      "ALLOW_PRIVATE_OUTBOUND_URLS",
+      false,
+    ),
     REALTIME_PORT: readPort(raw, problems, "REALTIME_PORT", DEFAULT_REALTIME_PORT),
     REALTIME_PUBLIC_URL: readString(
       raw,
@@ -367,6 +379,10 @@ export function parseEnv(raw: RawEnv): Env {
       DEFAULT_SCORE_VERIFICATION_ENABLED,
     ),
   };
+
+  if (parsed.NODE_ENV === "production" && parsed.ALLOW_PRIVATE_OUTBOUND_URLS) {
+    problems.add("ALLOW_PRIVATE_OUTBOUND_URLS", "cannot be enabled when NODE_ENV is production");
+  }
 
   if (problems.invalid) throw problems.report();
 

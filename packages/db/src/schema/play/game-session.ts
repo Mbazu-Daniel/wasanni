@@ -52,7 +52,7 @@ export const gameSession = pgTable(
     })
       .notNull()
       .default("none"),
-    scoreSigningKeyCiphertext: text("score_signing_key_ciphertext"),
+    scoreVerificationCallbackSecretCiphertext: text("score_verification_callback_secret_ciphertext"),
     externalUserId: text("external_user_id").notNull(),
     externalUserName: text("external_user_name"),
     mode: text("mode"),

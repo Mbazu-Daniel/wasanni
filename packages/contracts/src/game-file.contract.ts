@@ -78,5 +78,11 @@ export const GameFileIdParams = t.Object({
 });
 export type GameFileIdParams = UnwrapSchema<typeof GameFileIdParams>;
 
+export const PlatformGameFileParams = t.Object({
+  gameId: t.String(),
+  fileId: t.String(),
+});
+export type PlatformGameFileParams = UnwrapSchema<typeof PlatformGameFileParams>;
+
 export const DownloadUrlSingle = t.Object({ url: t.String() });
 export type DownloadUrlSingle = UnwrapSchema<typeof DownloadUrlSingle>;

@@ -8,6 +8,8 @@ export type StorageConfig = {
   readonly secretAccessKey: string;
   readonly bucket: string;
   readonly publicBaseUrl: string | undefined;
+  readonly endpoint?: string;
+  readonly forcePathStyle?: boolean;
 };
 
 export type UploadTarget = {

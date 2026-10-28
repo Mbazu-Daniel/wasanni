@@ -7,6 +7,10 @@ export const MAX_SESSION_DURATION_SECONDS = 86_400;
 export const MIN_SESSION_DURATION_SECONDS = 60;
 
 export const SCORE_RULE_FLAGS: readonly ScoreFlag[] = [
+  "late",
+  "resubmitted",
   "max_score_exceeded",
   "score_rate_exceeded",
+  "verification_unavailable",
+  "verification_failed",
 ];

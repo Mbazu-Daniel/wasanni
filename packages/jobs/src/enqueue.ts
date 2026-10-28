@@ -27,10 +27,6 @@ export function createEnqueuer(queues: Queues) {
       });
     },
 
-    async scorePackSweep() {
-      return queues.archive.add(JOB.SCORE_PACK, {} satisfies ScorePackJob);
-    },
-
     async scoreRecheck(job: ScoreRecheckJob) {
       return queues.archive.add(JOB.SCORE_RECHECK, job, {
         jobId: `rchk-${job.configId}-${Math.floor(Date.now() / 60_000)}`,

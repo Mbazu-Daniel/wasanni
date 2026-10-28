@@ -10,11 +10,14 @@ export function readRuleFlags(
   const { rules } = readGameConfig(config);
   const flags: ScoreFlag[] = [];
 
-  if (rules.maxScore !== undefined && score > rules.maxScore) {
+  const checks = rules.checks ?? ["max_score", "score_rate"];
+
+  if (checks.includes("max_score") && rules.maxScore !== undefined && score > rules.maxScore) {
     flags.push("max_score_exceeded");
   }
 
   if (
+    checks.includes("score_rate") &&
     rules.maxScorePerSecond !== undefined &&
     durationSeconds > 0 &&
     score / durationSeconds > rules.maxScorePerSecond

@@ -1,0 +1,1 @@
+ALTER TABLE "agent_provider" ADD COLUMN "max_request_tokens" integer;

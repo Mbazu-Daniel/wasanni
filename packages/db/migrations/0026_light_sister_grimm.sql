@@ -1,0 +1,1 @@
+CREATE INDEX "agent_session_organization_creator_ix" ON "agent_session" USING btree ("organization_id","created_by_member_id");

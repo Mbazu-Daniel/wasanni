@@ -167,19 +167,16 @@ export const RegisterParticipantBody = t.Object({
 });
 export type RegisterParticipantBody = UnwrapSchema<typeof RegisterParticipantBody>;
 
-export const PlatformRegisterBody = t.Object({
+export const PlatformJoinParams = t.Object({
+  tournamentId: t.String(),
   externalUserId: t.String({ minLength: 1, maxLength: 200 }),
+});
+export type PlatformJoinParams = UnwrapSchema<typeof PlatformJoinParams>;
+
+export const PlatformJoinBody = t.Object({
   displayName: t.Optional(t.String({ maxLength: 200 })),
 });
-export type PlatformRegisterBody = UnwrapSchema<typeof PlatformRegisterBody>;
-
-export const PlatformRegistrationParams = t.Object({
-  tournamentId: t.String(),
-  externalUserId: t.String(),
-});
-export type PlatformRegistrationParams = UnwrapSchema<
-  typeof PlatformRegistrationParams
->;
+export type PlatformJoinBody = UnwrapSchema<typeof PlatformJoinBody>;
 
 export const PlatformTournamentParams = t.Object({ tournamentId: t.String() });
 export type PlatformTournamentParams = UnwrapSchema<
@@ -199,6 +196,9 @@ export const StandingsRow = t.Object({
   submittedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
 });
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
+
+export const TournamentLeaderboard = t.Object({ rows: t.Array(StandingsRow) });
+export type TournamentLeaderboard = UnwrapSchema<typeof TournamentLeaderboard>;
 
 export const Standings = t.Union([
   t.Object({

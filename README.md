@@ -47,7 +47,7 @@ curl localhost:3001/readyz
 ```
 
 `apps/web` is the marketing site (`/landing`) and the dashboard
-(`/o/:orgSlug/...`): the overview, the games, the platforms with their keys
+(`/:orgSlug/...`): the overview, the games, the platforms with their keys
 and webhooks, the assignments matrix with its config editor, the templates,
 the members, and the account settings. It runs on 5173 and talks to the api through
 `VITE_API_URL` (the api's port, 9000 by default); the api trusts the web
@@ -83,6 +83,7 @@ generated SQL by hand and commit it.
 | `apps/worker` | Background jobs: webhook delivery, mail, session archiving, sweeps |
 | `apps/realtime` | WebSocket gateway: one room per game session, peer relay, score forwarding |
 | `apps/web` | The marketing site and the dashboard: a TanStack Start app |
+| `apps/mcp` | stdio MCP server: the platform api as tools for an external agent, called with one platform key |
 | `packages/contracts` | Entity vocabulary and wire schemas. Depends on `elysia` only. |
 | `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope, the object storage |
 | `packages/db` | Drizzle schema, migrations, the Postgres adapter |
@@ -179,7 +180,7 @@ marketing site is a separate origin and is not versioned by this API at all.
 | `/api/v1/auth/...` | Better Auth and `GET /me` |
 | `/api/v1/organizations` | the caller's organizations |
 | `/api/v1/organizations/:organizationId/...` | every tenant-scoped resource |
-| `/api/v1/platform/...` | the routes an api key calls |
+| `/api/v1/...` | the routes an api key calls, each id it acts on in the path |
 | `/api/v1/play/...` | the routes a session token calls |
 | `/play/:gameId/:fileId/*` | the game bundle itself, served by the api |
 | `/docs` | one OpenAPI document describing all of the above |
@@ -236,7 +237,7 @@ belongs to, per platform, per month:
 
 ```bash
 curl -s localhost:3000/api/v1/organizations/$ORG/usage -b cookies.txt
-curl -s localhost:3000/api/v1/platform/usage -H "x-api-key: $KEY"
+curl -s localhost:3000/api/v1/platforms/$PLATFORM/usage -H "x-api-key: $KEY"
 ```
 
 A quota is a monthly ceiling on one metric. Set one, and the api refuses the
@@ -284,31 +285,45 @@ the bucket are not part of it.
 
 ## Server-side score verification
 
-A game can ask the api to check a score before it accepts it. The config of a
-game assignment carries the block:
+A game can ask the api to check a score before it records it as verified. The
+config of a game assignment carries the block:
 
 ```json
-{ "scoreVerification": { "mode": "hmac" } }
+{
+  "scoreVerification": {
+    "mode": "callback",
+    "callback": {
+      "url": "https://games.example.com/verify",
+      "secret": "callback-secret",
+      "timeoutMs": 3000
+    }
+  }
+}
 ```
 
-`hmac` signs the score with a key the session hands out when it opens, so the
-game server proves the score is its own:
+`callback` posts the score to a url of the platform, signed with that secret the
+way a webhook delivery is — `x-wasanni-verify-signature: t=<seconds>,v1=<hex>`
+over `<timestamp>.<body>`, with the timestamp in
+`x-wasanni-verify-timestamp`:
 
-```bash
-curl -s -XPOST localhost:3000/api/v1/platform/sessions \
-  -H 'content-type: application/json' -H "x-api-key: $KEY" \
-  -d '{"gameId":"'$GAME'","externalUserId":"player-1"}'
+```json
+{ "event": "score.verify", "sessionId": "gsx_…", "score": 940 }
 ```
 
-The answer carries `scoreSigningKey` once. The client signs
-`"{sessionId}|{score}"` with it and sends the signature with the score. A
-signature that does not match is refused with a 422 and no score is written,
-and the platform is told through a `score.rejected` webhook.
+Answer `{ "valid": true }` and the score is stored with
+`verificationStatus` `passed` and the `callback_verified` flag. Answer
+`{ "valid": false, "reason": "score mismatch" }` and the score is stored too,
+with `verificationStatus` `failed` and the `verification_failed` flag — which
+makes it `flagged`, so it is kept off the leaderboard and the platform can hide
+it or re-check it. A verifier that does not answer inside `timeoutMs` leaves the
+score in place, flagged `verification_unavailable`: a game server outage is not a
+reason to drop scores. The default is `none`: every score is accepted, with
+`verificationStatus` `not_required`.
 
-`callback` asks a url of the platform whether a score is valid; `both` does
-both. A verifier that does not answer leaves the score in place, flagged
-`verification_unavailable` — a game server outage is not a reason to drop
-scores. The default is `none`: every score is accepted, as before.
+A score a client submits carries no signature. The session token is the whole
+capability: it lets that one session record one score. Deciding whether the
+score is honest is the callback's job, and a score the platform submits through
+`POST /api/v1/sessions/:sessionId/score` is never checked at all.
 
 ## Custom roles
 
@@ -371,6 +386,9 @@ secret in place. Deploy the new key afterwards, then remove the old one.
 | `bun run db:generate` | Generate a migration from the Drizzle schema |
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:studio` | Drizzle Studio |
+| `bun run agent:traces [runId]` | The newest failing agent run's span tree, or the run you name |
+| `bun run agent:studio` | Mastra's HTTP API on `MASTRA_STUDIO_PORT` (4111) for https://studio.mastra.io |
+| `bun run mcp` | The stdio MCP server: the platform api as tools, as the organization of `WASANNI_API_KEY` |
 | `bun run ci` | `typecheck` then `test` |
 
 `tests/db/*` runs against a real Postgres and **skips** when `DATABASE_URL` is
