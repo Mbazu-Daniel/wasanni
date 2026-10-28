@@ -2,6 +2,7 @@ export * from "./types.ts";
 export * from "./constants.ts";
 export * from "./client.ts";
 export * from "./membership.ts";
+export * from "./roles.ts";
 export * from "./api-key.ts";
 export * from "./game-session.ts";
 export * from "./violation.ts";

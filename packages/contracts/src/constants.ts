@@ -17,6 +17,7 @@ export const RESOURCES = [
   "tournament",
   "match",
   "audit",
+  "role",
 ] as const;
 
 export const ACTIONS = [
@@ -109,6 +110,11 @@ export const PERMISSION = {
   matchComplete: "match:complete",
 
   auditRead: "audit:read",
+
+  roleRead: "role:read",
+  roleCreate: "role:create",
+  roleUpdate: "role:update",
+  roleDelete: "role:delete",
 } as const satisfies Record<string, Permission>;
 
 export const ROLE_NAMES = ["owner", "admin", "member"] as const;
@@ -143,6 +149,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     ],
     match: ["create", "read", "update", "delete", "complete"],
     audit: ["read"],
+    role: FULL_ACTIONS,
   },
   admin: {
     organization: ["read", "update"],
@@ -161,6 +168,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     tournament: ["create", "read", "update", "register", "seed", "start"],
     match: ["create", "read", "update", "complete"],
     audit: ["read"],
+    role: [],
   },
   member: {
     organization: ["read"],
@@ -179,5 +187,6 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     tournament: ["read"],
     match: ["read"],
     audit: [],
+    role: [],
   },
 };

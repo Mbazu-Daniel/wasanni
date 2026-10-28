@@ -9,3 +9,5 @@ export type Permission = `${Resource}:${Action}`;
 export type RoleName = (typeof ROLE_NAMES)[number];
 
 export type PermissionGrant = Record<string, readonly string[] | undefined>;
+
+export type RolePermission = Record<string, string[]>;

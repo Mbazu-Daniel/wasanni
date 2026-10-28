@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { activeMember, member, user } from "@wasanni/db/schema";
-import { scopeTo } from "@wasanni/db";
+import { readOrganizationRoles, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { NotFoundError } from "@wasanni/kit";
-import type { MemberView } from "@wasanni/contracts";
+import { BadRequestError, NotFoundError } from "@wasanni/kit";
+import { OWNER_ROLE, ROLE_NAMES, type MemberView } from "@wasanni/contracts";
 
 import type { MemberRow } from "./types.ts";
 
@@ -49,10 +49,37 @@ export function createMemberService(db: Db) {
       return this.write(scope, memberId, { avatar });
     },
 
+    async setRole(scope: Scope, memberId: string, role: string): Promise<MemberView> {
+      const name = role.trim().toLowerCase();
+
+      if (name === OWNER_ROLE) {
+        throw new BadRequestError("the owner role is not assigned here");
+      }
+
+      const grants = await readOrganizationRoles(db, scope.organizationId);
+      const known = (ROLE_NAMES as readonly string[]).includes(name) || grants[name] !== undefined;
+
+      if (!known) throw new BadRequestError(`unknown role: ${name}`);
+
+      const [current] = await db
+        .select({ role: member.role })
+        .from(member)
+        .where(scopeTo(scope, member, eq(member.id, memberId), activeMember))
+        .limit(1);
+
+      if (current === undefined) throw new NotFoundError("member not found");
+
+      if (current.role.split(",").includes(OWNER_ROLE)) {
+        throw new BadRequestError("the role of an owner is not changed here");
+      }
+
+      return this.write(scope, memberId, { role: name });
+    },
+
     async write(
       scope: Scope,
       memberId: string,
-      patch: { displayName?: string; avatar?: string },
+      patch: { displayName?: string; avatar?: string; role?: string },
     ): Promise<MemberView> {
       const [row] = await db
         .update(member)

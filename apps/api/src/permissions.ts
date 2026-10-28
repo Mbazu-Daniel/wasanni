@@ -1,18 +1,22 @@
 import { ROLE_PERMISSIONS, flattenPermissions, rolesIn } from "@wasanni/contracts";
+import type { PermissionGrant, RoleName } from "@wasanni/contracts";
 import { ForbiddenError, UnauthorizedError, type Principal } from "@wasanni/kit";
 
-const EMPTY: ReadonlySet<string> = new Set();
-
-export function permissionsForRole(role: string): ReadonlySet<string> {
-  const names = rolesIn(role);
-  if (names.length === 0) return EMPTY;
-
+export function permissionsForRole(
+  role: string,
+  grants: Record<string, PermissionGrant> = {},
+): ReadonlySet<string> {
   const permissions = new Set<string>();
-  for (const name of names) {
-    for (const permission of flattenPermissions(ROLE_PERMISSIONS[name])) {
-      permissions.add(permission);
-    }
+
+  for (const name of rolesIn(role)) {
+    const compiled: PermissionGrant | undefined = ROLE_PERMISSIONS[name as RoleName];
+    const grant: PermissionGrant | undefined = grants[name] ?? compiled;
+
+    if (grant === undefined) continue;
+
+    for (const permission of flattenPermissions(grant)) permissions.add(permission);
   }
+
   return permissions;
 }
 

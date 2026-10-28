@@ -41,3 +41,14 @@ export const SetMemberAvatar = t.Object({
   key: t.String({ minLength: 1, maxLength: 512 }),
 });
 export type SetMemberAvatar = UnwrapSchema<typeof SetMemberAvatar>;
+
+export const SetMemberRole = t.Object({
+  role: t.String({ minLength: 1, maxLength: 40 }),
+});
+export type SetMemberRole = UnwrapSchema<typeof SetMemberRole>;
+
+export const MemberIdParams = t.Object({
+  organizationId: t.String(),
+  memberId: t.String(),
+});
+export type MemberIdParams = UnwrapSchema<typeof MemberIdParams>;

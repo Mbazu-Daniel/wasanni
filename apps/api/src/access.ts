@@ -27,6 +27,7 @@ const statement: { [K in Resource]: Action[] } = {
   tournament: resolveResourceActions("tournament"),
   match: resolveResourceActions("match"),
   audit: resolveResourceActions("audit"),
+  role: resolveResourceActions("role"),
 };
 
 export const ac = createAccessControl(statement);

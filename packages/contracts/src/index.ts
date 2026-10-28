@@ -7,6 +7,7 @@ export * from "./error-body.ts";
 export * from "./platform.contract.ts";
 export * from "./api-key.contract.ts";
 export * from "./member.contract.ts";
+export * from "./role.contract.ts";
 export * from "./game.contract.ts";
 export * from "./game-file.contract.ts";
 export * from "./assignment.contract.ts";
