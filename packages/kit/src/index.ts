@@ -8,11 +8,6 @@ export * from "./email/types.ts";
 export * from "./email/constants.ts";
 export * from "./email/email.ts";
 
-export * from "./httpx/types.ts";
-export * from "./httpx/constants.ts";
-export * from "./httpx/limits.ts";
-export * from "./httpx/cursors.ts";
-
 export * from "./logger/types.ts";
 export * from "./logger/constants.ts";
 export * from "./logger/logger.ts";
