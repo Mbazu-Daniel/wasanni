@@ -3,17 +3,11 @@ import type { Db } from "@wasanni/db";
 import { platform } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { conflict, newId, notFound } from "@wasanni/kit";
+import { conflict, internal, newId, notFound } from "@wasanni/kit";
 
 import type { PlatformView } from "@wasanni/contracts";
 
-type PlatformRow = (typeof platform.$inferSelect);
-
-type PlatformPatch = {
-  name?: string;
-  slug?: string;
-  description?: string | null;
-};
+import type { PlatformPatch, PlatformRow } from "./types.ts";
 
 const toView = (row: PlatformRow): PlatformView => ({
   id: row.id,
@@ -69,7 +63,7 @@ export function createPlatformService(db: Db) {
           })
           .returning();
 
-        if (row === undefined) throw new Error("platform insert returned no row");
+        if (row === undefined) throw internal("platform insert returned no row");
         return toView(row);
       } catch (error) {
         return rethrowAsSlugConflict(error);
@@ -110,5 +104,3 @@ export function createPlatformService(db: Db) {
     },
   };
 }
-
-export type PlatformService = ReturnType<typeof createPlatformService>;

@@ -7,18 +7,12 @@ import {
   type SessionEventStore,
 } from "@wasanni/kit";
 import type { ScorePackJob } from "@wasanni/jobs";
+import type { Block } from "../types.ts";
 
 const GRACE_MS = 60_000;
 const MAX_ROWS = 1000;
 
 const pad2 = (value: number): string => String(value).padStart(2, "0");
-
-type Block = {
-  scoreId: string;
-  offset: number;
-  length: number;
-  rows: number;
-};
 
 export function createPackProcessor(
   db: Db,

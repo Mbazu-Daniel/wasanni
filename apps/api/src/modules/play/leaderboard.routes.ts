@@ -1,15 +1,11 @@
 import { LeaderboardList, LeaderboardQuery, PERMISSION } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { LeaderboardService } from "./leaderboard.service.ts";
-
-type LeaderboardDeps = {
-  service: LeaderboardService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { LeaderboardRouteDeps } from "./types.ts";
 
 export const createLeaderboardRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: LeaderboardDeps,
+  { service }: LeaderboardRouteDeps,
 ) =>
   api.get(
     "/api/v1/platform/leaderboards",

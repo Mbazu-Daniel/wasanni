@@ -10,7 +10,8 @@ import {
 } from "@wasanni/kit";
 import { buildAuthApiDocument, createAuthRoutes } from "./modules/auth/index.ts";
 import { createBetterAuth } from "./config/better-auth.ts";
-import { createPrincipalPlugin, type PrincipalDeps } from "./plugins/principal.ts";
+import { createPrincipalPlugin } from "./plugins/principal.ts";
+import type { PrincipalDeps } from "./plugins/types.ts";
 import { createHealthRoutes } from "./routes/health.ts";
 import { failureOf } from "./failures.ts";
 import { createRequestContextPlugin, requestContextOf } from "./plugins/request-context.ts";
@@ -23,6 +24,7 @@ import { createApiKeyService } from "./modules/api-key/service.ts";
 import { createGamesRoutes } from "./modules/games/index.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes } from "./modules/play/index.ts";
+import { createCompetition } from "./modules/competition/index.ts";
 import { createWebhooksRoutes } from "./modules/webhook/index.ts";
 import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
 import { AUTH_ROUTE_PREFIX, DOCS_PATH } from "./constants.ts";
@@ -44,6 +46,7 @@ export async function createApp(deps: AppDeps) {
   const events = deps.events ?? createMemorySessionEventStore();
   const enqueuer = deps.enqueuer ?? null;
   const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
+  const competition = createCompetition(deps.db);
 
   return new Elysia({ name: "wasanni-api" })
     .use(createRequestContextPlugin(deps.logger))
@@ -130,6 +133,7 @@ export async function createApp(deps: AppDeps) {
         encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
       }),
     )
+    .use(competition.mount(base))
     .use(
       createPlayRoutes(base, {
         db: deps.db,
@@ -138,6 +142,7 @@ export async function createApp(deps: AppDeps) {
         dispatcher,
         enqueuer,
         realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
+        matchRecorder: competition.matches,
       }),
     )
     .use(createHealthRoutes(deps))
@@ -152,5 +157,3 @@ export async function createApp(deps: AppDeps) {
       });
     });
 }
-
-export type App = ReturnType<typeof createApp>;

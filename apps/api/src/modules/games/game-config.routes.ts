@@ -8,16 +8,12 @@ import {
   UpdateGameConfigBody,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { GameConfigService } from "./game-config.service.ts";
-
-type GameConfigDeps = {
-  service: GameConfigService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { GameConfigRouteDeps } from "./types.ts";
 
 export const createGameConfigRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: GameConfigDeps,
+  { service }: GameConfigRouteDeps,
 ) =>
   api
     .get(

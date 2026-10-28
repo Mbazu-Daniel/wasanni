@@ -1,16 +1,14 @@
 import { Elysia } from "elysia";
-import { HealthModel, ReadyModel, REALTIME_PATH } from "@wasanni/contracts";
-import { AppError, unauthenticated } from "@wasanni/kit";
+import { HealthModel, ReadyModel, REALTIME_PATH, toErrorBody } from "@wasanni/contracts";
+import { AppError, internal, unauthenticated } from "@wasanni/kit";
 import { resolveRealtimeSession } from "./auth.ts";
 import { createGateway } from "./gateway.ts";
-import type { RealtimeDeps, RealtimeSession } from "./types.ts";
+import type { RealtimeContext, RealtimeDeps, RealtimeSession } from "./types.ts";
 
-type RealtimeContext = { realtimeSession?: RealtimeSession };
+const sessionOf = (frame: unknown): RealtimeSession => {
+  const session = (frame as RealtimeContext).realtimeSession;
 
-const sessionOf = (data: unknown): RealtimeSession => {
-  const session = (data as RealtimeContext).realtimeSession;
-
-  if (session === undefined) throw new Error("realtime socket is missing its session");
+  if (session === undefined) throw internal("realtime socket is missing its session");
 
   return session;
 };
@@ -75,22 +73,25 @@ export function createRealtimeApp(deps: RealtimeDeps) {
         response: { 200: ReadyModel, 503: ReadyModel },
       },
     )
-    .onError(({ error, code, set }) => {
+    .onError(({ error, code, set, request }) => {
+      const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+
       if (error instanceof AppError) {
         if (error.status >= 500) deps.logger.error("realtime error", { err: error });
         set.status = error.status;
-        return { error: { code: error.code, message: error.message } };
+        return toErrorBody({ code: error.code, message: error.message }, requestId);
       }
 
       if (code === "NOT_FOUND") {
         set.status = 404;
-        return { error: { code: "not_found", message: "route not found" } };
+        return toErrorBody(
+          { code: "not_found", message: "route not found" },
+          requestId,
+        );
       }
 
       deps.logger.error("realtime error", { err: error });
       set.status = 500;
-      return { error: { code: "internal", message: "internal error" } };
+      return toErrorBody({ code: "internal", message: "internal error" }, requestId);
     });
 }
-
-export type RealtimeApp = ReturnType<typeof createRealtimeApp>;

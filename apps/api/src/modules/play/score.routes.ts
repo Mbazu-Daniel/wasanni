@@ -9,16 +9,12 @@ import {
 } from "@wasanni/contracts";
 import { t } from "elysia";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { ScoreService } from "./score.service.ts";
-
-type ScoreDeps = {
-  service: ScoreService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { ScoreRouteDeps } from "./types.ts";
 
 export const createScoreRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: ScoreDeps,
+  { service }: ScoreRouteDeps,
 ) =>
   api
     .post(

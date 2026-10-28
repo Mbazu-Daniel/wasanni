@@ -1,10 +1,11 @@
 import type { RealtimeServerMessage, ScoreView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
-import type { Logger } from "@wasanni/kit";
+import type { Logger, Redis } from "@wasanni/kit";
+import type { createRealtimeApp } from "./app.ts";
 
 export type RealtimeSocket = {
   readonly id: string;
-  send(data: string): unknown;
+  send(payload: string): unknown;
   close(code?: number, reason?: string): unknown;
 };
 
@@ -70,3 +71,26 @@ export type RealtimeDeps = GatewayDeps & {
   maxMessageBytes: number;
   ready: () => Promise<{ database: boolean; redis: boolean }>;
 };
+
+export type ScoreForwarderDeps = {
+  apiUrl: string;
+  logger: Logger;
+  fetch?: typeof fetch;
+};
+
+export type BridgeDeps = {
+  redis: Redis;
+  rooms: RoomRegistry;
+  logger: Logger;
+  instanceId?: string;
+};
+
+export type Envelope = {
+  origin: string;
+  room: string;
+  message: RealtimeServerMessage;
+};
+
+export type RealtimeContext = { realtimeSession?: RealtimeSession };
+
+export type RealtimeApp = ReturnType<typeof createRealtimeApp>;

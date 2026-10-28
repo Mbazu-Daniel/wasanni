@@ -5,8 +5,7 @@ import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { conflict, notFound } from "@wasanni/kit";
 import type { WebhookConfigView } from "@wasanni/contracts";
-
-export type WebhookRow = (typeof webhookConfig.$inferSelect);
+import type { WebhookRow } from "./types.ts";
 
 export const toWebhookView = (row: WebhookRow): WebhookConfigView => ({
   id: row.id,

@@ -1,14 +1,8 @@
 import type { RealtimeServerMessage } from "@wasanni/contracts";
 import { REALTIME_CLOSE } from "@wasanni/contracts";
-import type { Logger, Redis } from "@wasanni/kit";
+import type { Redis } from "@wasanni/kit";
 import { REALTIME_CHANNEL } from "./constants.ts";
-import type { RoomBridge, RoomRegistry } from "./types.ts";
-
-type Envelope = {
-  origin: string;
-  room: string;
-  message: RealtimeServerMessage;
-};
+import type { BridgeDeps, Envelope, RoomBridge } from "./types.ts";
 
 const isEnvelope = (value: unknown): value is Envelope => {
   if (typeof value !== "object" || value === null) return false;
@@ -22,13 +16,6 @@ const isEnvelope = (value: unknown): value is Envelope => {
     candidate.message !== null &&
     typeof candidate.message.type === "string"
   );
-};
-
-export type BridgeDeps = {
-  redis: Redis;
-  rooms: RoomRegistry;
-  logger: Logger;
-  instanceId?: string;
 };
 
 export function createRoomBridge(deps: BridgeDeps): RoomBridge {

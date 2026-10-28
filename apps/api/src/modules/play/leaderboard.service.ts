@@ -68,5 +68,3 @@ export function createLeaderboardService(db: Db) {
     },
   };
 }
-
-export type LeaderboardService = ReturnType<typeof createLeaderboardService>;

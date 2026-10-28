@@ -3,28 +3,7 @@ import type { Db } from "@wasanni/db";
 import { game, gameConfig, gameFile, gamePlatformAssignment } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import type {
-  AssignmentStatus,
-  GameHosting,
-  GameStatus,
-} from "@wasanni/contracts";
-
-export type GameState = {
-  id: string;
-  hosting: GameHosting;
-  status: GameStatus;
-};
-
-export type AssignmentState = {
-  id: string;
-  status: AssignmentStatus;
-};
-
-export type AssignmentConfig = {
-  id: string;
-  config: Record<string, unknown>;
-  schemaVersion: number;
-};
+import type { AssignmentConfig, AssignmentState, GameState } from "./types.ts";
 
 export async function readGameState(
   db: Db,

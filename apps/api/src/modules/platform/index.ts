@@ -8,12 +8,8 @@ import {
   UpdatePlatformBody,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { PlatformService } from "./service.ts";
-
-type PlatformDeps = {
-  service: PlatformService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { PlatformDeps } from "./types.ts";
 
 export const createPlatformRoutes = <T extends PrincipalApi>(api: T, { service }: PlatformDeps) =>
   api

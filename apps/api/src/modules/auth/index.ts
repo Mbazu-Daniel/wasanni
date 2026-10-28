@@ -1,6 +1,6 @@
-import type { BetterAuth } from "../../config/better-auth.ts";
+import type { BetterAuth } from "../../config/types.ts";
 import { AUTH_ROUTE_PREFIX } from "../../constants.ts";
-import type { PrincipalApi } from "../../plugins/principal.ts";
+import type { PrincipalApi } from "../../plugins/types.ts";
 import { ErrorBodyModel } from "@wasanni/contracts";
 import { AuthModel } from "./model.ts";
 
@@ -27,4 +27,3 @@ export const createAuthRoutes = <T extends PrincipalApi>(api: T, auth: BetterAut
     );
 
 export { buildAuthApiDocument } from "./openapi.ts";
-export type { AuthApiDocument } from "./openapi.ts";

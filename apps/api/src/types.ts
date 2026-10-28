@@ -1,6 +1,7 @@
 import type { Db } from "@wasanni/db";
 import type { Enqueuer } from "@wasanni/jobs";
 import type { Env, Logger, ObjectStorage, SendEmail, SessionEventStore } from "@wasanni/kit";
+import type { ErrorSource } from "@wasanni/contracts";
 
 export type AppDeps = {
   logger: Logger;
@@ -21,4 +22,11 @@ export type ModuleDeps = {
   logger: Logger;
   sendEmail?: SendEmail;
   enqueuer?: Enqueuer | null;
+};
+
+export type Failure = { status: number; source: ErrorSource };
+
+export type DelegatedError = {
+  name?: string;
+  body?: { code?: string; message?: string };
 };

@@ -1,8 +1,7 @@
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
 import { QUEUE } from "./names.ts";
-
-export type QueueConnection = IORedis;
+import type { QueueConnection, Queues } from "./types.ts";
 
 export function createQueueConnection(redisUrl: string): QueueConnection {
   return new IORedis(redisUrl, {
@@ -51,8 +50,6 @@ export function createQueues(connection: QueueConnection) {
 
   return { webhooks, email, archive, default: defaultQueue };
 }
-
-export type Queues = ReturnType<typeof createQueues>;
 
 export async function closeQueues(queues: Queues): Promise<void> {
   await Promise.all([

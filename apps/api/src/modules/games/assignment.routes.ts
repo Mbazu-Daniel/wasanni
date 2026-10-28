@@ -8,16 +8,12 @@ import {
   PlatformIdParams,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { AssignmentService } from "./assignment.service.ts";
-
-type AssignmentDeps = {
-  service: AssignmentService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { AssignmentRouteDeps } from "./types.ts";
 
 export const createAssignmentRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: AssignmentDeps,
+  { service }: AssignmentRouteDeps,
 ) =>
   api
     .get(

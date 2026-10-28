@@ -1,15 +1,11 @@
 import { GameSessionIdParams, PERMISSION, ReplayView } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { ReplayService } from "./replay.service.ts";
-
-type ReplayDeps = {
-  service: ReplayService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { ReplayRouteDeps } from "./types.ts";
 
 export const createReplayRoutes = <T extends PrincipalApi>(
   api: T,
-  { service }: ReplayDeps,
+  { service }: ReplayRouteDeps,
 ) =>
   api.get(
     "/api/v1/platform/sessions/:sessionId/events",

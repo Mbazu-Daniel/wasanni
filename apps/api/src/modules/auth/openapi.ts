@@ -1,8 +1,6 @@
-import type { OpenAPIV3_1 } from "openapi-types";
 import { AUTH_ROUTE_PREFIX } from "../../constants.ts";
-import type { BetterAuth } from "../../config/better-auth.ts";
-
-export type AuthApiDocument = Pick<OpenAPIV3_1.Document, "paths" | "components">;
+import type { BetterAuth } from "../../config/types.ts";
+import type { AuthApiDocument } from "./types.ts";
 
 export async function buildAuthApiDocument(auth: BetterAuth): Promise<AuthApiDocument> {
   const generated = await auth.api.generateOpenAPISchema();

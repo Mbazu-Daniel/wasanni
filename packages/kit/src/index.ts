@@ -22,6 +22,8 @@ export * from "./publicid/publicid.ts";
 export * from "./redis/types.ts";
 export * from "./redis/redis.ts";
 
+export * from "./score/types.ts";
+export * from "./score/constants.ts";
 export * from "./score/rules.ts";
 
 export * from "./scope/types.ts";

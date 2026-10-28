@@ -1,13 +1,6 @@
 import type { ScoreView, SubmitScoreBody } from "@wasanni/contracts";
-import type { Logger } from "@wasanni/kit";
 import { SCORE_FORWARD_TIMEOUT_MS } from "./constants.ts";
-import type { ScoreForwarder, ScoreForwardResult } from "./types.ts";
-
-export type ScoreForwarderDeps = {
-  apiUrl: string;
-  logger: Logger;
-  fetch?: typeof fetch;
-};
+import type { ScoreForwarder, ScoreForwarderDeps, ScoreForwardResult } from "./types.ts";
 
 const readRejection = async (response: Response): Promise<string> => {
   try {

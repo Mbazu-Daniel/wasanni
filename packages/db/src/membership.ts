@@ -1,13 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import type { RoleName } from "@wasanni/contracts";
-import type { Db } from "./client.ts";
+import type { Db, MembershipRow } from "./types.ts";
 import { activeMember, member } from "./schema/organization/member.ts";
-
-export type MembershipRow = {
-  memberId: string;
-  role: RoleName;
-  displayName: string | null;
-};
 
 export async function readMembership(
   db: Db,

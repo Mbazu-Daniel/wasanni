@@ -149,5 +149,3 @@ export function createTemplateBundleService(
     },
   };
 }
-
-export type TemplateBundleService = ReturnType<typeof createTemplateBundleService>;

@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { apiKey, platform } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { API_KEY_DISPLAY_CHARS, badRequest, hashApiKey, newApiKeySecret, newId, notFound } from "@wasanni/kit";
+import { API_KEY_DISPLAY_CHARS, badRequest, hashApiKey, internal, newApiKeySecret, newId, notFound } from "@wasanni/kit";
 import {
   listUnknownPermissions,
   type ApiKeyView,
@@ -11,12 +11,7 @@ import {
   type PermissionGrant,
 } from "@wasanni/contracts";
 
-type ApiKeyRow = (typeof apiKey.$inferSelect);
-
-type ApiKeyPatch = {
-  name?: string;
-  enabled?: boolean;
-};
+import type { ApiKeyPatch, ApiKeyRow } from "./types.ts";
 
 const toView = (row: ApiKeyRow): ApiKeyView => ({
   id: row.id,
@@ -87,7 +82,7 @@ export function createApiKeyService(db: Db) {
           expiresAt: apiKey.expiresAt,
         });
 
-      if (row === undefined) throw new Error("api key insert returned no row");
+      if (row === undefined) throw internal("api key insert returned no row");
 
       return {
         id: row.id,
@@ -131,5 +126,3 @@ export function createApiKeyService(db: Db) {
     },
   };
 }
-
-export type ApiKeyService = ReturnType<typeof createApiKeyService>;

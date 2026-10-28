@@ -1,13 +1,6 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm";
-import type { Db } from "./client.ts";
+import type { ApiKeyCredential, Db } from "./types.ts";
 import { apiKey } from "./schema/api-key/api-key.ts";
-
-export type ApiKeyCredential = {
-  id: string;
-  organizationId: string;
-  platformId: string;
-  permissions: string | null;
-};
 
 export async function readActiveApiKey(
   db: Db,

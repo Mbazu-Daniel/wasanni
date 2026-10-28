@@ -9,18 +9,12 @@ import {
   WebhookParams,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { WebhookSecretService } from "./webhook-secret.service.ts";
-import type { WebhookService } from "./webhook.service.ts";
-
-type WebhookDeps = {
-  service: WebhookService;
-  secrets: WebhookSecretService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { WebhookRouteDeps } from "./types.ts";
 
 export const createWebhookRoutes = <T extends PrincipalApi>(
   api: T,
-  { service, secrets }: WebhookDeps,
+  { service, secrets }: WebhookRouteDeps,
 ) =>
   api
     .get(

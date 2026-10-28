@@ -1,18 +1,6 @@
 import { eq } from "drizzle-orm";
-import type { GameSessionStatus } from "@wasanni/contracts";
-import type { Db } from "./client.ts";
+import type { Db, GameSessionCredential } from "./types.ts";
 import { gameSession } from "./schema/play/game-session.ts";
-
-export type GameSessionCredential = {
-  id: string;
-  organizationId: string;
-  platformId: string;
-  gameId: string;
-  externalUserId: string;
-  mode: string | null;
-  status: GameSessionStatus;
-  expiresAt: Date;
-};
 
 export async function readGameSessionByToken(
   db: Db,

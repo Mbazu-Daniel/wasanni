@@ -43,6 +43,13 @@
       "when": 1792588832143,
       "tag": "0005_past_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792599505677,
+      "tag": "0006_special_vapor",
+      "breakpoints": true
     }
   ]
 }

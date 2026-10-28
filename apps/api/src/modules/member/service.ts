@@ -6,6 +6,8 @@ import type { Scope } from "@wasanni/kit";
 import { notFound } from "@wasanni/kit";
 import type { MemberView } from "@wasanni/contracts";
 
+import type { MemberRow } from "./types.ts";
+
 const columns = {
   memberId: member.id,
   userId: user.id,
@@ -16,17 +18,6 @@ const columns = {
   displayName: member.displayName,
   joinedAt: member.createdAt,
 } as const;
-
-type MemberRow = {
-  memberId: string;
-  userId: string;
-  email: string;
-  name: string;
-  avatar: string | null;
-  role: string;
-  displayName: string | null;
-  joinedAt: Date;
-};
 
 const toView = (row: MemberRow): MemberView => ({
   ...row,
@@ -83,5 +74,3 @@ export function createMemberService(db: Db) {
     },
   };
 }
-
-export type MemberService = ReturnType<typeof createMemberService>;

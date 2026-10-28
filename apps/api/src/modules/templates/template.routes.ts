@@ -11,18 +11,12 @@ import {
   UploadTemplateBody,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
-import type { PrincipalApi } from "../../plugins/principal.ts";
-import type { TemplateBundleService } from "./template-bundle.service.ts";
-import type { TemplateService } from "./template.service.ts";
-
-type TemplateDeps = {
-  service: TemplateService;
-  bundle: TemplateBundleService;
-};
+import type { PrincipalApi } from "../../plugins/types.ts";
+import type { TemplateRouteDeps } from "./types.ts";
 
 export const createTemplateRoutes = <T extends PrincipalApi>(
   api: T,
-  { service, bundle }: TemplateDeps,
+  { service, bundle }: TemplateRouteDeps,
 ) =>
   api
     .get(

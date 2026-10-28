@@ -5,18 +5,14 @@ import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { forbidden, newId, notFound, isFlagged } from "@wasanni/kit";
 import type { ScoreFlag, ScoreSource, ScoreView } from "@wasanni/contracts";
-import type { WebhookDispatcher } from "../webhook/webhook-dispatcher.ts";
 import { readGameSessionRow } from "./session.service.ts";
-import type { SessionService } from "./session.service.ts";
 import { readScoreFlags } from "./score-flags.ts";
-import type { HidePlayerScoresInput, ScoreSubmitInput } from "./types.ts";
-
-export type ScoreDeps = {
-  dispatcher: WebhookDispatcher;
-  sessions: SessionService;
-};
-
-type ScoreRow = (typeof gameSessionScore.$inferSelect);
+import type {
+  HidePlayerScoresInput,
+  ScoreRow,
+  ScoreServiceDeps,
+  ScoreSubmitInput,
+} from "./types.ts";
 
 const toView = (row: ScoreRow): ScoreView => ({
   id: row.id,
@@ -34,7 +30,7 @@ const toView = (row: ScoreRow): ScoreView => ({
   submittedAt: row.submittedAt.toISOString(),
 });
 
-export function createScoreService(db: Db, deps: ScoreDeps) {
+export function createScoreService(db: Db, deps: ScoreServiceDeps) {
   const mergeIntoExisting = async (
     scope: Scope,
     sessionId: string,
@@ -109,6 +105,19 @@ export function createScoreService(db: Db, deps: ScoreDeps) {
 
     const view = toView(row);
 
+    const recorder = deps.matchRecorder;
+    if (recorder !== undefined && session.matchId !== null) {
+      await recorder
+        .recordParticipantScore(scope, {
+          matchId: session.matchId,
+          platformId: session.platformId,
+          externalUserId: session.externalUserId,
+          sessionId: session.id,
+          score: row.score,
+        })
+        .catch(() => undefined);
+    }
+
     await deps.dispatcher
       .dispatch({
         organizationId: view.organizationId,
@@ -164,5 +173,3 @@ export function createScoreService(db: Db, deps: ScoreDeps) {
     },
   };
 }
-
-export type ScoreService = ReturnType<typeof createScoreService>;
