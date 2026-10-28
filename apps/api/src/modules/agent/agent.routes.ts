@@ -28,6 +28,7 @@ import {
   UpdateAgentSessionBody,
 } from "@wasanni/contracts";
 import { HttpError, organizationScope } from "@wasanni/kit";
+import { requestContextOf } from "../../plugins/request-context.ts";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import { RECENT_RUNS_LIMIT, SPEND_WINDOW_DAYS } from "./constants.ts";
 import { classifyProviderError } from "./provider-error.ts";
@@ -361,13 +362,14 @@ export const createAgentRoutes = <T extends PrincipalApi>(
     )
     .post(
       "/api/v1/organizations/:organizationId/agents/run",
-      async ({ principal, body }) =>
+      async ({ principal, body, request }) =>
         sse(
           service.run(
             organizationScope(principal),
             principal.memberId,
             principal.userId,
             body,
+            requestContextOf(request).requestId,
           ),
         ),
       {
@@ -379,12 +381,13 @@ export const createAgentRoutes = <T extends PrincipalApi>(
     )
     .get(
       "/api/v1/organizations/:organizationId/agents/sessions/:sessionId/approvals",
-      async ({ principal, params }) => ({
+      async ({ principal, params, request }) => ({
         pending: await service.pending(
           organizationScope(principal),
           principal.memberId,
           principal.userId,
           params.sessionId,
+          requestContextOf(request).requestId,
         ),
       }),
       {
@@ -399,13 +402,14 @@ export const createAgentRoutes = <T extends PrincipalApi>(
     )
     .post(
       "/api/v1/organizations/:organizationId/agents/sessions/:sessionId/approvals",
-      async ({ principal, body }) =>
+      async ({ principal, body, request }) =>
         sse(
           service.approve(
             organizationScope(principal),
             principal.memberId,
             principal.userId,
             body,
+            requestContextOf(request).requestId,
           ),
         ),
       {

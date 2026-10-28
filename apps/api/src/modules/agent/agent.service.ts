@@ -986,7 +986,7 @@ export function createAgentService(deps: AgentModuleDeps) {
       }
 
       if (leg.state === "failed") {
-        logFailure(scope, runId, provider, endpoint.model, leg.failure);
+        logFailure(log, provider, endpoint.model, leg.failure);
 
         yield {
           kind: "error",
@@ -999,6 +999,18 @@ export function createAgentService(deps: AgentModuleDeps) {
       }
 
       if (leg.state === "awaiting_approval") return;
+
+      logRun(log, {
+        provider,
+        model: endpoint.model,
+        state: leg.state,
+        costMicros,
+        promptTokens: leg.promptTokens,
+        completionTokens: leg.completionTokens,
+        durationMs,
+        trimmedMessages: leg.trimmedMessages,
+        tools: Object.keys(tools),
+      });
 
       yield {
         kind: "done",
@@ -1018,6 +1030,7 @@ export function createAgentService(deps: AgentModuleDeps) {
       memberId: string,
       userId: string,
       sessionId: string,
+      requestId: string,
     ): Promise<AgentPendingApproval[]> {
       const [row] = await db
         .select()
@@ -1041,11 +1054,14 @@ export function createAgentService(deps: AgentModuleDeps) {
       const gameContext =
         session.gameId === null ? null : await games.context(scope, session.gameId);
 
+      const log = logOf(requestId, scope, row.id);
+
       return pendingApprovals({
         runtime,
         endpoint: endpointOf(provider),
         instructions: systemOf(await readOrg(scope), gameContext, "agent"),
-        tools: toolsFor(scope, { memberId, userId }, row.id, session.gameId),
+        requestId,
+        tools: toolsFor(scope, { memberId, userId }, row.id, session.gameId, log),
         thread: session.id,
         resource: `${scope.organizationId}:${memberId}`,
       });
@@ -1056,6 +1072,7 @@ export function createAgentService(deps: AgentModuleDeps) {
       memberId: string,
       userId: string,
       body: ApproveAgentRunBody,
+      requestId: string,
     ): AsyncGenerator<RunEvent, void, void> {
       const [row] = await db
         .select()
@@ -1082,15 +1099,19 @@ export function createAgentService(deps: AgentModuleDeps) {
       const gameContext =
         session.gameId === null ? null : await games.context(scope, session.gameId);
 
+      const log = logOf(requestId, scope, row.id);
+      const tools = toolsFor(scope, { memberId, userId }, row.id, session.gameId, log);
+
       const leg = yield* collectLeg(
         resumeAgentRun({
           runtime,
           endpoint,
           instructions: systemOf(await readOrg(scope), gameContext, "agent"),
+          requestId,
           agentRunId: row.id,
           callId: body.callId,
           approved: body.approved,
-          tools: toolsFor(scope, { memberId, userId }, row.id, session.gameId),
+          tools,
         }),
       );
 
@@ -1127,7 +1148,7 @@ export function createAgentService(deps: AgentModuleDeps) {
       }
 
       if (leg.state === "failed") {
-        logFailure(scope, row.id, provider, endpoint.model, leg.failure);
+        logFailure(log, provider, endpoint.model, leg.failure);
 
         yield {
           kind: "error",
@@ -1140,6 +1161,18 @@ export function createAgentService(deps: AgentModuleDeps) {
       }
 
       if (leg.state === "awaiting_approval") return;
+
+      logRun(log, {
+        provider,
+        model: endpoint.model,
+        state: leg.state,
+        costMicros,
+        promptTokens,
+        completionTokens,
+        durationMs,
+        trimmedMessages: leg.trimmedMessages,
+        tools: Object.keys(tools),
+      });
 
       yield {
         kind: "done",
