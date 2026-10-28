@@ -189,6 +189,38 @@ them — not just ours: the auth module contributes them through `openAPI()`'s
 sign-in, email-verification and OAuth route with its operation id, request body
 and security scheme. The startup log prints both URLs.
 
+## Game bundles
+
+A hosted game is one zip in R2. Upload it with `kind: "bundle"`:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/games/$GAME/files/upload \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"filename":"neon-racer.zip","version":"1.4.0","contentType":"application/zip",
+       "sizeBytes":<bytes>,"kind":"bundle","entryPoint":"index.html",
+       "crossOriginIsolation":true}'
+```
+
+`PUT` the zip to the returned url, then `POST .../complete`. The file goes to
+`extracting` while the worker unzips it; poll `GET .../files` until `ready`.
+The zip must hold `index.html` at its root — zip the contents of the export
+folder, not the folder. Unity, Godot, Construct and PlayCanvas exports all
+qualify.
+
+The game is then served from `/play/:gameId/:fileId/`:
+
+- `crossOriginIsolation: true` sends `Cross-Origin-Opener-Policy: same-origin`
+  and `Cross-Origin-Embedder-Policy: require-corp`, which is what
+  `self.crossOriginIsolated` and `SharedArrayBuffer` need. Threaded Godot 4 and
+  multithreaded Unity WebGL require it.
+- `.wasm` is served as `application/wasm`; `.pck`, `.data`, `.mem` and
+  `.unityweb` as `application/octet-stream`.
+- `Range` requests are forwarded to R2, so `.wasm` and `.pck` load in pieces.
+- `spaFallback: true` serves `index.html` for an extensionless miss only.
+
+A `.zip` without `kind: "bundle"` is read as a bundle anyway; a bundle that is
+not a `.zip` filename, or a `.zip` declared `kind: "single"`, is refused.
+
 ## Secret rotation
 
 `bun scripts/rotate-secret.ts <old-key> <new-key>` re-encrypts every webhook

@@ -34,3 +34,8 @@ export type ScoreRecheckJob = {
   organizationId: string;
   configId: string;
 };
+
+export type GameBundleJob = {
+  organizationId: string;
+  fileId: string;
+};

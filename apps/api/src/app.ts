@@ -166,6 +166,7 @@ export async function createApp(deps: AppDeps) {
         db: deps.db,
         storage,
         config: readStorageLimits(deps.env),
+        enqueuer,
         onConfigChanged: async (input) => {
           await enqueuer?.scoreRecheck(input);
         },

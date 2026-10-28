@@ -13,10 +13,14 @@ import {
   type ObjectStorage,
   type StorageLimits,
 } from "@wasanni/kit";
-import type { GameFileUpload, GameFileView } from "@wasanni/contracts";
+import type { GameFileKind, GameFileUpload, GameFileView } from "@wasanni/contracts";
+import type { Enqueuer } from "@wasanni/jobs";
 import { GAME_FILE_CONTENT_TYPES } from "./constants.ts";
 import { readGameState } from "./game-state.ts";
 import type { GameFileRow, GameFileUploadInput } from "./types.ts";
+
+const isZip = (contentType: string): boolean =>
+  contentType === "application/zip" || contentType === "application/x-zip-compressed";
 
 const toView = (row: GameFileRow): GameFileView => ({
   id: row.id,
@@ -27,6 +31,11 @@ const toView = (row: GameFileRow): GameFileView => ({
   contentType: row.contentType,
   etag: row.etag,
   status: row.status,
+  kind: row.kind,
+  entryPoint: row.entryPoint,
+  crossOriginIsolation: row.crossOriginIsolation,
+  spaFallback: row.spaFallback,
+  servedPrefix: row.servedPrefix,
   isCurrent: row.isCurrent,
   createdAt: row.createdAt.toISOString(),
   readyAt: row.readyAt === null ? null : row.readyAt.toISOString(),
@@ -37,6 +46,7 @@ export function createGameFileService(
   db: Db,
   storage: ObjectStorage,
   config: StorageLimits,
+  enqueuer: Enqueuer | null,
 ) {
   const getFile = async (
     scope: Scope,
@@ -95,6 +105,16 @@ export function createGameFileService(
         throw new BadRequestError("the game file is outside the size this api accepts");
       }
 
+      const kind: GameFileKind = input.body.kind ?? (isZip(input.body.contentType) ? "bundle" : "single");
+
+      if (kind === "bundle" && !input.body.filename.toLowerCase().endsWith(".zip")) {
+        throw new BadRequestError("a bundle upload must be a .zip");
+      }
+
+      if (kind === "single" && isZip(input.body.contentType)) {
+        throw new BadRequestError("a .zip upload must be declared as a bundle");
+      }
+
       const fileId = newId();
 
       const upload = await storage.createUploadTarget({
@@ -120,6 +140,10 @@ export function createGameFileService(
           sizeBytes: input.body.sizeBytes,
           contentType: input.body.contentType,
           status: "pending_upload",
+          kind,
+          entryPoint: input.body.entryPoint ?? "index.html",
+          crossOriginIsolation: input.body.crossOriginIsolation ?? false,
+          spaFallback: input.body.spaFallback ?? false,
           uploadedByMemberId: input.memberId,
           uploadExpiresAt: new Date(upload.expiresAt),
         })
@@ -137,7 +161,7 @@ export function createGameFileService(
     ): Promise<GameFileView> {
       const row = await getFile(scope, gameId, fileId);
 
-      if (row.status === "ready") return toView(row);
+      if (row.status === "ready" || row.status === "extracting") return toView(row);
       if (row.status === "failed") {
         throw new ConflictError("this game file upload has already failed");
       }
@@ -158,6 +182,24 @@ export function createGameFileService(
       if (object.contentType !== row.contentType) {
         await markFileFailed(scope, row);
         throw new BadRequestError("the uploaded object does not have the declared content type");
+      }
+
+      if (row.kind === "bundle") {
+        if (enqueuer === null) {
+          throw new InternalServerError("the bundle extraction queue is not configured");
+        }
+
+        await db
+          .update(gameFile)
+          .set({ status: "extracting", etag: object.etag })
+          .where(scopeTo(scope, gameFile, eq(gameFile.id, row.id)));
+
+        await enqueuer.gameBundleExtract({
+          organizationId: row.organizationId,
+          fileId: row.id,
+        });
+
+        return toView({ ...row, status: "extracting", etag: object.etag });
       }
 
       await db.transaction(async (tx) => {
