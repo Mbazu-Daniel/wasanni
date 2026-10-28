@@ -1,34 +1,23 @@
 import type { ScoreFlag } from "@wasanni/contracts";
 import { SCORE_RULE_FLAGS } from "./constants.ts";
-import type { ScoreRules } from "./types.ts";
-
-function readScoreRules(config: Record<string, unknown>): ScoreRules {
-  const rules = config.rules;
-
-  if (typeof rules !== "object" || rules === null) return {};
-
-  const record = rules as Record<string, unknown>;
-
-  return {
-    maxScore: typeof record.maxScore === "number" ? record.maxScore : undefined,
-    maxScorePerSecond:
-      typeof record.maxScorePerSecond === "number" ? record.maxScorePerSecond : undefined,
-  };
-}
+import { readGameConfig } from "./config.ts";
 
 export function readRuleFlags(
   config: Record<string, unknown>,
   score: number,
   durationSeconds: number,
 ): ScoreFlag[] {
-  const rules = readScoreRules(config);
+  const { rules } = readGameConfig(config);
   const flags: ScoreFlag[] = [];
 
-  if (rules.maxScore !== undefined && score > rules.maxScore) {
+  const checks = rules.checks ?? ["max_score", "score_rate"];
+
+  if (checks.includes("max_score") && rules.maxScore !== undefined && score > rules.maxScore) {
     flags.push("max_score_exceeded");
   }
 
   if (
+    checks.includes("score_rate") &&
     rules.maxScorePerSecond !== undefined &&
     durationSeconds > 0 &&
     score / durationSeconds > rules.maxScorePerSecond

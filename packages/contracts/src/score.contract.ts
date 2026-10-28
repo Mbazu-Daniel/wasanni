@@ -12,7 +12,23 @@ export const SCORE_FLAGS = [
   "resubmitted",
   "max_score_exceeded",
   "score_rate_exceeded",
+  "verification_unavailable",
+  "verification_failed",
+  "callback_verified",
 ] as const;
+
+export const SCORE_VERIFICATION_MODES = ["none", "callback"] as const;
+export type ScoreVerificationMode = (typeof SCORE_VERIFICATION_MODES)[number];
+
+export const SCORE_VERIFICATION_STATUSES = ["not_required", "passed", "failed", "unavailable"] as const;
+export type ScoreVerificationStatus = (typeof SCORE_VERIFICATION_STATUSES)[number];
+
+export const ScoreVerificationStatusModel = t.Union([
+  t.Literal("not_required"),
+  t.Literal("passed"),
+  t.Literal("failed"),
+  t.Literal("unavailable"),
+]);
 
 export type ScoreFlag = (typeof SCORE_FLAGS)[number];
 
@@ -29,6 +45,7 @@ export const ScoreView = t.Object({
   flagged: t.Boolean(),
   flags: t.Array(t.String()),
   source: ScoreSource,
+  verificationStatus: ScoreVerificationStatusModel,
   submittedAt: t.String({ format: "date-time" }),
 });
 export type ScoreView = UnwrapSchema<typeof ScoreView>;
@@ -55,14 +72,16 @@ export type LeaderboardEntry = UnwrapSchema<typeof LeaderboardEntry>;
 export const LeaderboardList = t.Object({ entries: t.Array(LeaderboardEntry) });
 export type LeaderboardList = UnwrapSchema<typeof LeaderboardList>;
 
-export const LeaderboardQuery = t.Object({
-  gameId: t.String(),
+export const GameLeaderboardQuery = t.Object({
   mode: t.Optional(t.String({ maxLength: 80 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 200 })),
   offset: t.Optional(t.Number({ minimum: 0 })),
   includeFlagged: t.Optional(t.Boolean()),
 });
-export type LeaderboardQuery = UnwrapSchema<typeof LeaderboardQuery>;
+export type GameLeaderboardQuery = UnwrapSchema<typeof GameLeaderboardQuery>;
+
+export const GameLeaderboardParams = t.Object({ gameId: t.String() });
+export type GameLeaderboardParams = UnwrapSchema<typeof GameLeaderboardParams>;
 
 export const HideScoresBody = t.Object({
   gameId: t.Optional(t.String()),

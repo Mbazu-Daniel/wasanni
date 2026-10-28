@@ -11,7 +11,7 @@ export async function readMembership(
     .select({
       memberId: member.id,
       role: member.role,
-      displayName: member.displayName,
+      name: member.name,
     })
     .from(member)
     .where(

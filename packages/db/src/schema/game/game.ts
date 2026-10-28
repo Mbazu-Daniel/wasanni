@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, uuid, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization } from "../organization/organization.ts";
 import type { GameHosting, GameStatus } from "@wasanni/contracts";
 
@@ -14,7 +14,6 @@ export const game = pgTable(
     description: text("description"),
     hosting: text("hosting").notNull().$type<GameHosting>(),
     status: text("status").notNull().default("draft").$type<GameStatus>(),
-    replayEnabled: boolean("replay_enabled").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

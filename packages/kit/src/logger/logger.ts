@@ -9,7 +9,12 @@ import type { LogLevel, Logger } from "./types.ts";
 function redact(value: unknown, depth = 0): unknown {
   if (depth > MAX_REDACTION_DEPTH || value === null || typeof value !== "object") return value;
   if (value instanceof Error)
-    return { name: value.name, message: value.message, stack: value.stack };
+    return {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+      cause: redact(value.cause, depth + 1),
+    };
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
 
   const out: Record<string, unknown> = {};

@@ -1,10 +1,15 @@
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { webhookConfig } from "@wasanni/db/schema";
+import { platform, webhookConfig, webhookDelivery } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { ConflictError, NotFoundError } from "@wasanni/kit";
-import type { UpdateWebhookBody, WebhookConfigView } from "@wasanni/contracts";
+import type {
+  OrgWebhookView,
+  UpdateWebhookBody,
+  WebhookConfigView,
+  WebhookDeliveryView,
+} from "@wasanni/contracts";
 import { assertPlatform, assertUrlFree, readWebhook, toWebhookView } from "./webhook-state.ts";
 
 export function createWebhookService(db: Db) {
@@ -19,6 +24,57 @@ export function createWebhookService(db: Db) {
         .orderBy(desc(webhookConfig.createdAt));
 
       return rows.map(toWebhookView);
+    },
+
+    async listForOrganization(scope: Scope): Promise<OrgWebhookView[]> {
+      const rows = await db
+        .select({
+          webhook: webhookConfig,
+          platformName: platform.name,
+          platformSlug: platform.slug,
+        })
+        .from(webhookConfig)
+        .innerJoin(platform, eq(webhookConfig.platformId, platform.id))
+        .where(scopeTo(scope, webhookConfig))
+        .orderBy(desc(webhookConfig.createdAt));
+
+      return rows.map((row) => ({
+        ...toWebhookView(row.webhook),
+        platformName: row.platformName,
+        platformSlug: row.platformSlug,
+      }));
+    },
+
+    async listDeliveries(
+      scope: Scope,
+      webhookId: string,
+      limit = 50,
+    ): Promise<WebhookDeliveryView[]> {
+      const rows = await db
+        .select()
+        .from(webhookDelivery)
+        .where(
+          scopeTo(
+            scope,
+            webhookDelivery,
+            eq(webhookDelivery.webhookId, webhookId),
+          ),
+        )
+        .orderBy(desc(webhookDelivery.createdAt))
+        .limit(limit);
+
+      return rows.map((row) => ({
+        id: row.id,
+        eventId: row.eventId,
+        eventType: row.eventType,
+        attempt: row.attempt,
+        status: row.status,
+        statusCode: row.statusCode,
+        responseBody: row.responseBody,
+        error: row.error,
+        durationMs: row.durationMs,
+        createdAt: row.createdAt.toISOString(),
+      }));
     },
 
     async get(

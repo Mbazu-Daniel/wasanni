@@ -46,6 +46,18 @@ export function createBetterAuth(deps: ModuleDeps) {
   const sendPasswordResetLink = (email: string, url: string): Promise<void> =>
     sendMail({ to: email, subject: "Reset your Wasanni password", url, purpose: "reset" });
 
+  const resetUrlForWeb = (url: string): string => {
+    const parsed = new URL(url);
+    const token = parsed.pathname.split("/").pop() ?? "";
+    const callback = parsed.searchParams.get("callbackURL");
+
+    const next = new URL("/reset-password", env.PUBLIC_WEB_ORIGIN);
+    next.searchParams.set("token", token);
+    if (callback !== null) next.searchParams.set("callbackURL", callback);
+
+    return next.toString();
+  };
+
   const google = credentialsFor(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET);
   const github = credentialsFor(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
 
@@ -56,6 +68,7 @@ export function createBetterAuth(deps: ModuleDeps) {
     appName: "Wasanni",
     basePath: AUTH_ROUTE_PREFIX,
     baseURL: env.BETTER_AUTH_URL,
+    trustedOrigins: [...env.WEB_ORIGINS],
     secret: env.SESSION_SECRET,
 
     database: drizzleAdapter(db, {
@@ -76,7 +89,15 @@ export function createBetterAuth(deps: ModuleDeps) {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
-      sendResetPassword: async ({ user, url }) => sendPasswordResetLink(user.email, url),
+      sendResetPassword: async ({ user, url }) =>
+        sendPasswordResetLink(user.email, resetUrlForWeb(url)),
+      sendChangeEmailVerification: async ({ newEmail, url }: { newEmail: string; url: string }) =>
+        sendMail({
+          to: newEmail,
+          subject: "Confirm your new Wasanni email",
+          url,
+          purpose: "changeEmail",
+        }),
     },
 
 
@@ -130,7 +151,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         cancelPendingInvitationsOnReinvite: true,
         sendInvitationEmail: async ({ email, organization: invited, inviter, invitation }) => {
           const membership = await readMembership(db, invited.id, inviter.user.id);
-          const inviterName = membership?.displayName ?? inviter.user.name;
+          const inviterName = membership?.name ?? inviter.user.name;
           const url = `${env.PUBLIC_WEB_ORIGIN}/accept-invitation/${invitation.id}`;
 
           await sendMail({
@@ -143,7 +164,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         schema: {
           member: {
             additionalFields: {
-              displayName: {
+              name: {
                 type: "string",
                 required: false,
                 input: true,

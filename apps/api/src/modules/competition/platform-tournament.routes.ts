@@ -2,24 +2,26 @@ import {
   BracketSingle,
   PERMISSION,
   ParticipantSingle,
-  PlatformRegisterBody,
-  PlatformRegistrationParams,
+  PlatformJoinBody,
+  PlatformJoinParams,
   PlatformTournamentParams,
   PlatformTournamentQuery,
-  Standings,
+  TournamentLeaderboard,
   TournamentList,
+  TournamentSingle,
 } from "@wasanni/contracts";
+import { t } from "elysia";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import type { CompetitionRouteDeps } from "./types.ts";
+import type { CompetitionServices } from "./types.ts";
 
 export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
   api: T,
-  deps: CompetitionRouteDeps,
+  deps: CompetitionServices,
 ) =>
   api
     .get(
-      "/api/v1/platform/tournaments",
+      "/api/v1/tournaments",
       async ({ principal, query }) => ({
         tournaments: await deps.tournaments.listOpen(
           organizationScope(principal),
@@ -30,19 +32,40 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
         platformAuth: PERMISSION.tournamentRead,
         query: PlatformTournamentQuery,
         response: { 200: TournamentList },
-        detail: { tags: ["tournaments"], summary: "List open tournaments" },
+        detail: {
+          tags: ["tournaments"],
+          summary: "List open tournaments (platform api key)",
+        },
+      },
+    )
+    .get(
+      "/api/v1/tournaments/:tournamentId",
+      async ({ principal, params }) => ({
+        tournament: await deps.tournaments.get(
+          organizationScope(principal),
+          params.tournamentId,
+        ),
+      }),
+      {
+        platformAuth: PERMISSION.tournamentRead,
+        params: PlatformTournamentParams,
+        response: { 200: TournamentSingle },
+        detail: {
+          tags: ["tournaments"],
+          summary: "Get a tournament (platform api key)",
+        },
       },
     )
     .post(
-      "/api/v1/platform/tournaments/:tournamentId/register",
+      "/api/v1/tournaments/:tournamentId/players/:externalUserId/join",
       async ({ principal, params, body, status }) => {
-        const participant = await deps.tournaments.register(
+        const participant = await deps.participants.register(
           organizationScope(principal),
           {
             tournamentId: params.tournamentId,
             platformId: principal.platformId,
-            externalUserId: body.externalUserId,
-            ...(body.displayName === undefined
+            externalUserId: params.externalUserId,
+            ...(body?.displayName === undefined
               ? {}
               : { displayName: body.displayName }),
           },
@@ -51,19 +74,19 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
       },
       {
         platformAuth: PERMISSION.tournamentRegister,
-        params: PlatformTournamentParams,
-        body: PlatformRegisterBody,
+        params: PlatformJoinParams,
+        body: t.Optional(PlatformJoinBody),
         response: { 201: ParticipantSingle },
         detail: {
           tags: ["tournaments"],
-          summary: "Register one of the platform's players",
+          summary: "Join a player into a tournament (platform api key)",
         },
       },
     )
     .delete(
-      "/api/v1/platform/tournaments/:tournamentId/register/:externalUserId",
+      "/api/v1/tournaments/:tournamentId/players/:externalUserId/leave",
       async ({ principal, params, status }) => {
-        await deps.tournaments.withdraw(
+        await deps.participants.withdraw(
           organizationScope(principal),
           params.tournamentId,
           {
@@ -75,26 +98,32 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
       },
       {
         platformAuth: PERMISSION.tournamentRegister,
-        params: PlatformRegistrationParams,
-        detail: { tags: ["tournaments"], summary: "Withdraw a player" },
+        params: PlatformJoinParams,
+        detail: {
+          tags: ["tournaments"],
+          summary: "Remove a player from a tournament (platform api key)",
+        },
       },
     )
     .get(
-      "/api/v1/platform/tournaments/:tournamentId/standings",
+      "/api/v1/tournaments/:tournamentId/leaderboards",
       async ({ principal, params }) =>
-        deps.standings.read(
+        deps.standings.leaderboards(
           organizationScope(principal),
           params.tournamentId,
         ),
       {
         platformAuth: PERMISSION.tournamentRead,
         params: PlatformTournamentParams,
-        response: { 200: Standings },
-        detail: { tags: ["tournaments"], summary: "Tournament standings" },
+        response: { 200: TournamentLeaderboard },
+        detail: {
+          tags: ["tournaments"],
+          summary: "Read the ranked players of a tournament (platform api key)",
+        },
       },
     )
     .get(
-      "/api/v1/platform/tournaments/:tournamentId/bracket",
+      "/api/v1/tournaments/:tournamentId/bracket",
       async ({ principal, params }) => ({
         bracket: await deps.brackets.readBracket(
           organizationScope(principal),
@@ -105,6 +134,9 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
         platformAuth: PERMISSION.tournamentRead,
         params: PlatformTournamentParams,
         response: { 200: BracketSingle },
-        detail: { tags: ["tournaments"], summary: "Read the bracket" },
+        detail: {
+          tags: ["tournaments"],
+          summary: "Read the bracket of a tournament (platform api key)",
+        },
       },
     );

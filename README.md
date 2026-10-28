@@ -46,6 +46,13 @@ curl localhost:3001/healthz
 curl localhost:3001/readyz
 ```
 
+`apps/web` is the marketing site (`/landing`) and the dashboard
+(`/:orgSlug/...`): the overview, the games, the platforms with their keys
+and webhooks, the assignments matrix with its config editor, the templates,
+the members, and the account settings. It runs on 5173 and talks to the api through
+`VITE_API_URL` (the api's port, 9000 by default); the api trusts the web
+origin, so the session cookie crosses.
+
 `apps/realtime` listens on `REALTIME_PORT` (3001) and upgrades
 `/rt/:sessionId?token=…`. A session's create response carries that URL as
 `realtimeUrl`, token included.
@@ -75,6 +82,8 @@ generated SQL by hand and commit it.
 | `apps/api` | Elysia HTTP server, `/api/v1` routes, OpenAPI document, composition root |
 | `apps/worker` | Background jobs: webhook delivery, mail, session archiving, sweeps |
 | `apps/realtime` | WebSocket gateway: one room per game session, peer relay, score forwarding |
+| `apps/web` | The marketing site and the dashboard: a TanStack Start app |
+| `apps/mcp` | stdio MCP server: the platform api as tools for an external agent, called with one platform key |
 | `packages/contracts` | Entity vocabulary and wire schemas. Depends on `elysia` only. |
 | `packages/kit` | Config, errors, email, HTTP protocol shapes, logging, ids, security, tenancy, the organization scope, the object storage |
 | `packages/db` | Drizzle schema, migrations, the Postgres adapter |
@@ -171,7 +180,7 @@ marketing site is a separate origin and is not versioned by this API at all.
 | `/api/v1/auth/...` | Better Auth and `GET /me` |
 | `/api/v1/organizations` | the caller's organizations |
 | `/api/v1/organizations/:organizationId/...` | every tenant-scoped resource |
-| `/api/v1/platform/...` | the routes an api key calls |
+| `/api/v1/...` | the routes an api key calls, each id it acts on in the path |
 | `/api/v1/play/...` | the routes a session token calls |
 | `/play/:gameId/:fileId/*` | the game bundle itself, served by the api |
 | `/docs` | one OpenAPI document describing all of the above |
@@ -188,6 +197,157 @@ them — not just ours: the auth module contributes them through `openAPI()`'s
 `curl localhost:9000/docs/json` lists every sign-up,
 sign-in, email-verification and OAuth route with its operation id, request body
 and security scheme. The startup log prints both URLs.
+
+## Game bundles
+
+A hosted game is one zip in R2. Upload it with `kind: "bundle"`:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/games/$GAME/files/upload \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"filename":"neon-racer.zip","version":"1.4.0","contentType":"application/zip",
+       "sizeBytes":<bytes>,"kind":"bundle","entryPoint":"index.html",
+       "crossOriginIsolation":true}'
+```
+
+`PUT` the zip to the returned url, then `POST .../complete`. The file goes to
+`extracting` while the worker unzips it; poll `GET .../files` until `ready`.
+The zip must hold `index.html` at its root — zip the contents of the export
+folder, not the folder. Unity, Godot, Construct and PlayCanvas exports all
+qualify.
+
+The game is then served from `/play/:gameId/:fileId/`:
+
+- `crossOriginIsolation: true` sends `Cross-Origin-Opener-Policy: same-origin`
+  and `Cross-Origin-Embedder-Policy: require-corp`, which is what
+  `self.crossOriginIsolated` and `SharedArrayBuffer` need. Threaded Godot 4 and
+  multithreaded Unity WebGL require it.
+- `.wasm` is served as `application/wasm`; `.pck`, `.data`, `.mem` and
+  `.unityweb` as `application/octet-stream`.
+- `Range` requests are forwarded to R2, so `.wasm` and `.pck` load in pieces.
+- `spaFallback: true` serves `index.html` for an extensionless miss only.
+
+A `.zip` without `kind: "bundle"` is read as a bundle anyway; a bundle that is
+not a `.zip` filename, or a `.zip` declared `kind: "single"`, is refused.
+
+## Usage and quotas
+
+Every session, score, match and tournament is counted for the organization it
+belongs to, per platform, per month:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/usage -b cookies.txt
+curl -s localhost:3000/api/v1/platforms/$PLATFORM/usage -H "x-api-key: $KEY"
+```
+
+A quota is a monthly ceiling on one metric. Set one, and the api refuses the
+event with a 429 once the month reaches it:
+
+```bash
+curl -s -XPUT localhost:3000/api/v1/organizations/$ORG/quotas \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"metric":"sessions_created","limitValue":10000}'
+```
+
+Bandwidth is counted in Redis and flushed to the database every minute, so a
+quota on `bandwidth_bytes` stops the game files a minute after the limit is
+reached. Storage is not a counter: it is computed from the game files and
+templates that are ready, because a counter would drift.
+
+`USAGE_METERING_ENABLED=false` turns the counting off and lets every quota
+check pass.
+
+Two more reads sit on the same counters. The first counts one metric per day
+between two dates, with the empty days filled in, and the second breaks the
+storage down by game and template:
+
+```bash
+curl -s "localhost:3000/api/v1/organizations/$ORG/usage/daily?metric=sessions_created&from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z" -b cookies.txt
+curl -s localhost:3000/api/v1/organizations/$ORG/usage/storage -b cookies.txt
+```
+
+`GET /api/v1/organizations/$ORG/usage` also takes `?period=YYYY-MM` to read a
+month other than the current one.
+
+## Organization export
+
+An owner can take every row an organization owns as one JSON file:
+
+```bash
+curl -s -XPOST localhost:3000/api/v1/organizations/$ORG/export -b cookies.txt -o wasanni.json
+```
+
+The file holds the members, the invitations, the platforms, the games, the
+files, the assignments, the configs, the tournaments, the participants, the
+matches, the sessions and the scores, with a count for each. Sessions and
+scores stop at ten thousand rows each, and the `limits` say so. The files in
+the bucket are not part of it.
+
+## Server-side score verification
+
+A game can ask the api to check a score before it records it as verified. The
+config of a game assignment carries the block:
+
+```json
+{
+  "scoreVerification": {
+    "mode": "callback",
+    "callback": {
+      "url": "https://games.example.com/verify",
+      "secret": "callback-secret",
+      "timeoutMs": 3000
+    }
+  }
+}
+```
+
+`callback` posts the score to a url of the platform, signed with that secret the
+way a webhook delivery is — `x-wasanni-verify-signature: t=<seconds>,v1=<hex>`
+over `<timestamp>.<body>`, with the timestamp in
+`x-wasanni-verify-timestamp`:
+
+```json
+{ "event": "score.verify", "sessionId": "gsx_…", "score": 940 }
+```
+
+Answer `{ "valid": true }` and the score is stored with
+`verificationStatus` `passed` and the `callback_verified` flag. Answer
+`{ "valid": false, "reason": "score mismatch" }` and the score is stored too,
+with `verificationStatus` `failed` and the `verification_failed` flag — which
+makes it `flagged`, so it is kept off the leaderboard and the platform can hide
+it or re-check it. A verifier that does not answer inside `timeoutMs` leaves the
+score in place, flagged `verification_unavailable`: a game server outage is not a
+reason to drop scores. The default is `none`: every score is accepted, with
+`verificationStatus` `not_required`.
+
+A score a client submits carries no signature. The session token is the whole
+capability: it lets that one session record one score. Deciding whether the
+score is honest is the callback's job, and a score the platform submits through
+`POST /api/v1/sessions/:sessionId/score` is never checked at all.
+
+## Custom roles
+
+An organization can name its own roles. A role is a grant — the same shape an
+api key carries — and a member holding it gets exactly that grant:
+
+```bash
+curl -s localhost:3000/api/v1/organizations/$ORG/roles \
+  -H 'content-type: application/json' -b cookies.txt \
+  -d '{"role":"judge","permission":{"score":["read","hide"],"tournament":["read"]}}'
+```
+
+`owner` creates, changes and deletes roles; `POST` is a conflict when the name
+is taken, `PATCH /roles/:role` changes the grant, `DELETE /roles/:role` takes
+it away. A role named `owner` cannot be redefined, and the owner role always
+keeps its compiled permissions, so an organization cannot lock itself out.
+
+A member is given a role with
+`PUT /api/v1/organizations/$ORG/members/$MEMBER/role` and the body
+`{"role":"judge"}`. A role that the organization has not created is refused.
+
+A custom role replaces the compiled role of the same name inside that
+organization, and only there: the built-in `owner`, `admin` and `member` roles
+stay as they are until an organization overrides one.
 
 ## Secret rotation
 
@@ -220,13 +380,20 @@ secret in place. Deploy the new key afterwards, then remove the old one.
 
 | Script | Does |
 |---|---|
-| `bun run dev` | API + worker, both watching |
-| `bun run typecheck` | `tsc --noEmit` across the workspace |
+| `bun run dev` | api, worker, realtime and web, each watching, through `turbo run dev` |
+| `bun run typecheck` | `tsc --noEmit` over apps, packages and tests, then the web app's own `tsc` through `turbo run typecheck` |
 | `bun test` | Unit + integration tests |
 | `bun run db:generate` | Generate a migration from the Drizzle schema |
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:studio` | Drizzle Studio |
+| `bun run agent:traces [runId]` | The newest failing agent run's span tree, or the run you name |
+| `bun run agent:studio` | Mastra's HTTP API on `MASTRA_STUDIO_PORT` (4111) for https://studio.mastra.io |
+| `bun run mcp` | The stdio MCP server: the platform api as tools, as the organization of `WASANNI_API_KEY` |
 | `bun run ci` | `typecheck` then `test` |
+
+Turborepo runs the tasks of the package you name, so one app can be started or
+checked alone: `bunx turbo run dev --filter=@wasanni/worker`,
+`bunx turbo run typecheck --filter=@wasanni/web`.
 
 `tests/db/*` runs against a real Postgres and **skips** when `DATABASE_URL` is
 unset. A green `bun test` with no database is not a verified change.

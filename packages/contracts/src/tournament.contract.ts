@@ -1,21 +1,11 @@
 import { t, type UnwrapSchema } from "elysia";
 import { BracketView } from "./match.contract.ts";
 
-export const TOURNAMENT_FORMATS = ["leaderboard", "bracket"] as const;
-
 export const TournamentFormat = t.Union([
   t.Literal("leaderboard"),
   t.Literal("bracket"),
 ]);
 export type TournamentFormat = UnwrapSchema<typeof TournamentFormat>;
-
-export const TOURNAMENT_STATUSES = [
-  "draft",
-  "open",
-  "running",
-  "completed",
-  "cancelled",
-] as const;
 
 export const TournamentStatus = t.Union([
   t.Literal("draft"),
@@ -26,14 +16,6 @@ export const TournamentStatus = t.Union([
 ]);
 export type TournamentStatus = UnwrapSchema<typeof TournamentStatus>;
 
-export const PARTICIPANT_STATUSES = [
-  "registered",
-  "active",
-  "withdrawn",
-  "eliminated",
-  "winner",
-] as const;
-
 export const ParticipantStatus = t.Union([
   t.Literal("registered"),
   t.Literal("active"),
@@ -42,6 +24,21 @@ export const ParticipantStatus = t.Union([
   t.Literal("winner"),
 ]);
 export type ParticipantStatus = UnwrapSchema<typeof ParticipantStatus>;
+
+export const TournamentGame = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+  hosting: t.String(),
+});
+export type TournamentGame = UnwrapSchema<typeof TournamentGame>;
+
+export const TournamentPlatform = t.Object({
+  id: t.String(),
+  name: t.String(),
+  slug: t.String(),
+});
+export type TournamentPlatform = UnwrapSchema<typeof TournamentPlatform>;
 
 export const TournamentView = t.Object({
   id: t.String(),
@@ -62,6 +59,8 @@ export const TournamentView = t.Object({
   completedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
   createdAt: t.String({ format: "date-time" }),
   updatedAt: t.String({ format: "date-time" }),
+  game: t.Optional(t.Union([TournamentGame, t.Null()])),
+  platform: t.Optional(t.Union([TournamentPlatform, t.Null()])),
 });
 export type TournamentView = UnwrapSchema<typeof TournamentView>;
 
@@ -168,19 +167,16 @@ export const RegisterParticipantBody = t.Object({
 });
 export type RegisterParticipantBody = UnwrapSchema<typeof RegisterParticipantBody>;
 
-export const PlatformRegisterBody = t.Object({
+export const PlatformJoinParams = t.Object({
+  tournamentId: t.String(),
   externalUserId: t.String({ minLength: 1, maxLength: 200 }),
+});
+export type PlatformJoinParams = UnwrapSchema<typeof PlatformJoinParams>;
+
+export const PlatformJoinBody = t.Object({
   displayName: t.Optional(t.String({ maxLength: 200 })),
 });
-export type PlatformRegisterBody = UnwrapSchema<typeof PlatformRegisterBody>;
-
-export const PlatformRegistrationParams = t.Object({
-  tournamentId: t.String(),
-  externalUserId: t.String(),
-});
-export type PlatformRegistrationParams = UnwrapSchema<
-  typeof PlatformRegistrationParams
->;
+export type PlatformJoinBody = UnwrapSchema<typeof PlatformJoinBody>;
 
 export const PlatformTournamentParams = t.Object({ tournamentId: t.String() });
 export type PlatformTournamentParams = UnwrapSchema<
@@ -189,12 +185,20 @@ export type PlatformTournamentParams = UnwrapSchema<
 
 export const StandingsRow = t.Object({
   position: t.Number(),
+  participantId: t.String(),
   externalUserId: t.String(),
   displayName: t.Union([t.String(), t.Null()]),
-  score: t.Number(),
+  seed: t.Union([t.Number(), t.Null()]),
+  status: t.String(),
+  score: t.Union([t.Number(), t.Null()]),
   flagged: t.Boolean(),
+  flags: t.Array(t.String()),
+  submittedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
 });
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
+
+export const TournamentLeaderboard = t.Object({ rows: t.Array(StandingsRow) });
+export type TournamentLeaderboard = UnwrapSchema<typeof TournamentLeaderboard>;
 
 export const Standings = t.Union([
   t.Object({

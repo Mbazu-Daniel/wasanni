@@ -23,15 +23,24 @@ import { createMemberRoutes } from "./modules/member/index.ts";
 import { createMemberService } from "./modules/member/service.ts";
 import { createApiKeyRoutes } from "./modules/api-key/index.ts";
 import { createApiKeyService } from "./modules/api-key/service.ts";
-import { createGamesRoutes } from "./modules/games/index.ts";
+import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
+import { createAgentModule } from "./modules/agent/index.ts";
+import { createAgentRuntime } from "./modules/agent/mastra.ts";
+import { createOrganizationModule } from "./modules/organization/index.ts";
+import { createUsageService } from "./modules/usage/usage.service.ts";
+import { createRoleRoutes } from "./modules/role/index.ts";
+import { createRoleService } from "./modules/role/service.ts";
+import { createAgentGamePort, createGamesRoutes } from "./modules/games/index.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
-import { createPlayRoutes } from "./modules/play/index.ts";
+import { createPlayRoutes, createPlayServices } from "./modules/play/index.ts";
+import { createScoreVerifier } from "./modules/play/score-verifier.ts";
 import { createCompetition } from "./modules/competition/index.ts";
 import { createAuditRoutes } from "./modules/audit/index.ts";
 import { createAuditService } from "./modules/audit/service.ts";
 import { createAuditPlugin } from "./plugins/audit.ts";
 import { createWebhooksRoutes } from "./modules/webhook/index.ts";
 import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts";
+import { createDocsRoutes } from "./modules/docs/index.ts";
 import {
   AUTH_ROUTE_PREFIX,
   DOCS_PATH,
@@ -89,6 +98,15 @@ export async function createApp(deps: AppDeps) {
     deps.logger,
   );
 
+  const usage = createUsageService(deps.db, {
+    logger: deps.logger,
+    enabled: deps.env.USAGE_METERING_ENABLED,
+  });
+
+  const verifier = deps.env.SCORE_VERIFICATION_ENABLED
+    ? createScoreVerifier(deps.logger, deps.env.ALLOW_PRIVATE_OUTBOUND_URLS)
+    : null;
+
   const metrics = createMetrics();
   metrics.counter("wasanni_http_requests_total", "HTTP requests handled by the API");
 
@@ -96,7 +114,40 @@ export async function createApp(deps: AppDeps) {
   const events = deps.events ?? createMemorySessionEventStore();
   const enqueuer = deps.enqueuer ?? null;
   const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
-  const competition = createCompetition(deps.db);
+  const competition = createCompetition(deps.db, usage);
+  const platforms = createPlatformService(deps.db);
+  const play = createPlayServices({
+    db: deps.db,
+    storage,
+    events,
+    dispatcher,
+    enqueuer,
+    realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
+    matchRecorder: competition.matches,
+    verifier,
+    usage,
+    encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+  });
+
+  const platformProvider =
+    deps.env.AGENT_API_KEY !== undefined &&
+    deps.env.AGENT_BASE_URL !== undefined &&
+    deps.env.AGENT_MODEL !== undefined
+      ? {
+          apiKey: deps.env.AGENT_API_KEY,
+          baseUrl: deps.env.AGENT_BASE_URL,
+          model: deps.env.AGENT_MODEL,
+        }
+      : null;
+
+  const socialProviders = [
+    ...(deps.env.GOOGLE_CLIENT_ID !== undefined && deps.env.GOOGLE_CLIENT_SECRET !== undefined
+      ? ["google"]
+      : []),
+    ...(deps.env.GITHUB_CLIENT_ID !== undefined && deps.env.GITHUB_CLIENT_SECRET !== undefined
+      ? ["github"]
+      : []),
+  ];
 
   return new Elysia({ name: "wasanni-api" })
     .use(createRequestContextPlugin(deps.logger))
@@ -157,15 +208,52 @@ export async function createApp(deps: AppDeps) {
       return toErrorBody(failure.source, requestId);
     })
     .use(createAuditPlugin(audit))
-    .use(createAuthRoutes(base, betterAuth))
+    .use(createAuthRoutes(base, betterAuth, socialProviders))
     .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
-    .use(createPlatformRoutes(base, { service: createPlatformService(deps.db) }))
+    .use(createPlatformRoutes(base, { service: platforms }))
     .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
+    .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
+    .use(createUsageRoutes(base, { service: usage }))
+    .use(
+      createAgentModule(base, {
+        db: deps.db,
+        logger: deps.logger,
+        usage,
+        audit,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        allowPrivateOutbound: deps.env.ALLOW_PRIVATE_OUTBOUND_URLS,
+        runtime: createAgentRuntime(
+          deps.env.DATABASE_URL,
+          deps.env.AGENT_OTEL_ENDPOINT,
+        ),
+        platformProvider,
+        games: createAgentGamePort({
+          db: deps.db,
+          storage,
+          config: readStorageLimits(deps.env),
+        }),
+        integrator: {
+          brackets: competition.brackets,
+          leaderboards: play.leaderboards,
+          matches: competition.matches,
+          participants: competition.participants,
+          platforms,
+          scores: play.scores,
+          standings: competition.standings,
+          tournaments: competition.tournaments,
+        },
+      }),
+    )
+    .use(createOrganizationModule(base, deps.db))
     .use(
       createGamesRoutes(base, {
         db: deps.db,
         storage,
         config: readStorageLimits(deps.env),
+        enqueuer,
+        usage,
+        redis: deps.redis ?? null,
+        encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
         onConfigChanged: async (input) => {
           await enqueuer?.scoreRecheck(input);
         },
@@ -182,22 +270,13 @@ export async function createApp(deps: AppDeps) {
       createWebhooksRoutes(base, {
         db: deps.db,
         encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        dispatcher,
       }),
     )
     .use(competition.mount(base))
-    .use(
-      createPlayRoutes(base, {
-        db: deps.db,
-        storage,
-        events,
-        dispatcher,
-        enqueuer,
-        realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
-        matchRecorder: competition.matches,
-        rateLimit,
-      }),
-    )
+    .use(createPlayRoutes(base, { services: play, rateLimit }))
     .use(createHealthRoutes(deps))
+    .use(createDocsRoutes())
     .get(
       METRICS_PATH,
       ({ set }) => {

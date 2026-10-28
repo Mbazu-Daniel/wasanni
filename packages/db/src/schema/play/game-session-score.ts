@@ -16,6 +16,7 @@ import { platform } from "../platform/platform.ts";
 import { game } from "../game/game.ts";
 import { gameSession } from "./game-session.ts";
 import type { ScoreFlag, ScoreSource, ScoreStatus } from "@wasanni/contracts";
+import { SCORE_VERIFICATION_STATUSES } from "@wasanni/contracts";
 
 export const gameSessionScore = pgTable(
   "game_session_score",
@@ -40,6 +41,11 @@ export const gameSessionScore = pgTable(
     flagged: boolean("flagged").notNull().default(false),
     flags: jsonb("flags").$type<ScoreFlag[]>().notNull().default([]),
     source: text("source").notNull().$type<ScoreSource>(),
+    verificationStatus: text("verification_status", {
+      enum: SCORE_VERIFICATION_STATUSES,
+    })
+      .notNull()
+      .default("not_required"),
     archiveKey: text("archive_key"),
     archiveOffset: bigint("archive_offset", { mode: "number" }),
     archiveLength: bigint("archive_length", { mode: "number" }),

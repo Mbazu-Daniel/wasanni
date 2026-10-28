@@ -3,7 +3,10 @@ import type { Db } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import type { LeaderboardEntry, LeaderboardQuery } from "@wasanni/contracts";
+import type {
+  GameLeaderboardQuery,
+  LeaderboardEntry,
+} from "@wasanni/contracts";
 
 const DEFAULT_LIMIT = 50;
 
@@ -12,7 +15,8 @@ export function createLeaderboardService(db: Db) {
     async list(
       scope: Scope,
       platformId: string,
-      query: LeaderboardQuery,
+      gameId: string,
+      query: GameLeaderboardQuery,
     ): Promise<LeaderboardEntry[]> {
       const limit = query.limit ?? DEFAULT_LIMIT;
       const offset = query.offset ?? 0;
@@ -34,7 +38,7 @@ export function createLeaderboardService(db: Db) {
           scopeTo(
             scope,
             gameSessionScore,
-            eq(gameSessionScore.gameId, query.gameId),
+            eq(gameSessionScore.gameId, gameId),
             eq(gameSessionScore.platformId, platformId),
             eq(gameSessionScore.status, "accepted"),
             query.mode === undefined ? undefined : eq(gameSessionScore.mode, query.mode),

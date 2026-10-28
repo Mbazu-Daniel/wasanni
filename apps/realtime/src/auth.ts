@@ -38,5 +38,6 @@ export async function resolveRealtimeSession(
     platformId: session.platformId,
     gameId: session.gameId,
     externalUserId: session.externalUserId,
+    expiresAt: session.expiresAt.getTime(),
   };
 }

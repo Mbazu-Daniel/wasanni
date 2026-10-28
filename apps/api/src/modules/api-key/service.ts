@@ -8,6 +8,7 @@ import {
   listUnknownPermissions,
   type ApiKeyView,
   type CreatedApiKey,
+  type OrgApiKeyView,
   type PermissionGrant,
 } from "@wasanni/contracts";
 
@@ -33,6 +34,25 @@ export function createApiKeyService(db: Db) {
         .orderBy(desc(apiKey.createdAt));
 
       return rows.map(toView);
+    },
+
+    async listForOrganization(scope: Scope): Promise<OrgApiKeyView[]> {
+      const rows = await db
+        .select({
+          key: apiKey,
+          platformName: platform.name,
+          platformSlug: platform.slug,
+        })
+        .from(apiKey)
+        .innerJoin(platform, eq(apiKey.platformId, platform.id))
+        .where(scopeTo(scope, apiKey))
+        .orderBy(desc(apiKey.createdAt));
+
+      return rows.map((row) => ({
+        ...toView(row.key),
+        platformName: row.platformName,
+        platformSlug: row.platformSlug,
+      }));
     },
 
     async create(

@@ -12,6 +12,7 @@ import type {
 } from "@wasanni/db/schema";
 import type { Scope } from "@wasanni/kit";
 import type { createBracketService } from "./bracket.service.ts";
+import type { createParticipantsService } from "./participants.service.ts";
 import type { createMatchService } from "./match.service.ts";
 import type { createStandingsService } from "./standings.service.ts";
 import type { createTournamentService } from "./tournament.service.ts";
@@ -70,7 +71,13 @@ export type CompleteMatchInput = {
   winnerExternal?: { platformId: string; externalUserId: string };
 };
 
-export type WithdrawTarget =
+export type MatchListFilter = {
+  gameId?: string;
+  tournamentId?: string;
+  status?: MatchRow["status"];
+  cursor?: string;
+  limit?: number;
+};export type WithdrawTarget =
   | { participantId: string }
   | { platformId: string; externalUserId: string };
 
@@ -97,8 +104,11 @@ export type BracketService = ReturnType<typeof createBracketService>;
 
 export type StandingsService = ReturnType<typeof createStandingsService>;
 
-export type CompetitionRouteDeps = {
+export type ParticipantsService = ReturnType<typeof createParticipantsService>;
+
+export type CompetitionServices = {
   tournaments: TournamentService;
+  participants: ParticipantsService;
   matches: MatchService;
   brackets: BracketService;
   standings: StandingsService;

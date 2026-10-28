@@ -7,3 +7,4 @@ export { NotFoundError } from "./not-found.ts";
 export { ConflictError } from "./conflict.ts";
 export { InternalServerError } from "./internal-server-error.ts";
 export { RateLimitedError } from "./rate-limited.ts";
+export { UnprocessableError } from "./unprocessable.ts";

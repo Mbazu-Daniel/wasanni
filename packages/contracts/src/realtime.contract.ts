@@ -10,7 +10,6 @@ export const REALTIME_CLOSE = {
 export const REALTIME_ERROR_CODES = [
   "bad_message",
   "score_failed",
-  "score_rejected",
 ] as const;
 
 export type RealtimeErrorCode = (typeof REALTIME_ERROR_CODES)[number];

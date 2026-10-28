@@ -1,14 +1,18 @@
-import { desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { AuditLogPage, AuditLogView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
-import { auditLog } from "@wasanni/db/schema";
+import { auditLog, member, user } from "@wasanni/db/schema";
 import type { Logger, Scope } from "@wasanni/kit";
+import { afterCursor, decodeCursor, paginate } from "../../pagination.ts";
 import { AUDIT_PAGE_DEFAULT, AUDIT_PAGE_MAX } from "./constants.ts";
 import type { AuditEvent, AuditQuery } from "./types.ts";
 
-type AuditRow = typeof auditLog.$inferSelect;
+type AuditRow = typeof auditLog.$inferSelect & {
+  actorName: string | null;
+  actorAvatar: string | null;
+};
 
 const toView = (row: AuditRow): AuditLogView => ({
   id: row.id,
@@ -16,6 +20,8 @@ const toView = (row: AuditRow): AuditLogView => ({
   actorType: row.actorType,
   actorUserId: row.actorUserId,
   actorApiKeyId: row.actorApiKeyId,
+  actorName: row.actorName,
+  actorAvatar: row.actorAvatar,
   source: row.source,
   action: row.action,
   resourceType: row.resourceType,
@@ -25,20 +31,6 @@ const toView = (row: AuditRow): AuditLogView => ({
   userAgent: row.userAgent,
   createdAt: row.createdAt.toISOString(),
 });
-
-const encodeCursor = (row: AuditRow): string =>
-  Buffer.from(`${row.createdAt.toISOString()}|${row.id}`, "utf8").toString("base64url");
-
-const decodeCursor = (cursor: string): { createdAt: Date; id: string } | null => {
-  const [createdAt, id] = Buffer.from(cursor, "base64url").toString("utf8").split("|");
-
-  if (createdAt === undefined || id === undefined) return null;
-
-  const parsed = new Date(createdAt);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  return { createdAt: parsed, id };
-};
 
 export function createAuditService(db: Db, logger: Logger) {
   return {
@@ -86,34 +78,46 @@ export function createAuditService(db: Db, logger: Logger) {
       ];
 
       if (cursor !== null) {
-        const cursorAt = cursor.createdAt.toISOString();
-
-        filters.push(
-          sql`(date_trunc('milliseconds', ${auditLog.createdAt}), ${auditLog.id}) < (date_trunc('milliseconds', ${cursorAt}::timestamptz), ${cursor.id}::uuid)`,
-        );
+        filters.push(afterCursor(auditLog.createdAt, auditLog.id, cursor));
       }
 
       const rows = await db
-        .select()
+        .select({
+          id: auditLog.id,
+          organizationId: auditLog.organizationId,
+          actorType: auditLog.actorType,
+          actorUserId: auditLog.actorUserId,
+          actorApiKeyId: auditLog.actorApiKeyId,
+          source: auditLog.source,
+          action: auditLog.action,
+          resourceType: auditLog.resourceType,
+          resourceId: auditLog.resourceId,
+          metadata: auditLog.metadata,
+          ipAddress: auditLog.ipAddress,
+          userAgent: auditLog.userAgent,
+          createdAt: auditLog.createdAt,
+          actorName: sql<string | null>`coalesce(${member.name}, ${user.name})`.as("actor_name"),
+          actorAvatar: sql<string | null>`coalesce(${member.avatar}, ${user.image})`.as("actor_avatar"),
+        })
         .from(auditLog)
+        .leftJoin(
+          member,
+          and(
+            eq(member.userId, auditLog.actorUserId),
+            eq(member.organizationId, auditLog.organizationId),
+          ),
+        )
+        .leftJoin(user, eq(user.id, auditLog.actorUserId))
         .where(scopeTo(scope, auditLog, ...filters))
         .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
         .limit(limit + 1);
 
-      const hasMore = rows.length > limit;
-      const page = hasMore ? rows.slice(0, limit) : rows;
-      const last = page.at(-1);
+      const { items, page } = paginate(rows, limit);
 
       return {
-        data: page.map(toView),
-        page: {
-          limit,
-          hasMore,
-          cursor: hasMore && last !== undefined ? encodeCursor(last) : null,
-        },
+        data: items.map(toView),
+        page,
       };
     },
   };
 }
-
-export type AuditService = ReturnType<typeof createAuditService>;

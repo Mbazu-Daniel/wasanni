@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --env-file=../../.env --watch src/index.ts",
     "start": "bun src/index.ts"
   },
   "dependencies": {
     "@wasanni/db": "workspace:*",
     "@wasanni/jobs": "workspace:*",
     "@wasanni/kit": "workspace:*",
-    "bullmq": "6.4.0"
+    "bullmq": "6.4.0",
+    "fflate": "0.8.3"
   }
 }

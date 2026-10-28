@@ -1,5 +1,6 @@
 import {
   BracketSingle,
+  Standings,
   CreateTournamentBody,
   OrganizationIdParams,
   PERMISSION,
@@ -15,11 +16,11 @@ import {
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import type { CompetitionRouteDeps } from "./types.ts";
+import type { CompetitionServices } from "./types.ts";
 
 export const createTournamentRoutes = <T extends PrincipalApi>(
   api: T,
-  deps: CompetitionRouteDeps,
+  deps: CompetitionServices,
 ) =>
   api
     .get(
@@ -134,7 +135,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .get(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants",
       async ({ principal, params }) => ({
-        participants: await deps.tournaments.listParticipants(
+        participants: await deps.participants.listParticipants(
           organizationScope(principal),
           params.tournamentId,
         ),
@@ -149,7 +150,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants",
       async ({ principal, params, body, status }) => {
-        const participant = await deps.tournaments.register(
+        const participant = await deps.participants.register(
           organizationScope(principal),
           {
             tournamentId: params.tournamentId,
@@ -173,7 +174,7 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
     .delete(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants/:participantId",
       async ({ principal, params, status }) => {
-        await deps.tournaments.withdraw(
+        await deps.participants.withdraw(
           organizationScope(principal),
           params.tournamentId,
           { participantId: params.participantId },
@@ -184,6 +185,32 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
         organizationAuth: PERMISSION.tournamentRegister,
         params: ParticipantParams,
         detail: { tags: ["tournaments"], summary: "Withdraw a participant" },
+      },
+    )
+    .post(
+      "/api/v1/organizations/:organizationId/tournaments/:tournamentId/complete",
+      async ({ principal, params }) => ({
+        tournament: await deps.tournaments.complete(
+          organizationScope(principal),
+          params.tournamentId,
+        ),
+      }),
+      {
+        organizationAuth: PERMISSION.tournamentUpdate,
+        params: TournamentIdParams,
+        response: { 200: TournamentSingle },
+        detail: { tags: ["tournaments"], summary: "Mark a leaderboard tournament complete" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/tournaments/:tournamentId/standings",
+      async ({ principal, params }) =>
+        deps.standings.read(organizationScope(principal), params.tournamentId),
+      {
+        organizationAuth: PERMISSION.tournamentRead,
+        params: TournamentIdParams,
+        response: { 200: Standings },
+        detail: { tags: ["tournaments"], summary: "Standings for a tournament" },
       },
     )
     .get(

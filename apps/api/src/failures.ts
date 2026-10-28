@@ -2,7 +2,7 @@ import { STATUS } from "@wasanni/contracts";
 import type { ErrorCode } from "@wasanni/contracts";
 import { HttpError } from "@wasanni/kit";
 
-import type { DelegatedError, Failure } from "./types.ts";
+import type { DatabaseError, DelegatedError, Failure } from "./types.ts";
 
 const DELEGATED: Readonly<Record<string, ErrorCode>> = {
   EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION: "conflict",
@@ -26,9 +26,42 @@ const DELEGATED: Readonly<Record<string, ErrorCode>> = {
   YOU_CANNOT_LEAVE_THE_ORGANIZATION_WITHOUT_AN_OWNER: "conflict",
 };
 
+const INVALID_UUID_TEXT = "22P02";
+const UUID_VALUE = /invalid input syntax for type uuid: "([^"]*)"/;
+
+const rejectedUuid = (error: DatabaseError | null): string | null => {
+  if (error?.code !== INVALID_UUID_TEXT) return null;
+
+  const value = UUID_VALUE.exec(error.message ?? "")?.[1];
+
+  return value === undefined ? null : value.slice(0, 64);
+};
+
+const malformedId = (error: unknown): string | null => {
+  const database = error as DatabaseError | null;
+
+  return rejectedUuid(database) ?? rejectedUuid(database?.cause as DatabaseError | null);
+};
+
 export function failureOf(error: unknown): Failure {
   if (error instanceof HttpError) {
-    return { status: error.status, source: { code: error.code, message: error.message } };
+    return {
+      status: error.status,
+      source: {
+        code: error.code,
+        message: error.message,
+        ...(error.details === undefined ? {} : { details: error.details }),
+      },
+    };
+  }
+
+  const id = malformedId(error);
+
+  if (id !== null) {
+    return {
+      status: STATUS.bad_request,
+      source: { code: "bad_request", message: `"${id}" is not a valid id` },
+    };
   }
 
   const delegated = error as DelegatedError | null;

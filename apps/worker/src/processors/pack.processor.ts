@@ -3,6 +3,7 @@ import type { Db } from "@wasanni/db";
 import { gameSession, gameSessionScore } from "@wasanni/db/schema";
 import {
   buildObjectKey,
+  type Env,
   type ObjectStorage,
   type SessionEventStore,
 } from "@wasanni/kit";
@@ -18,8 +19,11 @@ export function createPackProcessor(
   db: Db,
   storage: ObjectStorage,
   events: SessionEventStore,
+  env: Env,
 ) {
   return async function pack(job: ScorePackJob): Promise<unknown> {
+    if (!env.SCORE_ARCHIVE_ENABLED) return { packed: 0 };
+
     const limit = Math.min(Math.max(job.limit ?? 200, 1), MAX_ROWS);
     const cutoff = new Date(Date.now() - GRACE_MS);
 

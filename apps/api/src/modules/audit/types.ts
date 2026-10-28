@@ -1,5 +1,11 @@
-import type { AuditSource } from "@wasanni/contracts";
-import type { AuditService } from "./service.ts";
+import type {
+  AuditAction,
+  AuditResourceType,
+  AuditSource,
+} from "@wasanni/contracts";
+import type { createAuditService } from "./service.ts";
+
+export type AuditService = ReturnType<typeof createAuditService>;
 
 export type AuditActor =
   | { type: "user"; userId: string }
@@ -10,8 +16,8 @@ export type AuditEvent = {
   organizationId: string | null;
   actor: AuditActor;
   source: AuditSource;
-  action: string;
-  resourceType: string;
+  action: AuditAction;
+  resourceType: AuditResourceType;
   resourceId?: string | null;
   metadata?: Record<string, unknown>;
   ipAddress?: string | null;

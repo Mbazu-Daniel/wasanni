@@ -13,6 +13,8 @@ import {
   DEFAULT_REALTIME_PORT,
   DEFAULT_REALTIME_PUBLIC_URL,
   DEFAULT_SCORE_ARCHIVE_CRON,
+  DEFAULT_SCORE_ARCHIVE_DRY_RUN,
+  DEFAULT_SCORE_VERIFICATION_ENABLED,
   DEFAULT_SCORE_ARCHIVE_ENABLED,
   DEFAULT_SCORE_ARCHIVE_MAX_PARTITIONS_PER_RUN,
   DEFAULT_SCORE_ARCHIVE_RETENTION_HOURS,
@@ -21,6 +23,7 @@ import {
   DEFAULT_SCORE_RATE_LIMIT_PER_MINUTE,
   DEFAULT_SESSION_RATE_LIMIT_PER_MINUTE,
   DEFAULT_STORAGE_DOWNLOAD_URL_TTL_SECONDS,
+  DEFAULT_USAGE_METERING_ENABLED,
   DEFAULT_STORAGE_MAX_GAME_BUNDLE_BYTES,
   DEFAULT_STORAGE_UPLOAD_URL_TTL_SECONDS,
   DEFAULT_WEB_ORIGIN,
@@ -169,6 +172,11 @@ export function parseEnv(raw: RawEnv): Env {
   const problems = new Problems();
 
   const port = readPort(raw, problems, "PORT");
+  const publicWebOrigin = readString(raw, problems, "PUBLIC_WEB_ORIGIN", DEFAULT_WEB_ORIGIN);
+  const webOrigins = publicWebOrigin
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
 
   const parsed: Env = {
     NODE_ENV: readEnum(raw, problems, "NODE_ENV", NODE_ENVS, DEFAULT_NODE_ENV),
@@ -177,7 +185,8 @@ export function parseEnv(raw: RawEnv): Env {
     DATABASE_URL: readString(raw, problems, "DATABASE_URL"),
     REDIS_URL: readString(raw, problems, "REDIS_URL"),
     SESSION_SECRET: readSecret(raw, problems, "SESSION_SECRET"),
-    PUBLIC_WEB_ORIGIN: readString(raw, problems, "PUBLIC_WEB_ORIGIN", DEFAULT_WEB_ORIGIN),
+    PUBLIC_WEB_ORIGIN: webOrigins[0] ?? DEFAULT_WEB_ORIGIN,
+    WEB_ORIGINS: webOrigins,
     BETTER_AUTH_URL: readString(raw, problems, "BETTER_AUTH_URL", `http://localhost:${port}`),
     GOOGLE_CLIENT_ID: readOptional(raw, "GOOGLE_CLIENT_ID"),
     GOOGLE_CLIENT_SECRET: readOptional(raw, "GOOGLE_CLIENT_SECRET"),
@@ -189,6 +198,8 @@ export function parseEnv(raw: RawEnv): Env {
     R2_BUCKET_NAME: readOptional(raw, "R2_BUCKET_NAME"),
     R2_PUBLIC_ID: readOptional(raw, "R2_PUBLIC_ID"),
     R2_CUSTOM_DOMAIN: readOptional(raw, "R2_CUSTOM_DOMAIN"),
+    STORAGE_ENDPOINT: readOptional(raw, "STORAGE_ENDPOINT"),
+    STORAGE_FORCE_PATH_STYLE: readBoolean(raw, problems, "STORAGE_FORCE_PATH_STYLE", false),
     STORAGE_UPLOAD_URL_TTL_SECONDS: readNumber(
       raw,
       problems,
@@ -223,6 +234,16 @@ export function parseEnv(raw: RawEnv): Env {
     ),
     EMAIL_FROM_NAME: readString(raw, problems, "EMAIL_FROM_NAME", DEFAULT_EMAIL_FROM_NAME),
     ZEPTOMAIL_API_KEY: readOptional(raw, "ZEPTOMAIL_API_KEY"),
+    AGENT_API_KEY: readOptional(raw, "AGENT_API_KEY"),
+    AGENT_BASE_URL: readOptional(raw, "AGENT_BASE_URL"),
+    AGENT_MODEL: readOptional(raw, "AGENT_MODEL"),
+    AGENT_OTEL_ENDPOINT: readOptional(raw, "AGENT_OTEL_ENDPOINT"),
+    ALLOW_PRIVATE_OUTBOUND_URLS: readBoolean(
+      raw,
+      problems,
+      "ALLOW_PRIVATE_OUTBOUND_URLS",
+      false,
+    ),
     REALTIME_PORT: readPort(raw, problems, "REALTIME_PORT", DEFAULT_REALTIME_PORT),
     REALTIME_PUBLIC_URL: readString(
       raw,
@@ -315,7 +336,7 @@ export function parseEnv(raw: RawEnv): Env {
       raw,
       problems,
       "SCORE_ARCHIVE_DRY_RUN",
-      true,
+      DEFAULT_SCORE_ARCHIVE_DRY_RUN,
     ),
     SCORE_RATE_LIMIT_PER_MINUTE: readNumber(
       raw,
@@ -345,7 +366,23 @@ export function parseEnv(raw: RawEnv): Env {
       DEFAULT_GAME_BUNDLE_MAX_FILES,
       GAME_BUNDLE_MAX_FILES_RANGE,
     ),
+    USAGE_METERING_ENABLED: readBoolean(
+      raw,
+      problems,
+      "USAGE_METERING_ENABLED",
+      DEFAULT_USAGE_METERING_ENABLED,
+    ),
+    SCORE_VERIFICATION_ENABLED: readBoolean(
+      raw,
+      problems,
+      "SCORE_VERIFICATION_ENABLED",
+      DEFAULT_SCORE_VERIFICATION_ENABLED,
+    ),
   };
+
+  if (parsed.NODE_ENV === "production" && parsed.ALLOW_PRIVATE_OUTBOUND_URLS) {
+    problems.add("ALLOW_PRIVATE_OUTBOUND_URLS", "cannot be enabled when NODE_ENV is production");
+  }
 
   if (problems.invalid) throw problems.report();
 

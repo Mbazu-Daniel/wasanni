@@ -17,6 +17,7 @@ import { gamePlatformAssignment } from "../game/game-platform-assignment.ts";
 import { tournament } from "../competition/tournament.ts";
 import { match } from "../competition/match.ts";
 import type { GameSessionStatus } from "@wasanni/contracts";
+import { SCORE_VERIFICATION_MODES } from "@wasanni/contracts";
 
 export const gameSession = pgTable(
   "game_session",
@@ -46,6 +47,12 @@ export const gameSession = pgTable(
     matchId: uuid("match_id").references(() => match.id, {
       onDelete: "set null",
     }),
+    scoreVerificationMode: text("score_verification_mode", {
+      enum: SCORE_VERIFICATION_MODES,
+    })
+      .notNull()
+      .default("none"),
+    scoreVerificationCallbackSecretCiphertext: text("score_verification_callback_secret_ciphertext"),
     externalUserId: text("external_user_id").notNull(),
     externalUserName: text("external_user_name"),
     mode: text("mode"),

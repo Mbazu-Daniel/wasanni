@@ -32,10 +32,8 @@ export function parseClientMessage(raw: unknown): RealtimeClientMessage | null {
       if (score < 0 || score > Number.MAX_SAFE_INTEGER) return null;
 
       const endSession = parsed.endSession;
-
       if (endSession === undefined) return { type: "score", score };
       if (typeof endSession !== "boolean") return null;
-
       return { type: "score", score, endSession };
     }
 

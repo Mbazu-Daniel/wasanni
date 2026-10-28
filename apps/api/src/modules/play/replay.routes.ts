@@ -8,7 +8,7 @@ export const createReplayRoutes = <T extends PrincipalApi>(
   { service }: ReplayRouteDeps,
 ) =>
   api.get(
-    "/api/v1/platform/sessions/:sessionId/events",
+    "/api/v1/sessions/:sessionId/events",
     async ({ principal, params }) =>
       service.getSessionEvents(
         organizationScope(principal),
@@ -19,6 +19,9 @@ export const createReplayRoutes = <T extends PrincipalApi>(
       platformAuth: PERMISSION.scoreRead,
       params: GameSessionIdParams,
       response: { 200: ReplayView },
-      detail: { tags: ["replays"], summary: "Read the events of a game session" },
+      detail: {
+      tags: ["replays"],
+      summary: "Read the events of a game session (platform api key)",
+    },
     },
   );

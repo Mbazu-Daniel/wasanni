@@ -132,6 +132,11 @@ export function createBracketService(db: Db) {
       throw new ConflictError("the tournament must be open before seeding");
     }
 
+    const existingMatches = await readBracketRows(db, tournamentId);
+    if (existingMatches.length > 0) {
+      throw new ConflictError("the tournament bracket has already been seeded");
+    }
+
     const registered = await db
       .select()
       .from(tournamentParticipant)

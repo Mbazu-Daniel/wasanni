@@ -32,6 +32,15 @@ export function createGateway(deps: GatewayDeps): Gateway {
     },
 
     async message(socket, raw, session) {
+      if (session.expiresAt <= Date.now()) {
+        sendError(socket, "score_failed", "the game session has expired");
+        deps.bridge.endSession(session.sessionId, {
+          type: "session.ended",
+          at: Date.now(),
+        });
+        return;
+      }
+
       const message = parseClientMessage(raw);
 
       if (message === null) {
@@ -66,7 +75,7 @@ export function createGateway(deps: GatewayDeps): Gateway {
           });
 
           if (!result.ok) {
-            sendError(socket, result.rejected ? "score_rejected" : "score_failed", result.message);
+            sendError(socket, "score_failed", result.message);
             return;
           }
 

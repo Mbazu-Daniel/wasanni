@@ -1,11 +1,11 @@
-import { ACTIONS, RESOURCES, ROLE_NAMES } from "./constants.ts";
-import type { PermissionGrant, RoleName } from "./types.ts";
+import { ACTIONS, RESOURCES } from "./constants.ts";
+import type { PermissionGrant } from "./types.ts";
 
-export function rolesIn(role: string): RoleName[] {
+export function rolesIn(role: string): string[] {
   return role
     .split(",")
     .map((name) => name.trim())
-    .filter((name): name is RoleName => (ROLE_NAMES as readonly string[]).includes(name));
+    .filter((name) => name.length > 0);
 }
 
 export function flattenPermissions(grant: PermissionGrant): ReadonlySet<string> {

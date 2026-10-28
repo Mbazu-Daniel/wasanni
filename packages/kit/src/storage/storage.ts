@@ -7,6 +7,7 @@ import type {
   DownloadUrlInput,
   GetObjectRangeInput,
   ObjectStorage,
+  ObjectStream,
   PutObjectInput,
   StorageConfig,
   StoredObject,
@@ -26,7 +27,7 @@ export function readStorageConfig(env: Env): StorageConfig | undefined {
   const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME } = env;
 
   if (
-    R2_ACCOUNT_ID === undefined ||
+    (R2_ACCOUNT_ID === undefined && env.STORAGE_ENDPOINT === undefined) ||
     R2_ACCESS_KEY_ID === undefined ||
     R2_SECRET_ACCESS_KEY === undefined ||
     R2_BUCKET_NAME === undefined
@@ -35,16 +36,19 @@ export function readStorageConfig(env: Env): StorageConfig | undefined {
   }
 
   return {
-    accountId: R2_ACCOUNT_ID,
+    accountId: R2_ACCOUNT_ID ?? "local",
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
     bucket: R2_BUCKET_NAME,
     publicBaseUrl: resolvePublicBaseUrl(env.R2_PUBLIC_ID, env.R2_CUSTOM_DOMAIN),
+    endpoint: env.STORAGE_ENDPOINT,
+    forcePathStyle: env.STORAGE_FORCE_PATH_STYLE,
   };
 }
 
 function resolveObjectEndpoint(config: StorageConfig): string {
-  return `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}`;
+  const endpoint = config.endpoint ?? `https://${config.accountId}.r2.cloudflarestorage.com`;
+  return `${endpoint.replace(/\/$/, "")}/${config.bucket}`;
 }
 
 function resolveSigningTimestamp(): string {
@@ -60,6 +64,7 @@ function createUnconfiguredObjectStorage(): ObjectStorage {
     createDownloadUrl: reject,
     putObject: reject,
     getObjectRange: reject,
+    getObjectStream: reject,
     publicUrl: () => {
       throw new BadRequestError("object storage is not configured");
     },
@@ -86,6 +91,10 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
 
     const headers: Record<string, string> = { "content-type": input.contentType };
     if (input.sizeBytes !== undefined) headers["content-length"] = String(input.sizeBytes);
+    if (input.contentEncoding !== undefined) {
+      headers["content-encoding"] = input.contentEncoding;
+    }
+    if (input.cacheControl !== undefined) headers["cache-control"] = input.cacheControl;
 
     const signed = await client.sign(url.toString(), {
       method: "PUT",
@@ -97,7 +106,13 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
       key: input.key,
       url: signed.url,
       method: "PUT",
-      headers: { "Content-Type": input.contentType },
+      headers: {
+        "Content-Type": input.contentType,
+        ...(input.contentEncoding === undefined
+          ? {}
+          : { "Content-Encoding": input.contentEncoding }),
+        ...(input.cacheControl === undefined ? {} : { "Cache-Control": input.cacheControl }),
+      },
       sizeBytes: input.sizeBytes ?? 0,
       expiresAt: new Date(Date.now() + input.expiresInSeconds * 1000).toISOString(),
     };
@@ -126,6 +141,10 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
         contentType: input.contentType,
         sizeBytes: input.body.byteLength,
         expiresInSeconds: STORAGE_INTERNAL_UPLOAD_TTL_SECONDS,
+        ...(input.contentEncoding === undefined
+          ? {}
+          : { contentEncoding: input.contentEncoding }),
+        ...(input.cacheControl === undefined ? {} : { cacheControl: input.cacheControl }),
       });
 
       const response = await fetch(target.url, {
@@ -160,6 +179,38 @@ export function createObjectStorage(config: StorageConfig | undefined): ObjectSt
       if (!response.ok) throw new InternalServerError("object storage could not read the object");
 
       return new Uint8Array(await response.arrayBuffer());
+    },
+
+    async getObjectStream(
+      key: string,
+      range?: string | null,
+    ): Promise<ObjectStream | null> {
+      const url = await createDownloadUrl({
+        key,
+        expiresInSeconds: STORAGE_INTERNAL_UPLOAD_TTL_SECONDS,
+      });
+
+      const response = await fetch(
+        url,
+        range === undefined || range === null ? {} : { headers: { Range: range } },
+      );
+
+      if (response.status === 404 || response.status === 416) return null;
+      if (!response.ok || response.body === null) {
+        throw new InternalServerError("object storage could not read the object");
+      }
+
+      const length = response.headers.get("content-length");
+
+      return {
+        stream: response.body,
+        status: response.status,
+        contentLength: length === null ? null : Number(length),
+        contentRange: response.headers.get("content-range"),
+        contentType: response.headers.get("content-type") ?? "application/octet-stream",
+        contentEncoding: response.headers.get("content-encoding"),
+        etag: response.headers.get("etag")?.replaceAll('"', "") ?? null,
+      };
     },
 
     publicUrl(key: string): string {

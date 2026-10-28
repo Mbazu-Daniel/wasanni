@@ -9,7 +9,7 @@ import type {
   SessionEventStore,
 } from "@wasanni/kit";
 import type { ErrorSource } from "@wasanni/contracts";
-import type { AuditService } from "./modules/audit/service.ts";
+import type { AuditService } from "./modules/audit/types.ts";
 
 export type AppDeps = {
   logger: Logger;
@@ -39,4 +39,10 @@ export type Failure = { status: number; source: ErrorSource };
 export type DelegatedError = {
   name?: string;
   body?: { code?: string; message?: string };
+};
+
+export type DatabaseError = {
+  code?: unknown;
+  message?: string;
+  cause?: unknown;
 };

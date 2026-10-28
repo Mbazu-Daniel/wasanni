@@ -14,6 +14,16 @@ export type ApiKeyView = UnwrapSchema<typeof ApiKeyView>;
 export const ApiKeySingle = t.Object({ apiKey: ApiKeyView });
 export type ApiKeySingle = UnwrapSchema<typeof ApiKeySingle>;
 
+export const OrgApiKeyView = t.Object({
+  ...ApiKeyView.properties,
+  platformName: t.Union([t.String(), t.Null()]),
+  platformSlug: t.Union([t.String(), t.Null()]),
+});
+export type OrgApiKeyView = UnwrapSchema<typeof OrgApiKeyView>;
+
+export const OrgApiKeyList = t.Object({ keys: t.Array(OrgApiKeyView) });
+export type OrgApiKeyList = UnwrapSchema<typeof OrgApiKeyList>;
+
 export const ApiKeyList = t.Object({ keys: t.Array(ApiKeyView) });
 export type ApiKeyList = UnwrapSchema<typeof ApiKeyList>;
 

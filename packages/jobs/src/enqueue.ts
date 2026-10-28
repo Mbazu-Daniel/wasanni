@@ -1,6 +1,7 @@
 import { JOB, PACK_DELAY_MS, PACK_DEDUPLICATION_TTL_MS } from "./names.ts";
 import type {
   EmailJob,
+  GameBundleJob,
   Queues,
   ScorePackJob,
   ScoreRecheckJob,
@@ -26,13 +27,16 @@ export function createEnqueuer(queues: Queues) {
       });
     },
 
-    async scorePackSweep() {
-      return queues.archive.add(JOB.SCORE_PACK, {} satisfies ScorePackJob);
-    },
-
     async scoreRecheck(job: ScoreRecheckJob) {
       return queues.archive.add(JOB.SCORE_RECHECK, job, {
         jobId: `rchk-${job.configId}-${Math.floor(Date.now() / 60_000)}`,
+      });
+    },
+
+    async gameBundleExtract(job: GameBundleJob) {
+      return queues.archive.add(JOB.GAME_BUNDLE_EXTRACT, job, {
+        jobId: `gbe-${job.fileId}`,
+        attempts: 2,
       });
     },
 

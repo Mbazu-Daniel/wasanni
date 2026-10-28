@@ -4,7 +4,7 @@ import { game, gamePlatformAssignment, platform } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
-import type { AssignmentView } from "@wasanni/contracts";
+import type { AssignmentView, OrgAssignmentView } from "@wasanni/contracts";
 import type { AssignmentCreateInput, AssignmentRow } from "./types.ts";
 
 const toView = (row: AssignmentRow): AssignmentView => ({
@@ -48,6 +48,36 @@ export function createAssignmentService(db: Db) {
         .orderBy(desc(gamePlatformAssignment.createdAt));
 
       return rows.map(toView);
+    },
+
+    async listForOrganization(scope: Scope): Promise<OrgAssignmentView[]> {
+      const rows = await db
+        .select({
+          id: gamePlatformAssignment.id,
+          organizationId: gamePlatformAssignment.organizationId,
+          gameId: gamePlatformAssignment.gameId,
+          platformId: gamePlatformAssignment.platformId,
+          status: gamePlatformAssignment.status,
+          createdAt: gamePlatformAssignment.createdAt,
+          updatedAt: gamePlatformAssignment.updatedAt,
+          gameName: game.name,
+          gameSlug: game.slug,
+          gameHosting: game.hosting,
+          gameStatus: game.status,
+          platformName: platform.name,
+          platformSlug: platform.slug,
+        })
+        .from(gamePlatformAssignment)
+        .innerJoin(game, eq(gamePlatformAssignment.gameId, game.id))
+        .innerJoin(platform, eq(gamePlatformAssignment.platformId, platform.id))
+        .where(scopeTo(scope, gamePlatformAssignment))
+        .orderBy(desc(gamePlatformAssignment.createdAt));
+
+      return rows.map((row) => ({
+        ...row,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      }));
     },
 
     async create(scope: Scope, input: AssignmentCreateInput): Promise<AssignmentView> {

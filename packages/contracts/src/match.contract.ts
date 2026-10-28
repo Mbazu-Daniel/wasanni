@@ -1,7 +1,5 @@
 import { t, type UnwrapSchema } from "elysia";
 
-export const MATCH_STATUSES = ["pending", "active", "completed", "cancelled"] as const;
-
 export const MatchStatus = t.Union([
   t.Literal("pending"),
   t.Literal("active"),
@@ -9,14 +7,6 @@ export const MatchStatus = t.Union([
   t.Literal("cancelled"),
 ]);
 export type MatchStatus = UnwrapSchema<typeof MatchStatus>;
-
-export const MATCH_OUTCOMES = [
-  "pending",
-  "won",
-  "lost",
-  "draw",
-  "disqualified",
-] as const;
 
 export const MatchOutcome = t.Union([
   t.Literal("pending"),
@@ -117,11 +107,6 @@ export const CompleteMatchBody = t.Object({
 });
 export type CompleteMatchBody = UnwrapSchema<typeof CompleteMatchBody>;
 
-export const PlatformWinnerBody = t.Object({
-  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
-});
-export type PlatformWinnerBody = UnwrapSchema<typeof PlatformWinnerBody>;
-
 export const MatchIdParams = t.Object({
   organizationId: t.String(),
   matchId: t.String(),
@@ -131,8 +116,33 @@ export type MatchIdParams = UnwrapSchema<typeof MatchIdParams>;
 export const PlatformMatchParams = t.Object({ matchId: t.String() });
 export type PlatformMatchParams = UnwrapSchema<typeof PlatformMatchParams>;
 
+export const PlatformWinnerParams = t.Object({
+  matchId: t.String(),
+  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
+});
+export type PlatformWinnerParams = UnwrapSchema<typeof PlatformWinnerParams>;
+
 export const MatchParticipants = t.Object({
   match: MatchView,
   participants: t.Array(MatchParticipantView),
 });
 export type MatchParticipants = UnwrapSchema<typeof MatchParticipants>;
+
+export const MatchListQuery = t.Object({
+  gameId: t.Optional(t.String()),
+  tournamentId: t.Optional(t.String()),
+  status: t.Optional(MatchStatus),
+  cursor: t.Optional(t.String()),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 200 })),
+});
+export type MatchListQuery = UnwrapSchema<typeof MatchListQuery>;
+
+export const MatchList = t.Object({
+  data: t.Array(MatchParticipants),
+  page: t.Object({
+    limit: t.Number(),
+    hasMore: t.Boolean(),
+    cursor: t.Union([t.String(), t.Null()]),
+  }),
+});
+export type MatchList = UnwrapSchema<typeof MatchList>;

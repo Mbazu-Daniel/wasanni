@@ -16,6 +16,7 @@ export type RealtimeSession = {
   platformId: string;
   gameId: string;
   externalUserId: string;
+  expiresAt: number;
 };
 
 export type RoomRegistry = {
@@ -44,7 +45,7 @@ export type ScoreForwardInput = {
 
 export type ScoreForwardResult =
   | { ok: true; score: ScoreView }
-  | { ok: false; rejected: boolean; message: string };
+  | { ok: false; message: string };
 
 export type ScoreForwarder = {
   forward(input: ScoreForwardInput): Promise<ScoreForwardResult>;

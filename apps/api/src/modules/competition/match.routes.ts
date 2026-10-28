@@ -2,20 +2,22 @@ import {
   CompleteMatchBody,
   CreateMatchBody,
   MatchIdParams,
+  MatchList,
+  MatchListQuery,
   MatchParticipants,
   MatchSingle,
   OrganizationIdParams,
   PERMISSION,
   PlatformMatchParams,
-  PlatformWinnerBody,
+  PlatformWinnerParams,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import type { CompetitionRouteDeps } from "./types.ts";
+import type { CompetitionServices } from "./types.ts";
 
 export const createMatchRoutes = <T extends PrincipalApi>(
   api: T,
-  deps: CompetitionRouteDeps,
+  deps: CompetitionServices,
 ) =>
   api
     .post(
@@ -32,6 +34,24 @@ export const createMatchRoutes = <T extends PrincipalApi>(
         body: CreateMatchBody,
         response: { 201: MatchSingle },
         detail: { tags: ["matches"], summary: "Create a standalone match" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/matches",
+      async ({ principal, query }) =>
+        deps.matches.listForOrganization(organizationScope(principal), {
+          gameId: query.gameId,
+          tournamentId: query.tournamentId,
+          status: query.status,
+          cursor: query.cursor,
+          limit: query.limit,
+        }),
+      {
+        organizationAuth: PERMISSION.matchRead,
+        params: OrganizationIdParams,
+        query: MatchListQuery,
+        response: { 200: MatchList },
+        detail: { tags: ["matches"], summary: "List the organization's matches" },
       },
     )
     .get(
@@ -74,25 +94,46 @@ export const createMatchRoutes = <T extends PrincipalApi>(
         detail: { tags: ["matches"], summary: "Complete a match" },
       },
     )
+    .get(
+      "/api/v1/matches/:matchId",
+      async ({ principal, params }) => {
+        const scope = organizationScope(principal);
+        return {
+          match: await deps.matches.get(scope, params.matchId),
+          participants: await deps.matches.listParticipants(
+            scope,
+            params.matchId,
+          ),
+        };
+      },
+      {
+        platformAuth: PERMISSION.matchRead,
+        params: PlatformMatchParams,
+        response: { 200: MatchParticipants },
+        detail: {
+          tags: ["matches"],
+          summary: "Get a match and its players (platform api key)",
+        },
+      },
+    )
     .post(
-      "/api/v1/platform/matches/:matchId/complete",
-      async ({ principal, params, body }) => ({
+      "/api/v1/matches/:matchId/players/:externalUserId/win",
+      async ({ principal, params }) => ({
         match: await deps.matches.complete(organizationScope(principal), {
           matchId: params.matchId,
           winnerExternal: {
             platformId: principal.platformId,
-            externalUserId: body.externalUserId,
+            externalUserId: params.externalUserId,
           },
         }),
       }),
       {
         platformAuth: PERMISSION.matchComplete,
-        params: PlatformMatchParams,
-        body: PlatformWinnerBody,
+        params: PlatformWinnerParams,
         response: { 200: MatchSingle },
         detail: {
           tags: ["matches"],
-          summary: "Declare the platform's winner",
+          summary: "Declare the winning player of a match (platform api key)",
         },
       },
     );

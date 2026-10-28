@@ -4,18 +4,30 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --env-file=../../.env --watch src/index.ts",
     "start": "bun src/index.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "2.0.87",
     "@elysiajs/cors": "1.4.2",
     "@elysiajs/openapi": "1.4.16",
+    "@mastra/ai-sdk": "1.11.2",
+    "@mastra/core": "1.79.0",
+    "@mastra/hono": "1.7.21",
+    "@mastra/memory": "1.39.0",
+    "@mastra/observability": "1.21.0",
+    "@mastra/otel-exporter": "1.4.9",
+    "@mastra/pg": "1.32.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.300.0",
+    "@sinclair/typebox": "0.34.52",
     "@wasanni/contracts": "workspace:*",
     "@wasanni/db": "workspace:*",
     "@wasanni/jobs": "workspace:*",
     "@wasanni/kit": "workspace:*",
+    "ai": "7.0.154",
     "better-auth": "1.7.12",
     "elysia": "1.4.30",
+    "hono": "4.13.14",
     "openapi-types": "12.1.3"
   }
 }

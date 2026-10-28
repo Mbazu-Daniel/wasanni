@@ -14,6 +14,9 @@ export const AuthModel = {
       expiresAt: t.String(),
     }),
   }),
+  providers: t.Object({
+    providers: t.Array(t.String()),
+  }),
 } as const;
 
 export type AuthModel = {

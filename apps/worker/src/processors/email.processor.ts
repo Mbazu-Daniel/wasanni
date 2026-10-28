@@ -22,7 +22,9 @@ function renderEmailHtml(job: EmailJob): string {
       ? "Confirm your email"
       : job.purpose === "reset"
         ? "Reset your password"
-        : "Open invitation";
+        : job.purpose === "changeEmail"
+          ? "Confirm your new email"
+          : "Open invitation";
 
   return [
     '<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:520px;margin:0 auto;padding:32px 20px">',

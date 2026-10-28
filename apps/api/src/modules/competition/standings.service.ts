@@ -1,5 +1,5 @@
-import { desc, eq, sql } from "drizzle-orm";
-import type { Standings } from "@wasanni/contracts";
+import { and, desc, eq } from "drizzle-orm";
+import type { Standings, TournamentLeaderboard } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import {
@@ -7,7 +7,7 @@ import {
   gameSessionScore,
   tournamentParticipant,
 } from "@wasanni/db/schema";
-import type { Scope } from "@wasanni/kit";
+import { ConflictError, type Scope } from "@wasanni/kit";
 import { readTournamentRow } from "./tournament.service.ts";
 import type { BracketService } from "./types.ts";
 
@@ -18,15 +18,9 @@ export function createStandingsService(
   const readLeaderboard = async (
     scope: Scope,
     tournamentId: string,
-  ): Promise<Standings> => {
-    const best = sql<number>`max(${gameSessionScore.score})::double precision`;
-
-    const rows = await db
-      .select({
-        externalUserId: gameSessionScore.externalUserId,
-        score: best.as("score"),
-        flagged: sql<boolean>`bool_or(${gameSessionScore.flagged})`.as("flagged"),
-      })
+  ): Promise<TournamentLeaderboard> => {
+    const best = await db
+      .selectDistinctOn([gameSessionScore.externalUserId])
       .from(gameSessionScore)
       .innerJoin(gameSession, eq(gameSession.id, gameSessionScore.sessionId))
       .where(
@@ -37,36 +31,79 @@ export function createStandingsService(
           eq(gameSessionScore.status, "accepted"),
         ),
       )
-      .groupBy(gameSessionScore.externalUserId)
-      .orderBy(desc(best))
-      .limit(200);
+      .orderBy(
+        gameSessionScore.externalUserId,
+        desc(gameSessionScore.score),
+        gameSessionScore.submittedAt,
+      );
 
     const registrations = await db
       .select({
+        id: tournamentParticipant.id,
         externalUserId: tournamentParticipant.externalUserId,
         displayName: tournamentParticipant.displayName,
+        seed: tournamentParticipant.seed,
+        status: tournamentParticipant.status,
       })
       .from(tournamentParticipant)
-      .where(eq(tournamentParticipant.tournamentId, tournamentId));
+      .where(
+        and(
+          eq(tournamentParticipant.tournamentId, tournamentId),
+          eq(tournamentParticipant.status, "registered"),
+        ),
+      );
 
-    const names = new Map<string, string | null>();
-    for (const row of registrations) {
-      names.set(row.externalUserId, row.displayName);
-    }
+    const scoreByUser = new Map(
+      best.map((row) => [row.game_session_score.externalUserId, row.game_session_score]),
+    );
+
+    const rows = registrations
+      .map((registration) => {
+        const score = scoreByUser.get(registration.externalUserId);
+
+        return {
+          participantId: registration.id,
+          externalUserId: registration.externalUserId,
+          displayName: registration.displayName,
+          seed: registration.seed,
+          status: registration.status,
+          score: score?.score ?? null,
+          flagged: score?.flagged ?? false,
+          flags: score?.flags ?? [],
+          submittedAt: score?.submittedAt?.toISOString() ?? null,
+        };
+      })
+      .sort((left, right) => {
+        const leftScore = left.score ?? -1;
+        const rightScore = right.score ?? -1;
+
+        if (leftScore !== rightScore) return rightScore - leftScore;
+        if (left.seed !== null && right.seed !== null && left.seed !== right.seed) {
+          return left.seed - right.seed;
+        }
+        if (left.seed !== null && right.seed === null) return -1;
+        if (left.seed === null && right.seed !== null) return 1;
+        if (left.submittedAt !== null && right.submittedAt !== null) {
+          const bySubmittedAt = left.submittedAt.localeCompare(right.submittedAt);
+          if (bySubmittedAt !== 0) return bySubmittedAt;
+        }
+
+        return left.externalUserId.localeCompare(right.externalUserId);
+      });
 
     return {
-      format: "leaderboard",
-      rows: rows.map((row, index) => ({
-        position: index + 1,
-        externalUserId: row.externalUserId,
-        displayName: names.get(row.externalUserId) ?? null,
-        score: row.score,
-        flagged: row.flagged,
-      })),
+      rows: rows.map((row, index) => ({ position: index + 1, ...row })),
     };
   };
 
   return {
+    async leaderboards(scope: Scope, tournamentId: string) {
+      const current = await readTournamentRow(db, scope, tournamentId);
+      if (current.format === "bracket") {
+        throw new ConflictError("only a leaderboard tournament has a leaderboard");
+      }
+      return readLeaderboard(scope, tournamentId);
+    },
     async read(scope: Scope, tournamentId: string): Promise<Standings> {
       const current = await readTournamentRow(db, scope, tournamentId);
 
@@ -77,7 +114,10 @@ export function createStandingsService(
         };
       }
 
-      return readLeaderboard(scope, tournamentId);
+      return {
+        format: "leaderboard",
+        rows: (await readLeaderboard(scope, tournamentId)).rows,
+      };
     },
   };
 }

@@ -1,6 +1,5 @@
 import { isNull } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid, index, uniqueIndex } from "drizzle-orm/pg-core";
-import type { RoleName } from "@wasanni/contracts";
 import { organization } from "./organization.ts";
 import { user } from "../identity/user.ts";
 
@@ -14,8 +13,8 @@ export const member = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    role: text("role").notNull().default("member").$type<RoleName>(),
-    displayName: text("display_name"),
+    role: text("role").notNull().default("member"),
+    name: text("name"),
     avatar: text("avatar"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

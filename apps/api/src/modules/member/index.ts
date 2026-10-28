@@ -1,9 +1,14 @@
 import {
   AvatarUploadTicketSingle,
+  MemberIdParams,
+  MemberList,
   MemberSingle,
+  OrganizationIdParams,
+  PERMISSION,
   RequestAvatarUpload,
   SetMemberAvatar,
-  UpdateMemberDisplayName,
+  SetMemberRole,
+  UpdateMemberName,
 } from "@wasanni/contracts";
 import { NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
@@ -32,18 +37,65 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      const member = await service.setDisplayName(
+      const member = await service.setName(
         organizationScope(principal),
         principal.memberId,
-        body.displayName,
+        body.name,
       );
 
       return { member };
     }, {
       organizationAuth: null,
-      body: UpdateMemberDisplayName,
+      body: UpdateMemberName,
       response: { 200: MemberSingle },
-      detail: { tags: ["members"], summary: "Update the signed-in member display name" },
+      detail: { tags: ["members"], summary: "Update the signed-in member name" },
+    })
+    .put("/api/v1/organizations/:organizationId/members/:memberId/role", async ({
+      principal,
+      params,
+      body,
+    }) => {
+      const member = await service.setRole(
+        organizationScope(principal),
+        params.memberId,
+        body.role,
+        principal.role,
+      );
+
+      return { member };
+    }, {
+      organizationAuth: PERMISSION.memberUpdate,
+      params: MemberIdParams,
+      body: SetMemberRole,
+      response: { 200: MemberSingle },
+      detail: { tags: ["members"], summary: "Give a member a role" },
+    })
+    .get("/api/v1/organizations/:organizationId/members", async ({ principal }) => ({
+      members: await service.list(organizationScope(principal)),
+    }), {
+      organizationAuth: PERMISSION.memberRead,
+      params: OrganizationIdParams,
+      response: { 200: MemberList },
+      detail: { tags: ["members"], summary: "List the members of an organization" },
+    })
+    .patch("/api/v1/organizations/:organizationId/members/:memberId", async ({
+      principal,
+      params,
+      body,
+    }) => {
+      const member = await service.setName(
+        organizationScope(principal),
+        params.memberId,
+        body.name,
+      );
+
+      return { member };
+    }, {
+      organizationAuth: PERMISSION.memberUpdate,
+      params: MemberIdParams,
+      body: UpdateMemberName,
+      response: { 200: MemberSingle },
+      detail: { tags: ["members"], summary: "Rename a member of the organization" },
     })
     .post("/api/v1/organizations/:organizationId/members/me/avatar", async ({
       principal,

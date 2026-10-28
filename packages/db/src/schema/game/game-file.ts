@@ -12,7 +12,7 @@ import {
 import { organization } from "../organization/organization.ts";
 import { member } from "../organization/member.ts";
 import { game } from "./game.ts";
-import type { GameFileStatus } from "@wasanni/contracts";
+import type { GameFileKind, GameFileStatus } from "@wasanni/contracts";
 
 export const gameFile = pgTable(
   "game_file",
@@ -30,6 +30,12 @@ export const gameFile = pgTable(
     contentType: text("content_type").notNull(),
     etag: text("etag"),
     status: text("status").notNull().default("pending_upload").$type<GameFileStatus>(),
+    kind: text("kind").notNull().default("single").$type<GameFileKind>(),
+    entryPoint: text("entry_point").notNull().default("index.html"),
+    servedPrefix: text("served_prefix"),
+    crossOriginIsolation: boolean("cross_origin_isolation").notNull().default(false),
+    spaFallback: boolean("spa_fallback").notNull().default(false),
+    extractedAt: timestamp("extracted_at", { withTimezone: true }),
     isCurrent: boolean("is_current").notNull().default(false),
     uploadedByMemberId: uuid("uploaded_by_member_id").references(() => member.id, {
       onDelete: "set null",

@@ -4,11 +4,13 @@ import {
   readActiveApiKey,
   readGameSessionByToken,
   readMembership,
+  readOrganizationRoles,
   type MembershipRow,
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
 import { hashApiKey, InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
 import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
+import type { Principal } from "@wasanni/kit";
 import { permissionsForRole, requirePermission } from "../permissions.ts";
 import type {
   AuthResult,
@@ -32,6 +34,8 @@ const resolvePrincipal = async (
 
   if (membership === null) return null;
 
+  const grants = await readOrganizationRoles(db, organizationId);
+
   return {
     kind: "user",
     userId: session.user.id,
@@ -39,9 +43,14 @@ const resolvePrincipal = async (
     memberId: membership.memberId,
     organizationId,
     role: membership.role,
-    permissions: permissionsForRole(membership.role),
+    permissions: permissionsForRole(membership.role, grants),
   };
 };
+
+const requestPrincipals = new WeakMap<Request, Principal>();
+
+export const principalOf = (request: Request): Principal | undefined =>
+  requestPrincipals.get(request);
 
 export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
   new Elysia({ name: "principal" })
@@ -71,6 +80,7 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
 
           if (required !== null) requirePermission(resolved, required);
 
+          requestPrincipals.set(request, resolved);
           return { principal: resolved };
         },
       }),
@@ -97,6 +107,7 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
 
           if (required !== null) requirePermission(principal, required);
 
+          requestPrincipals.set(request, principal);
           return { principal };
         },
       }),
