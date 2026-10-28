@@ -4,7 +4,7 @@ import {
   IconBrandDiscord,
   IconHeart,
 } from "@tabler/icons-react";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/components/marketing/separator";
 
 const columns = [
   {

@@ -10,10 +10,10 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { motion, useScroll, useTransform } from "motion/react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Modal } from "@/components/ui/modal";
+import { Badge } from "@/components/marketing/badge";
+import { Button } from "@/components/marketing/button";
+import { Card } from "@/components/marketing/card";
+import { Modal } from "@/components/marketing/modal";
 import {
   Counter,
   CursorGlow,

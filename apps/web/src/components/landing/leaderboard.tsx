@@ -1,9 +1,9 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconEyeOff, IconFlag, IconTrophy, IconArrowUpRight } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/marketing/badge";
+import { Button } from "@/components/marketing/button";
+import { Card } from "@/components/marketing/card";
 import { Counter, Reveal } from "@/components/motion-kit";
 
 const initialRows = [

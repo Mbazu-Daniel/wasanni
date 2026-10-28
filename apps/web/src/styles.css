@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -18,10 +19,10 @@
   --accent: #2e7bff;
   --accent-foreground: #f4f6ff;
   --destructive: #ff4d4d;
-  --border: rgba(122, 184, 255, 0.14);
-  --input: rgba(122, 184, 255, 0.18);
+  --border: rgba(122, 184, 255, 0.12);
+  --input: rgba(122, 184, 255, 0.16);
   --ring: #ff2e88;
-  --radius: 1rem;
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -53,6 +54,11 @@
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   --animate-marquee: marquee 32s linear infinite;
   --animate-marquee-slow: marquee 60s linear infinite;
@@ -86,14 +92,23 @@
 @layer base {
   * { border-color: var(--border); }
   html { scroll-behavior: smooth; }
+  html, body { height: 100%; }
   body {
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-display);
+    font-size: 14px;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
   }
   ::selection { background: #ff2e88; color: #05060f; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(122, 184, 255, 0.16);
+    border-radius: 5px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(122, 184, 255, 0.28); }
 }
 
 @utility text-gradient-pink-blue {

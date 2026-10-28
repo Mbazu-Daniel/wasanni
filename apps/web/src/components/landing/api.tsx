@@ -7,9 +7,9 @@ import {
   IconBrandJavascript,
   IconBrandTypescript,
 } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/marketing/badge";
+import { Button } from "@/components/marketing/button";
+import { Card } from "@/components/marketing/card";
 import { Reveal, ShimmerText } from "@/components/motion-kit";
 
 const tabs = [

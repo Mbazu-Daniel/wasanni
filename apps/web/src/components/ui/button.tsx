@@ -3,24 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-[transform,box-shadow,background-color] duration-200 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.99]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_0_28px_-6px_rgba(255,46,136,0.9)] hover:shadow-[0_0_44px_-4px_rgba(255,46,136,1)]",
-        blue: "bg-accent text-accent-foreground shadow-[0_0_28px_-6px_rgba(46,123,255,0.9)] hover:shadow-[0_0_44px_-4px_rgba(46,123,255,1)]",
+          "bg-primary text-primary-foreground shadow-[0_0_20px_-6px_rgba(255,46,136,0.8)] hover:bg-pink-soft",
+        blue: "bg-accent text-accent-foreground hover:bg-blue-soft",
         outline:
-          "border border-blue-soft/30 bg-white/[0.02] text-foreground hover:border-pink/50 hover:bg-white/[0.06]",
-        ghost: "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]",
-        gradient:
-          "bg-[linear-gradient(100deg,#ff2e88,#2e7bff)] text-white shadow-[0_0_34px_-8px_rgba(255,46,136,0.8)] hover:shadow-[0_0_54px_-6px_rgba(46,123,255,0.9)]",
+          "border border-border bg-white/[0.02] text-foreground hover:border-pink/40 hover:bg-white/[0.06]",
+        ghost: "text-muted-foreground hover:bg-white/[0.05] hover:text-foreground",
+        destructive: "bg-destructive text-white hover:bg-red-500",
+        link: "text-blue-soft underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-9 px-4 text-xs",
-        default: "h-11 px-6",
-        lg: "h-13 px-8 text-base",
-        icon: "size-11",
+        sm: "h-8 px-3 text-xs",
+        default: "h-9 px-4",
+        lg: "h-11 px-6 text-base",
+        icon: "size-9",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

@@ -1,8 +1,8 @@
 import * as React from "react";
 import { motion } from "motion/react";
 import { IconTrophy, IconSwords, IconRefresh } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/marketing/badge";
+import { Button } from "@/components/marketing/button";
 import { Reveal } from "@/components/motion-kit";
 
 type Player = { id: string; name: string; score: number };
