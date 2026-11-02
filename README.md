@@ -387,7 +387,7 @@ secret in place. Deploy the new key afterwards, then remove the old one.
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:studio` | Drizzle Studio |
 | `bun run agent:traces [runId]` | The newest failing agent run's span tree, or the run you name |
-| `bun run agent:studio` | Mastra's HTTP API on `MASTRA_STUDIO_PORT` (4111) for https://studio.mastra.io |
+| `bun run agent:studio` | Mastra server + Studio UI on `MASTRA_STUDIO_PORT` (4111) — the Studio UI serves the agents, point https://studio.mastra.io at it too |
 | `bun run mcp` | The stdio MCP server: the platform api as tools, as the organization of `WASANNI_API_KEY` |
 | `bun run ci` | `typecheck` then `test` |
 

@@ -21,7 +21,7 @@
     "@tanstack/react-start": "1.169.3",
     "@wasanni/contracts": "workspace:*",
     "axios": "^1.8.4",
-    "better-auth": "1.7.12",
+    "better-auth": "1.7.14",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "lucide-react": "^1.61.0",
