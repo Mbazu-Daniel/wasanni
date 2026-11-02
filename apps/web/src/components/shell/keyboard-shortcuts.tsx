@@ -13,7 +13,6 @@ export const PAGE_SHORTCUTS: Record<string, string> = {
   platforms: "p",
   assignments: "a",
   keys: "k",
-  webhooks: "w",
   tournaments: "o",
   matches: "m",
   audit: "u",
@@ -31,15 +30,14 @@ const GO_TARGETS: Record<string, DashboardPath> = {
   p: "/$orgSlug/platforms",
   a: "/$orgSlug/assignments",
   k: "/$orgSlug/keys",
-  w: "/$orgSlug/webhooks",
   o: "/$orgSlug/tournaments",
   m: "/$orgSlug/matches",
   u: "/$orgSlug/audit",
   v: "/$orgSlug/usage",
-  e: "/$orgSlug/settings/members",
+  e: "/$orgSlug/members",
   r: "/$orgSlug/settings/organization",
   c: "/$orgSlug/settings/account",
-  x: "/$orgSlug/settings/danger",
+  x: "/$orgSlug/settings/sessions",
 };
 
 const CREATE_TARGETS: Record<string, DashboardPath> = {

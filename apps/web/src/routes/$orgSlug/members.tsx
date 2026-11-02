@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { fetchSession } from "@/lib/session";
 import { canChangeRole, canManageMembers } from "@/lib/org-permissions";
 import type { RoleName } from "@/lib/role-types";
@@ -29,7 +30,7 @@ import type { InvitationRow, MemberRow } from "@/lib/member-types";
 
 type Organization = { id: string; slug: string };
 
-export const Route = createFileRoute("/$orgSlug/settings/members")({
+export const Route = createFileRoute("/$orgSlug/members")({
   head: () => ({ meta: [{ title: "Members · Wasanni" }] }),
   component: MembersPage,
 });
@@ -91,7 +92,7 @@ function MembersView({ org }: { org: Organization }) {
     });
 
     if (error) {
-      toast.error(error.message ?? "Could not change role");
+      toastAuthError(error, "Could not change role");
       return;
     }
 
@@ -110,7 +111,7 @@ function MembersView({ org }: { org: Organization }) {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message ?? "Could not remove member");
+      toastAuthError(error, "Could not remove member");
       return;
     }
 
@@ -144,7 +145,7 @@ function MembersView({ org }: { org: Organization }) {
     });
 
     if (error) {
-      toast.error(error.message ?? "Could not cancel");
+      toastAuthError(error, "Could not cancel");
       return;
     }
 

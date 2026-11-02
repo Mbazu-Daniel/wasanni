@@ -18,6 +18,8 @@ type Game = {
   name: string;
   slug: string;
   description: string | null;
+  imageUrl: string | null;
+  hints: string[];
   hosting: "hosted" | "external";
   status: "draft" | "active" | "archived";
   createdAt: string;
@@ -69,6 +71,35 @@ export function GameOverviewPanel({
 
   return (
     <div className="space-y-6">
+      {(game.imageUrl !== null || game.description !== null || game.hints.length > 0) && (
+        <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+          {game.imageUrl !== null && (
+            <img
+              src={game.imageUrl}
+              alt=""
+              className="aspect-[16/6] w-full object-cover"
+            />
+          )}
+          <div className="space-y-3 p-5">
+            {game.description !== null && (
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {game.description}
+              </p>
+            )}
+            {game.hints.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground">Hints</p>
+                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm">
+                  {game.hints.map((hint, index) => (
+                    <li key={index}>{hint}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-border bg-card/50 p-4">
           <p className="text-xs text-muted-foreground">Hosting</p>

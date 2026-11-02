@@ -5,7 +5,6 @@ import {
   IconMedal,
   IconPlayerPlay,
   IconSwords,
-  IconTrophy,
 } from "@tabler/icons-react";
 import { formatBytes } from "@/lib/format";
 import type { UsageMetric } from "@/lib/usage-types";
@@ -22,12 +21,6 @@ const CARDS: {
     metric: "sessions_created",
     label: "Sessions",
     icon: IconPlayerPlay,
-    format: (value) => value.toLocaleString(),
-  },
-  {
-    metric: "scores_submitted",
-    label: "Scores",
-    icon: IconTrophy,
     format: (value) => value.toLocaleString(),
   },
   {

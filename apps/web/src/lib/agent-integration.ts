@@ -4,7 +4,7 @@ import type { AgentAttachment } from "./agent-types";
 export const INTEGRATION_PROMPT =
   "Integrate this game with Wasanni. Sequence the platform and game wiring using your tools. " +
   "The game client records scores through POST /api/v1/sessions and the session token that call returns; " +
-  "never place a wsk_ platform key in client code.";
+  "never place a sk_ platform key in client code.";
 
 const base64Of = (text: string): string => {
   const bytes = new TextEncoder().encode(text);

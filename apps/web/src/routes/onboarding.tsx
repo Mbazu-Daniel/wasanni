@@ -1,6 +1,6 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   IconArrowUpRight,
   IconBuilding,
@@ -11,8 +11,9 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { api, apiFetch } from "@/lib/api-client";
-import { fetchOrganizations, fetchSession, pickOrganization, requireSession } from "@/lib/session";
+import { fetchOrganizations, pickOrganization, requireSession } from "@/lib/session";
 import { slugify } from "@/lib/utils";
 import type { MemberRow } from "@/lib/member-types";
 import { AVATAR_TYPES, uploadMemberAvatar } from "@/lib/avatar-upload";
@@ -23,7 +24,23 @@ export const Route = createFileRoute("/onboarding")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
 
-    await requireSession();
+    const session = await requireSession();
+    const organizations = await fetchOrganizations();
+    if (organizations.length === 0) return;
+
+    const target = pickOrganization(
+      organizations,
+      session.session.activeOrganizationId,
+      localStorage.getItem("wasanni:last-org"),
+    );
+    if (target === undefined) return;
+
+    await authClient.organization.setActive({ organizationId: target.id });
+    localStorage.setItem("wasanni:last-org", target.slug);
+    throw redirect({
+      to: "/$orgSlug/overview",
+      params: { orgSlug: target.slug },
+    });
   },
   component: OnboardingPage,
 });
@@ -52,16 +69,15 @@ function isUsableUrl(value: string): boolean {
 }
 
 function StepTabs({ step }: { step: 1 | 2 }) {
-  const tabs = [
-    { number: "01", label: "Organization" },
-    { number: "02", label: "Your profile" },
+  const tabs: { step: 1 | 2; number: string; label: string }[] = [
+    { step: 1, number: "01", label: "Organization" },
+    { step: 2, number: "02", label: "Your profile" },
   ];
 
   return (
     <ol className="flex items-center gap-2" aria-label="Onboarding progress">
       {tabs.map((tab, index) => {
-        const tabStep = (index + 1) as 1 | 2;
-        const state = tabStep === step ? "active" : tabStep < step ? "done" : "todo";
+        const state = tab.step === step ? "active" : tab.step < step ? "done" : "todo";
 
         return (
           <li key={tab.number}>
@@ -93,65 +109,45 @@ function OnboardingPage() {
   const [touchedSlug, setTouchedSlug] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [org, setOrg] = React.useState<CreatedOrg | null>(null);
-  const [memberName, setMemberName] = React.useState("");
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [memberNameEdit, setMemberNameEdit] = React.useState<string | null>(null);
+  const [avatarEdit, setAvatarEdit] = React.useState<string | null>(null);
   const [avatarBusy, setAvatarBusy] = React.useState(false);
   const fileInput = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
-    if (!touchedSlug) setSlug(slugify(name));
-  }, [name, touchedSlug]);
+  const orgId = org?.id ?? "";
 
-  React.useEffect(() => {
-    void (async () => {
-      const organizations = await fetchOrganizations();
-      if (organizations.length === 0) return;
+  const { data: member } = useQuery({
+    queryKey: ["organization-member", "me", orgId],
+    queryFn: () =>
+      apiFetch<{ member: MemberRow }>(
+        `/api/v1/organizations/${orgId}/members/me`,
+      ).then((response) => response.member),
+    enabled: orgId !== "",
+  });
 
-      const session = await fetchSession();
-      const lastSlug = localStorage.getItem("wasanni:last-org");
-      const target = pickOrganization(
-        organizations,
-        session?.session.activeOrganizationId,
-        lastSlug,
-      );
-      if (target === undefined) return;
-
-      await authClient.organization.setActive({ organizationId: target.id });
-      localStorage.setItem("wasanni:last-org", target.slug);
-      navigate({ to: "/$orgSlug/overview", params: { orgSlug: target.slug } });
-    })();
-  }, [navigate]);
-
-  React.useEffect(() => {
-    if (org === null) return;
-
-    void (async () => {
-      try {
-        const { member } = await apiFetch<{ member: MemberRow }>(
-          `/api/v1/organizations/${org.id}/members/me`,
-        );
-        setMemberName(member.name);
-        if (member.avatar !== null) setAvatarUrl(member.avatar);
-      } catch {}
-    })();
-  }, [org]);
+  const effectiveSlug = touchedSlug ? slug : slugify(name);
+  const memberName = memberNameEdit ?? member?.name ?? "";
+  const avatarUrl = avatarEdit ?? member?.avatar ?? null;
 
   async function createOrganization(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     const { data, error } = await authClient.organization.create({
       name,
-      slug,
+      slug: effectiveSlug,
       logo: logo.trim() || null,
     });
     setBusy(false);
 
     if (error || data === null) {
-      toast.error(error?.message ?? "Could not create organization");
+      toastAuthError(error, "Could not create organization");
       return;
     }
 
-    await authClient.organization.setActive({ organizationId: data.id });
+    const activation = await authClient.organization.setActive({ organizationId: data.id });
+    if (activation.error) {
+      toastAuthError(activation.error, "Could not switch to the organization");
+    }
     localStorage.setItem("wasanni:last-org", data.slug);
     queryClient.setQueryData<CreatedOrg[]>(["organizations"], (current = []) => [
       ...current.filter((item) => item.id !== data.id),
@@ -167,7 +163,7 @@ function OnboardingPage() {
     setAvatarBusy(true);
     try {
       const saved = await uploadMemberAvatar(org.id, file);
-      setAvatarUrl(saved.avatar);
+      setAvatarEdit(saved.avatar);
       toast.success("Avatar saved.");
     } catch (error) {
       toast.error(
@@ -202,7 +198,11 @@ function OnboardingPage() {
   }
 
   async function signOut() {
-    await authClient.signOut();
+    const result = await authClient.signOut();
+    if ("error" in result && result.error) {
+      toastAuthError(result.error, "Could not sign out");
+      return;
+    }
     queryClient.clear();
     navigate({ to: "/" });
   }
@@ -244,7 +244,7 @@ function OnboardingPage() {
                 {name.trim() || "Your organization"}
               </p>
               <p className="truncate font-mono text-xs text-(--launch-ink)/60">
-                wasanni.com/{slug || "your-team"}
+                wasanni.com/{effectiveSlug || "your-team"}
               </p>
             </div>
           </div>
@@ -324,14 +324,14 @@ function OnboardingPage() {
               id="org-slug"
               label="Slug"
               icon={IconTag}
-              value={slug}
+              value={effectiveSlug}
               onChange={(e) => {
                 setSlug(slugify(e.target.value));
                 setTouchedSlug(true);
               }}
               placeholder="pixel-forge"
               className="font-mono"
-              valid={SLUG_PATTERN.test(slug)}
+              valid={SLUG_PATTERN.test(effectiveSlug)}
               required
               pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
             />
@@ -345,7 +345,7 @@ function OnboardingPage() {
               placeholder="https://…/logo.png"
               valid={logoTrimmed.length > 0 && isUsableUrl(logoTrimmed)}
             />
-            <button type="submit" className="launch-primary-button w-full" disabled={busy || !name || !slug}>
+            <button type="submit" className="launch-primary-button w-full" disabled={busy || !name || !effectiveSlug}>
               {busy ? "Creating…" : "Continue to profile"}
               {!busy && <IconArrowUpRight className="size-5" />}
             </button>
@@ -418,7 +418,7 @@ function OnboardingPage() {
               label="Name"
               icon={IconUser}
               value={memberName}
-              onChange={(e) => setMemberName(e.target.value)}
+              onChange={(e) => setMemberNameEdit(e.target.value)}
               placeholder="Daniel"
               maxLength={80}
               valid={memberName.trim().length > 0}

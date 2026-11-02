@@ -4,7 +4,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 
-export type AssignOption = { id: string; name: string; slug: string };
+type AssignOption = { id: string; name: string; slug: string };
 
 export function AssignModal({
   open,
@@ -32,16 +32,14 @@ export function AssignModal({
     if (!open) setSelected("");
   }, [open]);
 
-  React.useEffect(() => {
-    if (selected === "" && options.length > 0) setSelected(options[0]!.id);
-  }, [options, selected]);
+  const effectiveSelected = selected !== "" ? selected : (options[0]?.id ?? "");
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (selected === "") return;
+    if (effectiveSelected === "") return;
 
     setBusy(true);
-    const ok = await onAssign(selected);
+    const ok = await onAssign(effectiveSelected);
     setBusy(false);
 
     if (ok) onOpenChange(false);
@@ -53,7 +51,7 @@ export function AssignModal({
         <div className="space-y-1.5">
           <Label>{label}</Label>
           <Select
-            value={selected}
+            value={effectiveSelected}
             onValueChange={setSelected}
             options={options.map((option) => ({
               value: option.id,
@@ -73,7 +71,7 @@ export function AssignModal({
           >
             Cancel
           </Button>
-          <Button type="submit" size="sm" disabled={busy || selected === ""}>
+          <Button type="submit" size="sm" disabled={busy || effectiveSelected === ""}>
             {busy ? "Assigning…" : "Assign"}
           </Button>
         </div>

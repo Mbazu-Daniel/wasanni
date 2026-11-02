@@ -1,18 +1,18 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { fetchSession } from "@/lib/session";
 import { AuthFrame } from "@/components/auth/auth-frame";
 
-export const Route = createFileRoute("/accept-invitation/$id")({
+export const Route = createFileRoute("/accept-invitation/$invitationId")({
   head: () => ({ meta: [{ title: "Accept your invitation · Wasanni" }] }),
   component: AcceptInvitationPage,
 });
 
 function AcceptInvitationPage() {
-  const { id } = useParams({ from: "/accept-invitation/$id" });
+  const { invitationId } = useParams({ from: "/accept-invitation/$invitationId" });
   const navigate = useNavigate();
   const [busy, setBusy] = React.useState<"accept" | "reject" | null>(null);
 
@@ -25,30 +25,33 @@ function AcceptInvitationPage() {
   async function accept() {
     setBusy("accept");
     const { data, error } = await authClient.organization.acceptInvitation({
-      invitationId: id,
+      invitationId,
     });
     setBusy(null);
 
     if (error || data === null) {
-      toast.error(error?.message ?? "Could not accept invitation");
+      toastAuthError(error, "Could not accept invitation");
       return;
     }
 
-    await authClient.organization.setActive({
+    const activation = await authClient.organization.setActive({
       organizationId: data.invitation.organizationId,
     });
+    if (activation.error) {
+      toastAuthError(activation.error, "Could not switch to the organization");
+    }
     navigate({ to: "/" });
   }
 
   async function reject() {
     setBusy("reject");
     const { error } = await authClient.organization.rejectInvitation({
-      invitationId: id,
+      invitationId,
     });
     setBusy(null);
 
     if (error) {
-      toast.error(error.message ?? "Could not reject invitation");
+      toastAuthError(error, "Could not reject invitation");
       return;
     }
 
@@ -68,7 +71,7 @@ function AcceptInvitationPage() {
         </p>
         <Link
           to="/sign-in"
-          search={{ returnTo: `/accept-invitation/${id}` }}
+          search={{ returnTo: `/accept-invitation/${invitationId}` }}
           className="launch-primary-button mt-8 w-full"
         >
           Sign in to accept

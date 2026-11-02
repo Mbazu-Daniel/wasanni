@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { IconLink, IconPlus } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { PageHeader } from "@/components/primitives/page-header";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
@@ -29,6 +30,8 @@ type GameRow = {
   name: string;
   slug: string;
   description: string | null;
+  imageUrl: string | null;
+  hints: string[];
   hosting: "hosted" | "external";
   status: "draft" | "active" | "archived";
   createdAt: string;
@@ -59,19 +62,20 @@ function GameDetailPage() {
   const { org } = Route.useRouteContext();
   const { gameSlug } = useParams({ from: "/$orgSlug/games/$gameSlug/" });
   const { tab } = Route.useSearch();
+  const navigate = useNavigate();
 
   const organizationId = org?.id ?? "";
   const orgSlug = org?.slug ?? "";
 
-  const { data: game, isLoading } = useQuery({
-    queryKey: ["game", organizationId, gameSlug],
-    queryFn: async () => {
-      const { games } = await apiFetch<{ games: GameRow[] }>(
+  const { data: games = [], isLoading } = useQuery({
+    queryKey: ["games", organizationId],
+    queryFn: () =>
+      apiFetch<{ games: GameRow[] }>(
         `/api/v1/organizations/${organizationId}/games`,
-      );
-      return games.find((row) => row.slug === gameSlug) ?? null;
-    },
+      ).then((response) => response.games),
   });
+
+  const game = games.find((row) => row.slug === gameSlug) ?? null;
 
   const { data: versions = [] } = useQuery({
     queryKey: ["versions", organizationId, game?.id],
@@ -99,7 +103,22 @@ function GameDetailPage() {
   return (
     <div>
       <PageHeader
-        title={game.name}
+        title={
+          <SearchableSelect
+            value={game.slug}
+            onValueChange={(slug) => {
+              if (slug !== game.slug) {
+                navigate({
+                  to: "/$orgSlug/games/$gameSlug",
+                  params: { orgSlug, gameSlug: slug },
+                  search: { tab: "overview" },
+                });
+              }
+            }}
+            options={games.map((entry) => ({ value: entry.slug, label: entry.name }))}
+            className="w-72"
+          />
+        }
         actions={
           <div className="flex items-center gap-2">
             <Badge variant="muted" className="font-mono">
@@ -214,6 +233,24 @@ function GameAssignmentsTab({
     }
   };
 
+  const unassign = async (assignmentId: string) => {
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/games/${game.id}/assignments/${assignmentId}`,
+        { method: "DELETE" },
+      );
+      toast.success("Game removed from platform");
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, game.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, "all"],
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not unassign");
+    }
+  };
+
   const action =
     platforms.length === 0 ? (
       <Link to="/$orgSlug/platforms/new" params={{ orgSlug }}>
@@ -268,16 +305,13 @@ function GameAssignmentsTab({
                   )}
                   <StatusPill status={assignment.status} />
                 </div>
-                {platform && (
-                  <Link
-                    to="/$orgSlug/games/$gameSlug/assignments/$platformSlug"
-                    params={{ orgSlug, gameSlug: game.slug, platformSlug: platform.slug }}
-                  >
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
-                  </Link>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void unassign(assignment.id)}
+                >
+                  Unassign
+                </Button>
               </div>
             );
           })}

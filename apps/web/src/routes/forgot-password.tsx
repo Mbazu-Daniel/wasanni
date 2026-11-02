@@ -1,8 +1,8 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IconMail } from "@tabler/icons-react";
-import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { AuthField, AuthFrame } from "@/components/auth/auth-frame";
 import { looksLikeEmail } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ function ForgotPasswordPage() {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message ?? "Could not send the email");
+      toastAuthError(error, "Could not send the email");
       return;
     }
 

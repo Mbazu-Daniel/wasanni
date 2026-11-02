@@ -77,16 +77,6 @@ export function ConfigsPanel({
       ),
     },
     {
-      key: "revision",
-      header: "Revision",
-      sortValue: (row) => row.revision,
-      render: (row) => (
-        <span className="font-mono text-xs text-muted-foreground">
-          v{row.revision}
-        </span>
-      ),
-    },
-    {
       key: "config",
       header: "Summary",
       render: (row) => {

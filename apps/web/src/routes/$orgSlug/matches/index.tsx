@@ -44,11 +44,7 @@ function MatchesPage() {
   const [gameId, setGameId] = React.useState("");
   const [tournamentId, setTournamentId] = React.useState("");
   const [status, setStatus] = React.useState("");
-  const page = useCursorPage();
-
-  React.useEffect(() => {
-    page.reset();
-  }, [gameId, tournamentId, status, page.reset]);
+  const page = useCursorPage(`${gameId}|${tournamentId}|${status}`);
 
   const { data: games = [] } = useQuery({
     queryKey: ["games", organizationId],

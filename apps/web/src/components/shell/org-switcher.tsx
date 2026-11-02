@@ -19,7 +19,7 @@ export function OrgSwitcher() {
     <details ref={useMenuDisclosure()} className="group relative">
       <summary
         className={cn(
-          "flex h-9 w-full cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-ink/[0.04] px-2 text-sm transition-colors hover:border-pink/30 hover:bg-ink/[0.06] [&::-webkit-details-marker]:hidden",
+          "flex h-9 w-full cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-ink/[0.04] px-2 text-sm transition-colors group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0! hover:border-pink/30 hover:bg-ink/[0.06] [&::-webkit-details-marker]:hidden",
         )}
       >
         <span className="grid size-6 shrink-0 place-items-center rounded bg-primary font-mono text-[11px] font-bold text-primary-foreground">

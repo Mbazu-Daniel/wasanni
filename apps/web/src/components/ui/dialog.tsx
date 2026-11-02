@@ -10,6 +10,7 @@ export function Dialog({
   footer,
   className,
   label,
+  backdrop = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -19,6 +20,7 @@ export function Dialog({
   footer?: React.ReactNode;
   className?: string;
   label?: string;
+  backdrop?: boolean;
 }) {
   const ref = React.useRef<HTMLDialogElement>(null);
 
@@ -26,9 +28,12 @@ export function Dialog({
     const dialog = ref.current;
     if (dialog === null) return;
 
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      if (backdrop) dialog.showModal();
+      else dialog.show();
+    }
     if (!open && dialog.open) dialog.close();
-  }, [open]);
+  }, [open, backdrop]);
 
   return (
     <dialog
@@ -39,7 +44,8 @@ export function Dialog({
         if (event.target === ref.current) onOpenChange(false);
       }}
       className={cn(
-        "fixed left-1/2 top-1/2 z-[90] w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-6 shadow-2xl backdrop:bg-ink/80 backdrop:backdrop-blur-sm",
+        "fixed left-1/2 top-1/2 z-[90] w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-6 shadow-2xl",
+        backdrop && "backdrop:bg-ink/80 backdrop:backdrop-blur-sm",
         className,
       )}
     >

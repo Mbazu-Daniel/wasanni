@@ -14,7 +14,7 @@ import type {
   AgentSpecView,
 } from "@/lib/agent-types";
 
-export const Route = createFileRoute("/$orgSlug/settings/providers")({
+export const Route = createFileRoute("/$orgSlug/providers")({
   head: () => ({ meta: [{ title: "Providers · Wasanni" }] }),
   component: ProvidersSettingsPage,
 });

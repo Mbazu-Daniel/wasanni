@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useDashboardShortcuts({ togglePalette, openPalette, openHelp });
 
-  const immersive = location.pathname.endsWith("/agents");
+  const immersive = location.pathname.endsWith("/builder");
 
   return (
     <TooltipProvider>

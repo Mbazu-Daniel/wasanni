@@ -7,8 +7,8 @@ import {
   IconLock,
   IconMail,
 } from "@tabler/icons-react";
-import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { resumeLastOrganizationSlug } from "@/lib/session";
 import { useSocialProviders } from "@/lib/auth-providers";
 import { AuthField, AuthFrame, AuthSocial } from "@/components/auth/auth-frame";
@@ -42,7 +42,7 @@ function SignInPage() {
     const { error } = await authClient.signIn.email({ email, password });
     setBusy(false);
     if (error) {
-      toast.error(error.message ?? "Sign in failed");
+      toastAuthError(error, "Sign in failed");
       return;
     }
     queryClient.invalidateQueries({ queryKey: ["organizations"] });
@@ -63,7 +63,11 @@ function SignInPage() {
   }
 
   async function social(provider: "google" | "github") {
-    await authClient.signIn.social({ provider, callbackURL: returnTo ?? "/" });
+    const { error } = await authClient.signIn.social({
+      provider,
+      callbackURL: returnTo ?? "/",
+    });
+    if (error) toastAuthError(error, "Sign in failed");
   }
 
   return (

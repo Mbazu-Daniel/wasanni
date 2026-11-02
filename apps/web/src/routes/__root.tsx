@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { AssistantWidget } from "@/components/assistant/assistant-widget";
 import { THEME_SCRIPT, useTheme } from "@/lib/theme";
 import appCss from "../styles.css?url";
 
@@ -63,8 +64,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <AssistantWidget />
       <Toaster
         position="bottom-right"
+        offset={{ bottom: 72, right: 20 }}
         theme={resolved}
         toastOptions={{
           style: {

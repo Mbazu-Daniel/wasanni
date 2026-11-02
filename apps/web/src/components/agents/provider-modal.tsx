@@ -44,26 +44,18 @@ export function ProviderModal({
   React.useEffect(() => {
     if (!open) return;
 
+    const nextSpec = provider?.spec ?? specs[0]?.id ?? "";
+    const listed = specs.find((entry) => entry.id === nextSpec)?.models ?? [];
+
     setName(provider?.name ?? "");
-    setSpec(provider?.spec ?? specs[0]?.id ?? "");
+    setSpec(nextSpec);
     setBaseUrl(provider?.baseUrl ?? specs[0]?.baseUrl ?? "");
-    setModel(provider?.model ?? "");
+    setModel(provider?.model ?? listed[0]?.id ?? "");
     setApiKey("");
     setIsDefault(provider?.isDefault ?? false);
     setMaxRequestTokens(provider?.maxRequestTokens?.toString() ?? "");
-    setModels([]);
-  }, [open, provider, specs]);
-
-  React.useEffect(() => {
-    const listed = specs.find((entry) => entry.id === spec)?.models ?? [];
     setModels(listed);
-    if (model === "") setModel(listed[0]?.id ?? "");
-  }, [model, spec, specs]);
-
-  React.useEffect(() => {
-    if (provider !== null || chosen === undefined) return;
-    setBaseUrl(chosen.baseUrl);
-  }, [chosen, provider]);
+  }, [open, provider, specs]);
 
   const loadModels = async (): Promise<void> => {
     setBusy(true);
@@ -93,9 +85,11 @@ export function ProviderModal({
 
   const chooseSpec = (next: string): void => {
     setSpec(next);
-    const nextModels = specs.find((entry) => entry.id === next)?.models ?? [];
+    const entry = specs.find((candidate) => candidate.id === next);
+    const nextModels = entry?.models ?? [];
     setModels(nextModels);
     setModel(nextModels[0]?.id ?? "");
+    if (provider === null && entry !== undefined) setBaseUrl(entry.baseUrl);
   };
 
   const submit = async (event: React.FormEvent): Promise<void> => {
@@ -149,6 +143,7 @@ export function ProviderModal({
       onOpenChange={onOpenChange}
       title={provider === null ? "Add a model provider" : `Edit ${provider.name}`}
       description="Wasanni calls this endpoint with your key and meters every answer against your usage."
+      backdrop={false}
     >
       <form onSubmit={submit} className="mt-5 space-y-3">
         {provider === null && (

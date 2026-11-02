@@ -22,13 +22,13 @@ const features = [
     icon: IconTemplate,
     title: "Page templates",
     body: "Wrap the game, or a tournament page, in the HTML, CSS and assets you own. Uploaded the same way, served from the same place.",
-    surface: "POST …/templates/:id/upload",
+    surface: "POST …/templates/:templateId/upload",
   },
   {
     icon: IconKey,
     title: "Platforms & keys",
-    body: "One entry per platform you ship to, and a key for each. The key stays on your server; the player gets a short-lived token that grants one score and nothing else.",
-    surface: "POST …/platforms/:id/keys",
+    body: "One entry per platform you ship to, and one organization key whose scopes decide what your server may call. The key stays on your server; the player gets a short-lived token that grants one score and nothing else.",
+    surface: "POST …/organizations/:organizationId/keys",
   },
   {
     icon: IconFlame,
@@ -40,31 +40,31 @@ const features = [
     icon: IconShieldCheck,
     title: "Verified scores",
     body: "Every score is stored. Server-side rules and an optional callback add review flags without hiding the player’s result.",
-    surface: "POST /sessions/:id/score",
+    surface: "POST /sessions/:sessionId/score",
   },
   {
     icon: IconTrophy,
     title: "Leaderboards",
     body: "The best score each player holds on one game, on one platform. A flagged score stays off the leaderboard until you ask for it, and hiding a player never deletes the record.",
-    surface: "GET /games/:id/leaderboards",
+    surface: "GET /games/:gameId/leaderboards",
   },
   {
     icon: IconSwords,
     title: "Tournaments",
     body: "Decided by best score, or by head-to-head bracket. Register the players, seed the bracket, and each round fills itself in with the winners.",
-    surface: "POST /tournaments/:id/players/:id/join",
+    surface: "POST /tournaments/:tournamentId/enter",
   },
   {
     icon: IconRotateClockwise,
     title: "Replays",
     body: "A session keeps its events in order, and those events are the replay. Patch the game next month and last tournament's record run still plays.",
-    surface: "GET /sessions/:id/events",
+    surface: "GET /sessions/:sessionId/events",
   },
   {
     icon: IconWebhook,
     title: "Webhooks",
     body: "Signed deliveries for session opens and ends, scores submitted and hidden. Every payload carries an event ID, so a retry is safe to accept.",
-    surface: "POST …/platforms/:id/webhooks",
+    surface: "POST …/platforms/:platformId/webhooks",
   },
 ];
 

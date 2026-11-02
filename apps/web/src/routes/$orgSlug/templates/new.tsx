@@ -43,9 +43,7 @@ function NewTemplatePage() {
   const [description, setDescription] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!touchedSlug) setSlug(slugify(name));
-  }, [name, touchedSlug]);
+  const effectiveSlug = touchedSlug ? slug : slugify(name);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -58,7 +56,7 @@ function NewTemplatePage() {
           method: "POST",
           data: JSON.stringify({
             name,
-            slug,
+            slug: effectiveSlug,
             kind,
             description: description || undefined,
           }),
@@ -103,7 +101,7 @@ function NewTemplatePage() {
             <Label htmlFor="template-slug">Slug</Label>
             <Input
               id="template-slug"
-              value={slug}
+              value={effectiveSlug}
               onChange={(event) => {
                 setSlug(slugify(event.target.value));
                 setTouchedSlug(true);
@@ -162,7 +160,7 @@ function NewTemplatePage() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" disabled={busy || !name || !slug}>
+          <Button type="submit" disabled={busy || !name || !effectiveSlug}>
             {busy ? "Creating…" : "Create template"}
           </Button>
         </div>

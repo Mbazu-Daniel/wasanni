@@ -94,21 +94,18 @@ function NewMatchPage() {
       ELIGIBLE_TOURNAMENT_STATUSES.has(tournament.status),
   );
 
-  React.useEffect(() => {
-    if (availablePlatforms.length === 1 && newPlatformId === "") {
-      setNewPlatformId(availablePlatforms[0]!.id);
-    }
-  }, [availablePlatforms, newPlatformId]);
+  const solePlatform = availablePlatforms.length === 1 ? availablePlatforms[0] : null;
+  const platformId = newPlatformId !== "" ? newPlatformId : (solePlatform?.id ?? "");
 
   function addParticipant() {
     const externalUserId = newExternalUserId.trim();
 
-    if (newPlatformId === "" || externalUserId === "") {
+    if (platformId === "" || externalUserId === "") {
       toast.error("Pick a platform and type the player's external ID");
       return;
     }
 
-    const key = `${newPlatformId}:${externalUserId}`;
+    const key = `${platformId}:${externalUserId}`;
     if (participants.some((entry) => entry.key === key)) {
       toast.error("That player is already in this match");
       return;
@@ -118,7 +115,7 @@ function NewMatchPage() {
       ...prev,
       {
         key,
-        platformId: newPlatformId,
+        platformId,
         externalUserId,
         displayName: newDisplayName.trim(),
       },
@@ -299,7 +296,7 @@ function NewMatchPage() {
                 <>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Select
-                      value={newPlatformId}
+                      value={platformId}
                       onValueChange={setNewPlatformId}
                       options={availablePlatforms.map((entry) => ({
                         value: entry.id,
@@ -326,7 +323,7 @@ function NewMatchPage() {
                       type="button"
                       variant="outline"
                       onClick={addParticipant}
-                      disabled={newPlatformId === "" || newExternalUserId.trim() === ""}
+                      disabled={platformId === "" || newExternalUserId.trim() === ""}
                       className="gap-1.5"
                     >
                       <IconPlus className="size-3.5" />

@@ -1,22 +1,18 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { IconKey, IconPlus } from "@tabler/icons-react";
+import { IconKey, IconPlus, IconTrash } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/primitives/page-header";
 import { DataTable, type DataTableColumn } from "@/components/primitives/data-table";
 import { EmptyState } from "@/components/primitives/empty-state";
-import { CreateKeyModal } from "@/components/platforms/keys-panel";
-import type { PlatformSummary } from "@/components/platforms/platform-choice";
-import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 
-type OrgKeyRow = {
+type KeyRow = {
   id: string;
-  platformId: string;
-  platformName: string | null;
-  platformSlug: string | null;
   name: string;
   prefix: string;
   enabled: boolean;
@@ -34,25 +30,14 @@ function OrgKeysPage() {
   const queryClient = useQueryClient();
 
   const organizationId = org?.id ?? "";
-  const orgSlug = org?.slug ?? "";
 
-  const [createOpen, setCreateOpen] = React.useState(false);
-  const [revealedSecret, setRevealedSecret] = React.useState<string | null>(null);
-  const [acknowledged, setAcknowledged] = React.useState(false);
-
-  const { data: platforms = [] } = useQuery({
-    queryKey: ["platforms", organizationId],
-    queryFn: () =>
-      apiFetch<{ platforms: PlatformSummary[] }>(
-        `/api/v1/organizations/${organizationId}/platforms`,
-      ).then((response) => response.platforms),
-    enabled: org !== null,
-  });
+  const [revoking, setRevoking] = React.useState<KeyRow | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   const { data: keys = [], isLoading } = useQuery({
     queryKey: ["keys", organizationId, "all"],
     queryFn: () =>
-      apiFetch<{ keys: OrgKeyRow[] }>(
+      apiFetch<{ keys: KeyRow[] }>(
         `/api/v1/organizations/${organizationId}/keys`,
       ).then((response) => response.keys),
   });
@@ -60,44 +45,48 @@ function OrgKeysPage() {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ["keys", organizationId] });
 
-  const columns: DataTableColumn<OrgKeyRow>[] = [
+  async function revoke() {
+    if (revoking === null) return;
+
+    setBusy(true);
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/keys/${revoking.id}`,
+        { method: "PATCH", data: JSON.stringify({ enabled: false }) },
+      );
+      toast.success("API key revoked");
+      setRevoking(null);
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not revoke");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const columns: DataTableColumn<KeyRow>[] = [
     {
       key: "name",
       header: "Name",
       sortValue: (row) => row.name,
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{row.name}</p>
-          <p className="truncate font-mono text-[11px] text-muted-foreground">
-            {row.prefix}…
-          </p>
+      render: (key) => (
+        <div className="flex items-center gap-2.5">
+          <IconKey className="size-3.5 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{key.name}</p>
+            <p className="truncate font-mono text-[11px] text-muted-foreground">
+              {key.prefix}…
+            </p>
+          </div>
         </div>
       ),
-    },
-    {
-      key: "platformSlug",
-      header: "Platform",
-      sortValue: (row) => row.platformSlug ?? "",
-      render: (row) =>
-        row.platformSlug === null ? (
-          <span className="text-xs text-muted-foreground">unknown</span>
-        ) : (
-          <Link
-            to="/$orgSlug/platforms/$platformSlug"
-            params={{ orgSlug: orgSlug, platformSlug: row.platformSlug }}
-            search={{ tab: "keys" }}
-            className="text-sm text-blue hover:underline"
-          >
-            {row.platformName ?? row.platformSlug}
-          </Link>
-        ),
     },
     {
       key: "enabled",
       header: "Status",
       sortValue: (row) => (row.enabled ? 1 : 0),
-      render: (row) =>
-        row.enabled ? (
+      render: (key) =>
+        key.enabled ? (
           <Badge variant="success">active</Badge>
         ) : (
           <Badge variant="muted">revoked</Badge>
@@ -107,13 +96,31 @@ function OrgKeysPage() {
       key: "expiresAt",
       header: "Expires",
       sortValue: (row) => row.expiresAt ?? "",
-      render: (row) => (
+      render: (key) => (
         <span className="text-xs text-muted-foreground">
-          {row.expiresAt === null
+          {key.expiresAt === null
             ? "Never"
-            : new Date(row.expiresAt).toLocaleDateString()}
+            : new Date(key.expiresAt).toLocaleDateString()}
         </span>
       ),
+    },
+    {
+      key: "actions",
+      header: "",
+      className: "w-12",
+      render: (key) =>
+        key.enabled ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Revoke key"
+            title="Revoke key"
+            className="text-rose-400 hover:bg-rose-400/10 hover:text-rose-300"
+            onClick={() => setRevoking(key)}
+          >
+            <IconTrash className="size-4" />
+          </Button>
+        ) : null,
     },
   ];
 
@@ -122,12 +129,12 @@ function OrgKeysPage() {
       <PageHeader
         title="API keys"
         actions={
-          platforms.length > 0 ? (
-            <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+          <Link to="/$orgSlug/keys/new" params={{ orgSlug: org?.slug ?? "" }}>
+            <Button size="sm" className="gap-1.5">
               <IconPlus className="size-3.5" />
               Create key
             </Button>
-          ) : null
+          </Link>
         }
       />
 
@@ -140,37 +147,21 @@ function OrgKeysPage() {
           <EmptyState
             icon={<IconKey className="size-5" />}
             title="No API keys yet"
-            description={
-              platforms.length === 0
-                ? "A key belongs to one platform, so create a platform first."
-                : "Create a key for one of your platforms to let its server call the API."
-            }
+            description="Create a key so your servers and MCP clients can call the API."
           />
         }
       />
 
-      <CreateKeyModal
-        open={createOpen}
-        onOpenChange={(open) => {
-          if (!open && revealedSecret !== null && !acknowledged) {
-            toast.error("Save the secret first");
-            return;
-          }
-          setCreateOpen(open);
-          if (!open) {
-            setRevealedSecret(null);
-            setAcknowledged(false);
-          }
-        }}
-        organizationId={organizationId}
-        target={{ kind: "pick", platforms }}
-        onCreated={(secret) => {
-          setRevealedSecret(secret);
-          refresh();
-        }}
-        revealedSecret={revealedSecret}
-        onAcknowledged={() => setAcknowledged(true)}
-        acknowledged={acknowledged}
+      <ConfirmDialog
+        open={revoking !== null}
+        onOpenChange={(open) => !open && setRevoking(null)}
+        title={`Revoke ${revoking?.name ?? "this key"}?`}
+        description="Any client using this key stops working immediately. This cannot be undone."
+        confirmPhrase={revoking?.name}
+        confirmLabel="Revoke key"
+        destructive
+        busy={busy}
+        onConfirm={revoke}
       />
     </div>
   );

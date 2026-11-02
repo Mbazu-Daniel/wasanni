@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   IconPlus,
   IconLink,
@@ -113,18 +113,16 @@ function OverviewPage() {
     enabled: org !== null,
   });
 
-  const keyQueries = useQueries({
-    queries: platforms.map((platform) => ({
-      queryKey: ["keys", organizationId, platform.id],
-      queryFn: () =>
-        apiFetch<{ keys: { id: string }[] }>(
-          `/api/v1/organizations/${organizationId}/platforms/${platform.id}/keys`,
-        ).then((response) => response.keys),
-      enabled: org !== null,
-    })),
+  const { data: orgKeys = [] } = useQuery({
+    queryKey: ["keys", organizationId, "all"],
+    queryFn: () =>
+      apiFetch<{ keys: { id: string }[] }>(
+        `/api/v1/organizations/${organizationId}/keys`,
+      ).then((response) => response.keys),
+    enabled: org !== null,
   });
 
-  const hasKeys = keyQueries.some((query) => (query.data?.length ?? 0) > 0);
+  const hasKeys = orgKeys.length > 0;
   const game = games[0];
   const platform = platforms[0];
 
@@ -132,7 +130,7 @@ function OverviewPage() {
     {
       title: "Create a platform",
       description:
-        "The place your game is played. It owns the API keys and webhooks your server uses.",
+        "The place your game is played. Its webhooks deliver your events, and games are assigned to it.",
       done: platforms.length > 0,
       action: platform ? (
         <Link
@@ -198,20 +196,16 @@ function OverviewPage() {
     {
       title: "Create an API key",
       description:
-        "Your server signs session and score requests with a key scoped to the platform.",
+        "One key for the organization; its scopes decide what your server may call.",
       done: hasKeys,
-      action: platform ? (
-        <Link
-          to="/$orgSlug/platforms/$platformSlug"
-          params={{ orgSlug, platformSlug: platform.slug }}
-          search={{ tab: "keys" }}
-        >
+      action: (
+        <Link to="/$orgSlug/keys" params={{ orgSlug }}>
           <Button size="sm" variant={hasKeys ? "outline" : "default"} className="gap-1.5">
             <IconKey className="size-3.5" />
             Open keys
           </Button>
         </Link>
-      ) : null,
+      ),
     },
   ];
 
