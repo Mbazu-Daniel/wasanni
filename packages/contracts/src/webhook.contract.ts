@@ -30,6 +30,7 @@ export const WebhookConfigView = t.Object({
   secretLast4: t.String(),
   events: t.Array(t.String()),
   enabled: t.Boolean(),
+  expiresAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
   lastDeliveryAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
   lastFailureAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
   createdAt: t.String({ format: "date-time" }),
@@ -75,7 +76,7 @@ export type WebhookDeliveryList = UnwrapSchema<typeof WebhookDeliveryList>;
 
 export const WebhookConfigList = t.Object({ webhooks: t.Array(WebhookConfigView) });
 
-export const WebhookTestAccepted = t.Object({ queued: t.Number() });
+export const WebhookTestAccepted = t.Object({ accepted: t.Boolean() });
 export type WebhookTestAccepted = UnwrapSchema<typeof WebhookTestAccepted>;
 export type WebhookConfigList = UnwrapSchema<typeof WebhookConfigList>;
 
@@ -90,6 +91,7 @@ export const CreateWebhookBody = t.Object({
   description: t.Optional(t.String({ maxLength: 500 })),
   events: t.Array(WebhookEventSchema, { minItems: 1, maxItems: 20 }),
   enabled: t.Optional(t.Boolean()),
+  expiresInSeconds: t.Optional(t.Number({ minimum: 3600, maximum: 31536000 })),
 });
 export type CreateWebhookBody = UnwrapSchema<typeof CreateWebhookBody>;
 

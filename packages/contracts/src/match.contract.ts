@@ -122,6 +122,9 @@ export const PlatformWinnerParams = t.Object({
 });
 export type PlatformWinnerParams = UnwrapSchema<typeof PlatformWinnerParams>;
 
+export const PlatformWinnerBody = t.Object({ platformId: t.String() });
+export type PlatformWinnerBody = UnwrapSchema<typeof PlatformWinnerBody>;
+
 export const MatchParticipants = t.Object({
   match: MatchView,
   participants: t.Array(MatchParticipantView),

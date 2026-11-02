@@ -18,7 +18,7 @@ export const GameSessionView = t.Object({
   tournamentId: t.Union([t.String(), t.Null()]),
   matchId: t.Union([t.String(), t.Null()]),
   externalUserId: t.String(),
-  externalUserName: t.Union([t.String(), t.Null()]),
+  externalName: t.Union([t.String(), t.Null()]),
   mode: t.Union([t.String(), t.Null()]),
   status: GameSessionStatus,
   config: t.Record(t.String(), t.Unknown()),
@@ -42,8 +42,9 @@ export type CreatedGameSession = UnwrapSchema<typeof CreatedGameSession>;
 
 export const CreateGameSessionBody = t.Object({
   gameId: t.String(),
+  platformId: t.String(),
   externalUserId: t.String({ minLength: 1, maxLength: 200 }),
-  externalUserName: t.Optional(t.String({ maxLength: 200 })),
+  externalName: t.Optional(t.String({ maxLength: 200 })),
   mode: t.Optional(t.String({ maxLength: 80 })),
   configId: t.Optional(t.String()),
   tournamentId: t.Optional(t.String()),

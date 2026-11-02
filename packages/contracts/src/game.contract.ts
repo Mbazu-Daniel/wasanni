@@ -23,6 +23,8 @@ export const GameView = t.Object({
   name: t.String(),
   slug: t.String(),
   description: t.Union([t.String(), t.Null()]),
+  imageUrl: t.Union([t.String(), t.Null()]),
+  hints: t.Array(t.String()),
   hosting: GameHosting,
   status: GameStatus,
   createdAt: t.String({ format: "date-time" }),
@@ -36,10 +38,15 @@ export type GameSingle = UnwrapSchema<typeof GameSingle>;
 export const GameList = t.Object({ games: t.Array(GameView) });
 export type GameList = UnwrapSchema<typeof GameList>;
 
+export const GameHints = t.Array(t.String({ minLength: 1, maxLength: 200 }), {
+  maxLength: 20,
+});
+
 export const CreateGameBody = t.Object({
   name: t.String({ minLength: 1, maxLength: 120 }),
   slug: GameSlug,
   description: t.Optional(t.String({ maxLength: 1000 })),
+  hints: t.Optional(GameHints),
   hosting: GameHosting,
 });
 export type CreateGameBody = UnwrapSchema<typeof CreateGameBody>;
@@ -49,6 +56,8 @@ export const UpdateGameBody = t.Object(
     name: t.Optional(t.String({ minLength: 1, maxLength: 120 })),
     slug: t.Optional(GameSlug),
     description: t.Optional(t.Union([t.String({ maxLength: 1000 }), t.Null()])),
+    imageUrl: t.Optional(t.Null()),
+    hints: t.Optional(GameHints),
   },
   { minProperties: 1 },
 );
@@ -68,3 +77,8 @@ export type GameIdParams = UnwrapSchema<typeof GameIdParams>;
 
 export const PlatformGameParams = t.Object({ gameId: t.String() });
 export type PlatformGameParams = UnwrapSchema<typeof PlatformGameParams>;
+
+export const OptionalPlatformQuery = t.Object({
+  platformId: t.Optional(t.String()),
+});
+export type OptionalPlatformQuery = UnwrapSchema<typeof OptionalPlatformQuery>;

@@ -1,5 +1,6 @@
 import { t, type UnwrapSchema } from "elysia";
 import { BracketView } from "./match.contract.ts";
+import { GameSessionView } from "./session.contract.ts";
 
 export const TournamentFormat = t.Union([
   t.Literal("leaderboard"),
@@ -9,6 +10,7 @@ export type TournamentFormat = UnwrapSchema<typeof TournamentFormat>;
 
 export const TournamentStatus = t.Union([
   t.Literal("draft"),
+  t.Literal("scheduled"),
   t.Literal("open"),
   t.Literal("running"),
   t.Literal("completed"),
@@ -50,6 +52,7 @@ export const TournamentView = t.Object({
   name: t.String(),
   slug: t.String(),
   description: t.Union([t.String(), t.Null()]),
+  imageUrl: t.Union([t.String(), t.Null()]),
   format: TournamentFormat,
   status: TournamentStatus,
   maxParticipants: t.Union([t.Number(), t.Null()]),
@@ -119,6 +122,7 @@ export const UpdateTournamentBody = t.Object({
     }),
   ),
   description: t.Optional(t.Union([t.String({ maxLength: 2000 }), t.Null()])),
+  imageUrl: t.Optional(t.Null()),
   maxParticipants: t.Optional(
     t.Union([t.Number({ minimum: 2, maximum: 256 }), t.Null()]),
   ),
@@ -173,10 +177,42 @@ export const PlatformJoinParams = t.Object({
 });
 export type PlatformJoinParams = UnwrapSchema<typeof PlatformJoinParams>;
 
-export const PlatformJoinBody = t.Object({
+export const PlatformLeaveBody = t.Object({ platformId: t.String() });
+export type PlatformLeaveBody = UnwrapSchema<typeof PlatformLeaveBody>;
+
+export const TournamentEnterBody = t.Object({
+  platformId: t.String(),
+  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
   displayName: t.Optional(t.String({ maxLength: 200 })),
 });
-export type PlatformJoinBody = UnwrapSchema<typeof PlatformJoinBody>;
+export type TournamentEnterBody = UnwrapSchema<typeof TournamentEnterBody>;
+
+export const DuelEnterBody = t.Object({
+  platformId: t.String(),
+  gameId: t.String(),
+  externalUserId: t.String({ minLength: 1, maxLength: 200 }),
+  externalName: t.Optional(t.String({ maxLength: 200 })),
+  configId: t.Optional(t.String()),
+});
+export type DuelEnterBody = UnwrapSchema<typeof DuelEnterBody>;
+
+export const TournamentEnterView = t.Object({
+  session: GameSessionView,
+  sessionToken: t.String(),
+  realtimeUrl: t.String(),
+  matchId: t.Optional(t.String()),
+  opponent: t.Optional(t.Nullable(t.String())),
+});
+export type TournamentEnterView = UnwrapSchema<typeof TournamentEnterView>;
+
+export const DuelEnterView = t.Object({
+  matchId: t.String(),
+  opponent: t.Nullable(t.String()),
+  session: GameSessionView,
+  sessionToken: t.String(),
+  realtimeUrl: t.String(),
+});
+export type DuelEnterView = UnwrapSchema<typeof DuelEnterView>;
 
 export const PlatformTournamentParams = t.Object({ tournamentId: t.String() });
 export type PlatformTournamentParams = UnwrapSchema<
