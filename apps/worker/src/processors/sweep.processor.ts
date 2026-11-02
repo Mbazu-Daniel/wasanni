@@ -1,6 +1,6 @@
 import { and, eq, lt } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { gameSession, session, verification } from "@wasanni/db/schema";
+import { gameSession, session, tournament, verification } from "@wasanni/db/schema";
 import type { SweepResult } from "../types.ts";
 
 export function createSweepProcessor(db: Db) {
@@ -23,8 +23,17 @@ export function createSweepProcessor(db: Db) {
       .where(lt(verification.expiresAt, now))
       .returning({ id: verification.id });
 
+    const opened = await db
+      .update(tournament)
+      .set({ status: "open", updatedAt: now })
+      .where(
+        and(eq(tournament.status, "scheduled"), lt(tournament.startsAt, now)),
+      )
+      .returning({ id: tournament.id });
+
     return {
       expiredSessions: expired.length,
+      openedTournaments: opened.length,
       expiredOrganizations: [...new Set(expired.map((row) => row.organizationId))],
       purgedAuthSessions: purgedSessions.length,
       purgedVerifications: purgedVerifications.length,

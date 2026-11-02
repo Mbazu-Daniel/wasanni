@@ -1,18 +1,21 @@
 import { Worker } from "bullmq";
 import type { Db } from "@wasanni/db";
 import { JOB, QUEUE, type Enqueuer, type QueueConnection } from "@wasanni/jobs";
-import { InternalServerError, type Redis } from "@wasanni/kit";
+import { InternalServerError, type Logger, type Redis } from "@wasanni/kit";
 import { createSweepProcessor } from "../processors/sweep.processor.ts";
 import { createUsageFlushProcessor } from "../processors/usage-flush.processor.ts";
+import { createOutboxProcessor } from "../processors/outbox.processor.ts";
 
 export function createDefaultWorker(
   connection: QueueConnection,
   db: Db,
   redis: Redis,
   enqueuer: Enqueuer,
+  logger: Logger,
 ) {
   const sweep = createSweepProcessor(db);
   const flushUsage = createUsageFlushProcessor(db, redis);
+  const publishOutbox = createOutboxProcessor(db, enqueuer, logger);
 
   const sweepAndQueuePacks = async () => {
     const result = await sweep();
@@ -32,6 +35,9 @@ export function createDefaultWorker(
       }
       if (job.name === JOB.USAGE_FLUSH) {
         return flushUsage();
+      }
+      if (job.name === JOB.OUTBOX_PUBLISH) {
+        return publishOutbox();
       }
       throw new InternalServerError(`unexpected default job: ${job.name}`);
     },

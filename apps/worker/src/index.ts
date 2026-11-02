@@ -7,7 +7,7 @@ import {
   readEnv,
   readStorageConfig,
 } from "@wasanni/kit";
-import { createDb } from "@wasanni/db";
+import { createAuditRecorder, createDb } from "@wasanni/db";
 import {
   closeQueues,
   createEnqueuer,
@@ -15,8 +15,8 @@ import {
   createQueues,
   JOB,
   QUEUE,
+  SCHEDULES,
 } from "@wasanni/jobs";
-import { createAuditService } from "../../api/src/modules/audit/service.ts";
 import { createWebhookWorker } from "./jobs/webhook.worker.ts";
 import { createEmailWorker } from "./jobs/email.worker.ts";
 import { createArchiveWorker } from "./jobs/archive.worker.ts";
@@ -37,7 +37,7 @@ const { db, sql } = createDb(cfg.DATABASE_URL, { max: cfg.DB_POOL_MAX_WORKER });
 const redis = createRedis(cfg.REDIS_URL);
 const storage = createObjectStorage(readStorageConfig(cfg));
 const events = createRedisSessionEventStore(redis);
-const audit = createAuditService(db, logger);
+const audit = createAuditRecorder(db, logger);
 
 const connection = createQueueConnection(cfg.REDIS_URL);
 const queues = createQueues(connection);
@@ -47,7 +47,7 @@ const workers = [
   createWebhookWorker(connection, db, cfg, logger),
   createEmailWorker(connection, cfg, logger),
   createArchiveWorker(connection, { db, storage, events, audit, env: cfg, logger }),
-  createDefaultWorker(connection, db, redis, enqueuer),
+  createDefaultWorker(connection, db, redis, enqueuer, logger),
 ];
 
 for (const worker of workers) {
@@ -73,28 +73,17 @@ for (const worker of workers) {
 
 await queues.archive.removeJobScheduler("score-pack");
 
-await queues.archive.upsertJobScheduler(
-  "score-partition-maintenance",
-  { pattern: "5 * * * *", tz: "UTC" },
-  { name: JOB.SCORE_ENSURE_PARTITIONS, data: {} },
-);
+for (const schedule of SCHEDULES) {
+  await queues[schedule.queue].upsertJobScheduler(schedule.key, schedule.repeat, {
+    name: schedule.job,
+    data: {},
+  });
+}
 
 await queues.archive.upsertJobScheduler(
   "score-archive",
   { pattern: cfg.SCORE_ARCHIVE_CRON, tz: "UTC" },
   { name: JOB.SCORE_ARCHIVE_PARTITIONS, data: {} },
-);
-
-await queues.default.upsertJobScheduler(
-  "session-sweep",
-  { every: 60 * 1000 },
-  { name: JOB.SESSION_SWEEP, data: {} },
-);
-
-await queues.default.upsertJobScheduler(
-  "usage-flush",
-  { pattern: "* * * * *", tz: "UTC" },
-  { name: JOB.USAGE_FLUSH, data: {} },
 );
 
 logger.info("worker started", {
@@ -104,6 +93,7 @@ logger.info("worker started", {
     JOB.SCORE_ARCHIVE_PARTITIONS,
     JOB.SESSION_SWEEP,
     JOB.USAGE_FLUSH,
+    JOB.OUTBOX_PUBLISH,
   ],
 });
 
