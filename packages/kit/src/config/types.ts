@@ -37,6 +37,7 @@ export type Env = {
   readonly STORAGE_DOWNLOAD_URL_TTL_SECONDS: number;
   readonly STORAGE_MAX_GAME_BUNDLE_BYTES: number;
   readonly WEBHOOK_SECRET_ENCRYPTION_KEY: string;
+  readonly API_KEY_ENCRYPTION_KEY: string;
   readonly EMAIL_FROM_ADDRESS: string;
   readonly EMAIL_FROM_NAME: string;
   readonly ZEPTOMAIL_API_KEY: string | undefined;

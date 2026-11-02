@@ -34,8 +34,8 @@ export function buildObjectKey(input: {
   filename: string;
 }): string {
   const parts = [
+    input.organizationId,
     input.location,
-    sanitizeSegment(input.organizationId),
     ...input.segments.map(sanitizeSegment),
     `${newId()}-${sanitizeFilename(input.filename)}`,
   ];
