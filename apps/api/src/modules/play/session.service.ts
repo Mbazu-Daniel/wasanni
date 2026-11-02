@@ -43,7 +43,7 @@ const toView = (row: GameSessionRow): GameSessionView => ({
   tournamentId: row.tournamentId,
   matchId: row.matchId,
   externalUserId: row.externalUserId,
-  externalUserName: row.externalUserName,
+  externalName: row.externalName,
   mode: row.mode,
   status: row.status,
   config: withoutCallbackSecret(row.configSnapshot),
@@ -57,7 +57,6 @@ const toView = (row: GameSessionRow): GameSessionView => ({
 export async function readGameSessionRow(
   db: Db,
   scope: Scope,
-  platformId: string,
   sessionId: string,
 ): Promise<GameSessionRow> {
   const [row] = await db
@@ -68,7 +67,6 @@ export async function readGameSessionRow(
         scope,
         gameSession,
         eq(gameSession.id, sessionId),
-        eq(gameSession.platformId, platformId),
       ),
     )
     .limit(1);
@@ -163,19 +161,22 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
   ): Promise<void> => {
     if (session.status === "ended") return;
 
-    await db
-      .update(gameSession)
-      .set({ status: "ended", endedAt: at })
-      .where(scopeTo(scope, gameSession, eq(gameSession.id, session.id)));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(gameSession)
+        .set({ status: "ended", endedAt: at })
+        .where(scopeTo(scope, gameSession, eq(gameSession.id, session.id)));
 
-    await deps.dispatcher
-      .dispatch({
-        organizationId: session.organizationId,
-        platformId: session.platformId,
-        eventType: "session.ended",
-        payload: { sessionId: session.id, gameId: session.gameId },
-      })
-      .catch(() => 0);
+      await deps.dispatcher.dispatch(
+        {
+          organizationId: session.organizationId,
+          platformId: session.platformId,
+          eventType: "session.ended",
+          payload: { sessionId: session.id, gameId: session.gameId },
+        },
+        tx,
+      );
+    });
 
     await deps.enqueuer?.scorePackNow(session.organizationId).catch(() => undefined);
   };
@@ -249,33 +250,48 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         matchId,
       });
 
-      const [row] = await db
-        .insert(gameSession)
-        .values({
-          id: newId(),
-          organizationId: scope.organizationId,
-          platformId: input.platformId,
-          gameId: input.body.gameId,
-          assignmentId: assignment.id,
-          gameFileId,
-          gameConfigId: config.id,
-          tournamentId,
-          matchId,
-          externalUserId: input.body.externalUserId,
-          externalUserName: input.body.externalUserName ?? null,
-          mode: input.body.mode ?? null,
-          status: "active",
-          tokenHash: sha256Hex(sessionToken),
-          scoreVerificationMode: mode,
-          scoreVerificationCallbackSecretCiphertext: config.scoreVerificationCallbackSecretCiphertext,
-          configSnapshot: config.config,
-          configSchemaVersion: config.schemaVersion,
-          metadata: input.body.metadata ?? {},
-          expiresAt,
-        })
-        .returning();
+      const row = await db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(gameSession)
+          .values({
+            id: newId(),
+            organizationId: scope.organizationId,
+            platformId: input.platformId,
+            gameId: input.body.gameId,
+            assignmentId: assignment.id,
+            gameFileId,
+            gameConfigId: config.id,
+            tournamentId,
+            matchId,
+            externalUserId: input.body.externalUserId,
+            externalName: input.body.externalName ?? null,
+            mode: input.body.mode ?? null,
+            status: "active",
+            tokenHash: sha256Hex(sessionToken),
+            scoreVerificationMode: mode,
+            scoreVerificationCallbackSecretCiphertext: config.scoreVerificationCallbackSecretCiphertext,
+            configSnapshot: config.config,
+            configSchemaVersion: config.schemaVersion,
+            metadata: input.body.metadata ?? {},
+            expiresAt,
+          })
+          .returning();
 
-      if (row === undefined) throw new InternalServerError("game session insert returned no row");
+        if (inserted === undefined)
+          throw new InternalServerError("game session insert returned no row");
+
+        await deps.dispatcher.dispatch(
+          {
+            organizationId: inserted.organizationId,
+            platformId: inserted.platformId,
+            eventType: "session.created",
+            payload: toView(inserted),
+          },
+          tx,
+        );
+
+        return inserted;
+      });
 
       if (deps.usage !== null) {
         await deps.usage.incr({
@@ -287,15 +303,6 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       const session = toView(row);
 
-      await deps.dispatcher
-        .dispatch({
-          organizationId: session.organizationId,
-          platformId: session.platformId,
-          eventType: "session.created",
-          payload: session,
-        })
-        .catch(() => 0);
-
       const realtimeBase = deps.realtimeBaseUrl.replace(/\/+$/, "");
       const realtimeUrl = `${realtimeBase}${REALTIME_PATH}/${row.id}?token=${encodeURIComponent(sessionToken)}`;
 
@@ -306,18 +313,18 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
       };
     },
 
-    async get(scope: Scope, platformId: string, sessionId: string): Promise<GameSessionView> {
-      return toView(await readGameSessionRow(db, scope, platformId, sessionId));
+    async get(scope: Scope, sessionId: string): Promise<GameSessionView> {
+      return toView(await readGameSessionRow(db, scope, sessionId));
     },
 
-    async end(scope: Scope, platformId: string, sessionId: string): Promise<GameSessionView> {
-      const current = await readGameSessionRow(db, scope, platformId, sessionId);
+    async end(scope: Scope, sessionId: string): Promise<GameSessionView> {
+      const current = await readGameSessionRow(db, scope, sessionId);
 
       if (current.status === "ended") return toView(current);
 
       await endSession(scope, current, new Date());
 
-      return toView(await readGameSessionRow(db, scope, platformId, sessionId));
+      return toView(await readGameSessionRow(db, scope, sessionId));
     },
 
     endSession,

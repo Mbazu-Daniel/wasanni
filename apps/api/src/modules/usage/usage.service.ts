@@ -1,9 +1,10 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { usageCounter, usageQuota } from "@wasanni/db/schema";
+import { usageCounter, usageQuota, platform } from "@wasanni/db/schema";
 import type { UsageMetric, UsagePeriod } from "@wasanni/contracts";
 import { RateLimitedError } from "@wasanni/kit";
 import { DAILY_SOURCES } from "./constants.ts";
+import { dailyDates } from "../../daily-dates.ts";
 import type { DailyMetric, DailyRow, UsageServiceDeps } from "./types.ts";
 
 export const currentPeriodStart = (now = new Date()): Date =>
@@ -154,17 +155,10 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
 
     const byDate = new Map(rows.map((row) => [row.day, Number(row.value)]));
 
-    const series: DailyRow[] = [];
-    const cursor = new Date(input.from);
-    cursor.setUTCHours(0, 0, 0, 0);
-
-    while (cursor <= input.to) {
-      const date = cursor.toISOString().slice(0, 10);
-      series.push({ date, value: byDate.get(date) ?? 0 });
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
-    }
-
-    return series;
+    return dailyDates(input.from, input.to).map<DailyRow>((date) => ({
+      date,
+      value: byDate.get(date) ?? 0,
+    }));
   };
 
   const storageBreakdown = async (organizationId: string) => {
@@ -230,6 +224,24 @@ export function createUsageService(db: Db, deps: UsageServiceDeps) {
 
   return {
     incr,
+
+    async platformExists(
+      organizationId: string,
+      platformId: string,
+    ): Promise<boolean> {
+      const [row] = await db
+        .select({ id: platform.id })
+        .from(platform)
+        .where(
+          and(
+            eq(platform.id, platformId),
+            eq(platform.organizationId, organizationId),
+          ),
+        )
+        .limit(1);
+
+      return row !== undefined;
+    },
 
     dailyBreakdown,
 

@@ -89,14 +89,14 @@ export const createWebhookRoutes = <T extends PrincipalApi>(
 
         await service.get(scope, params.platformId, params.webhookId);
 
-        const queued = await dispatcher.dispatch({
+        await dispatcher.dispatch({
           organizationId: scope.organizationId,
           platformId: params.platformId,
           eventType: "webhook.test",
           payload: { webhookId: params.webhookId },
         });
 
-        return status(202, { queued });
+        return status(202, { accepted: true });
       },
       {
         organizationAuth: PERMISSION.webhookRead,

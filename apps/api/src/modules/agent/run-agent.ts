@@ -35,6 +35,11 @@ type AgentSetup = {
   readonly requestId: string;
 };
 
+const withTimeout = (signal?: AbortSignal): AbortSignal =>
+  signal === undefined
+    ? AbortSignal.timeout(RUN_TIMEOUT_MS)
+    : AbortSignal.any([AbortSignal.timeout(RUN_TIMEOUT_MS), signal]);
+
 const modelOf = (endpoint: ProviderEndpoint, baseUrl: string) =>
   createOpenAICompatible({
     name: endpoint.spec,
@@ -169,6 +174,7 @@ export const runAgent = async function* (
     readonly attachments: RunAgentBody["attachments"];
     readonly thread: string;
     readonly resource: string;
+    readonly signal?: AbortSignal;
   },
 ): AsyncGenerator<RunEvent, AgentRunOutcome, void> {
   const { agent, context, trimmedMessages } = await prepare(input);
@@ -197,7 +203,7 @@ export const runAgent = async function* (
     memory: { thread: input.thread, resource: input.resource },
     maxSteps: MAX_AGENT_STEPS,
     activeTools: input.activeTools,
-    abortSignal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+    abortSignal: withTimeout(input.signal),
   });
 
   return yield* consume(stream, trimmedMessages, input.agentRunId);
@@ -208,6 +214,7 @@ export const resumeAgentRun = async function* (
     readonly agentRunId: string;
     readonly callId: string;
     readonly approved: boolean;
+    readonly signal?: AbortSignal;
   },
 ): AsyncGenerator<RunEvent, AgentRunOutcome, void> {
   const { agent, context, trimmedMessages } = await prepare(input);
@@ -218,7 +225,7 @@ export const resumeAgentRun = async function* (
         requestContext: context,
         toolCallId: input.callId,
         maxSteps: MAX_AGENT_STEPS,
-        abortSignal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+        abortSignal: withTimeout(input.signal),
       })
     : await agent.declineToolCall({
         runId: input.agentRunId,
@@ -226,7 +233,7 @@ export const resumeAgentRun = async function* (
         toolCallId: input.callId,
         reason: "the developer did not allow this call",
         maxSteps: MAX_AGENT_STEPS,
-        abortSignal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+        abortSignal: withTimeout(input.signal),
       });
 
   return yield* consume(stream, trimmedMessages, input.agentRunId);

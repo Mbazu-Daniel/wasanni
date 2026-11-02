@@ -8,8 +8,8 @@ export const createWebhooksRoutes = <T extends PrincipalApi>(
   api: T,
   deps: WebhookModuleDeps,
 ) => {
-  const service = createWebhookService(deps.db);
-  const secrets = createWebhookSecretService(deps.db, deps.encryptionKey);
+  const service = createWebhookService(deps.db, deps.allowPrivateOutbound);
+  const secrets = createWebhookSecretService(deps.db, deps.encryptionKey, deps.allowPrivateOutbound);
 
   createWebhookRoutes(api, { service, secrets, dispatcher: deps.dispatcher });
 

@@ -2,11 +2,16 @@ import type { Db } from "@wasanni/db";
 import type { agentProvider, agentRun, agentSession } from "@wasanni/db/schema";
 import type {
   AgentRunStatus,
+  AssignmentView,
   BracketView,
+  CreateApiKeyBody,
+  CreateGameBody,
+  CreatePlatformBody,
+  CreatedApiKey,
   GameHosting,
   GameStatus,
   GameView,
-  LeaderboardEntry,
+  LeaderboardList,
   GameLeaderboardQuery,
   MatchParticipantView,
   MatchView,
@@ -27,8 +32,10 @@ import type {
   CreateMatchInput,
   CreateTournamentInput,
   RegisterParticipantInput,
+  TournamentFilter,
 } from "../competition/types.ts";
 import type { ScoreSubmitInput } from "../play/types.ts";
+import type { AssignmentCreateInput } from "../games/types.ts";
 
 export type AgentService = ReturnType<typeof createAgentService>;
 
@@ -66,21 +73,32 @@ export type AgentGameContext = {
 
 export type AgentGamePort = {
   list(scope: Scope): Promise<GameView[]>;
+  create(scope: Scope, input: CreateGameBody): Promise<GameView>;
   context(scope: Scope, gameId: string): Promise<AgentGameContext | null>;
   deploy(scope: Scope, memberId: string, gameId: string, html: string): Promise<string>;
 };
 
 export type AgentIntegrator = {
+  apiKeys: {
+    create(
+      scope: Scope,
+      actorUserId: string,
+      input: CreateApiKeyBody,
+    ): Promise<CreatedApiKey>;
+  };
+  assignments: {
+    create(scope: Scope, input: AssignmentCreateInput): Promise<AssignmentView>;
+    listByGame(scope: Scope, gameId: string): Promise<AssignmentView[]>;
+  };
   brackets: {
     generateBracket(scope: Scope, tournamentId: string): Promise<BracketView>;
   };
   leaderboards: {
     list(
       scope: Scope,
-      platformId: string,
       gameId: string,
       query: GameLeaderboardQuery,
-    ): Promise<LeaderboardEntry[]>;
+    ): Promise<LeaderboardList>;
   };
   matches: {
     complete(scope: Scope, input: CompleteMatchInput): Promise<MatchView>;
@@ -91,7 +109,10 @@ export type AgentIntegrator = {
   participants: {
     register(scope: Scope, input: RegisterParticipantInput): Promise<ParticipantView>;
   };
-  platforms: { list(scope: Scope): Promise<PlatformView[]> };
+  platforms: {
+    list(scope: Scope): Promise<PlatformView[]>;
+    create(scope: Scope, input: CreatePlatformBody): Promise<PlatformView>;
+  };
   scores: {
     submitFromServer(scope: Scope, input: ScoreSubmitInput): Promise<ScoreView>;
   };
@@ -99,6 +120,8 @@ export type AgentIntegrator = {
   tournaments: {
     cancel(scope: Scope, tournamentId: string): Promise<TournamentView>;
     create(scope: Scope, input: CreateTournamentInput): Promise<TournamentView>;
+    get(scope: Scope, tournamentId: string): Promise<TournamentView>;
+    list(scope: Scope, filter?: TournamentFilter): Promise<TournamentView[]>;
     open(scope: Scope, tournamentId: string): Promise<TournamentView>;
   };
 };

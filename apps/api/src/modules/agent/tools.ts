@@ -2,7 +2,12 @@ import { createTool } from "@mastra/core/tools";
 import { toStandardSchema } from "@mastra/core/schema";
 import type { Static } from "@sinclair/typebox";
 import { t } from "elysia";
-import { CreateTournamentBody } from "@wasanni/contracts";
+import {
+  CreateApiKeyBody,
+  CreateGameBody,
+  CreatePlatformBody,
+  CreateTournamentBody,
+} from "@wasanni/contracts";
 import type { AuditAction, AuditResourceType } from "@wasanni/contracts";
 import type { Logger, Scope } from "@wasanni/kit";
 import { findDoc, readDocs } from "../docs/index.ts";
@@ -97,28 +102,57 @@ const completeMatchInput = t.Object({
 });
 
 const recordScoreInput = t.Object({
-  platformId: t.String({ minLength: 1, maxLength: 64 }),
   sessionId: t.String({ minLength: 1, maxLength: 64 }),
   score: t.Number({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
   endSession: t.Optional(t.Boolean()),
 });
 
 const readLeaderboardInput = t.Object({
-  platformId: t.String({ minLength: 1, maxLength: 64 }),
   gameId: t.String({ minLength: 1, maxLength: 64 }),
+  platformId: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
   mode: t.Optional(t.String({ maxLength: 80 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 200 })),
-  offset: t.Optional(t.Number({ minimum: 0 })),
   includeFlagged: t.Optional(t.Boolean()),
 });
 
-const guarded = async <T>(run: () => Promise<T>): Promise<T | string> => {
+const gameIdInput = t.Object({ gameId: t.String({ minLength: 1, maxLength: 64 }) });
+
+const createAssignmentInput = t.Object({
+  gameId: t.String({ minLength: 1, maxLength: 64 }),
+  platformId: t.String({ minLength: 1, maxLength: 64 }),
+});
+
+const listTournamentsInput = t.Object({
+  gameId: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
+});
+
+const guarded = async <T>(
+  log: Logger,
+  tool: string,
+  run: () => Promise<T>,
+): Promise<T | string> => {
   try {
     return await run();
   } catch (caught) {
-    return failureOf(caught).source.message;
+    const failure = failureOf(caught);
+    log.warn("agent.tool_failed", { tool, code: failure.source.code });
+    return failure.source.message;
   }
 };
+
+const writeTool = (
+  ctx: WriteContext,
+  log: Logger,
+  meta: { tool: string; action: AuditAction; resourceType: AuditResourceType },
+  run: () => Promise<{ id: string; text: string }>,
+): Promise<string> =>
+  guarded(log, meta.tool, async () => {
+    const { id, text } = await run();
+
+    await auditWrite(ctx, meta.tool, meta.action, meta.resourceType, id);
+
+    return text;
+  });
 
 export const createApiDocsTool = (input: {
   api: { handle(request: Request): Response | Promise<Response> };
@@ -200,15 +234,13 @@ export const createGuideTool = () => ({
   }),
 });
 
-export const createGameTools = (input: {
+export const createGameTools = (input: WriteContext & {
   games: AgentGamePort;
-  scope: Scope;
-  actor: AgentActor;
-  agentRunId: string;
-  audit: AuditService;
   gameId: string | null;
+  log: Logger;
 }) => {
-  const { games, scope, actor, agentRunId, audit, gameId } = input;
+  const { games, scope, actor, agentRunId, audit, log, gameId } = input;
+  const ctx = { scope, actor, agentRunId, audit };
 
   return {
     list_games: createTool({
@@ -233,28 +265,46 @@ export const createGameTools = (input: {
           return "deploy_game needs the complete html of the game";
         }
 
-        return guarded(async () => {
-          const version = await games.deploy(scope, actor.memberId, gameId, html);
+        return writeTool(
+          ctx,
+          log,
+          { tool: "deploy_game", action: "game.updated", resourceType: "game" },
+          async () => {
+            const version = await games.deploy(scope, actor.memberId, gameId, html);
 
-          await auditWrite(
-            { scope, actor, agentRunId, audit },
-            "deploy_game",
-            "game.updated",
-            "game",
-            gameId,
-          );
-
-          return `deployed version ${version}`;
-        });
+            return { id: gameId, text: `deployed version ${version}` };
+          },
+        );
       },
+    }),
+    create_game: createTool({
+      id: "create_game",
+      description:
+        "Create a game in this organization. Create it here first, then deploy_game publishes its html once the chat is bound to it.",
+      inputSchema: toStandardSchema<CreateGameBody>(CreateGameBody),
+      requireApproval: true,
+      execute: (body) =>
+        writeTool(
+          ctx,
+          log,
+          { tool: "create_game", action: "game.created", resourceType: "game" },
+          async () => {
+            const game = await games.create(scope, body);
+
+            return {
+              id: game.id,
+              text: `created game ${game.id} (${game.name}, ${game.hosting}, ${game.status})`,
+            };
+          },
+        ),
     }),
   };
 };
 
 export const createIntegratorTools = (
-  input: { integrator: AgentIntegrator } & WriteContext,
+  input: { integrator: AgentIntegrator; log: Logger } & WriteContext,
 ) => {
-  const { integrator, scope, actor, agentRunId, audit } = input;
+  const { integrator, scope, actor, agentRunId, audit, log } = input;
   const ctx = { scope, actor, agentRunId, audit };
 
   return {
@@ -271,7 +321,7 @@ export const createIntegratorTools = (
         "One match with its participants: slots, scores, outcomes and participant ids.",
       inputSchema: toStandardSchema<Static<typeof matchIdInput>>(matchIdInput),
       execute: async ({ matchId }) =>
-        guarded(async () => ({
+        guarded(log, "read_match", async () => ({
           match: await integrator.matches.get(scope, matchId),
           participants: await integrator.matches.listParticipants(scope, matchId),
         })),
@@ -279,19 +329,20 @@ export const createIntegratorTools = (
     read_leaderboard: createTool({
       id: "read_leaderboard",
       description:
-        "The best accepted score per player for one game on one platform, highest first.",
+        "The best accepted score per player for one game, highest first; without a platformId the board spans every platform of the organization.",
       inputSchema: toStandardSchema<Static<typeof readLeaderboardInput>>(readLeaderboardInput),
       execute: async (query) =>
-        guarded(() =>
-          integrator.leaderboards.list(scope, query.platformId, query.gameId, {
+        guarded(log, "read_leaderboard", async () => {
+          const { entries } = await integrator.leaderboards.list(scope, query.gameId, {
+            ...(query.platformId === undefined ? {} : { platformId: query.platformId }),
             ...(query.mode === undefined ? {} : { mode: query.mode }),
             ...(query.limit === undefined ? {} : { limit: query.limit }),
-            ...(query.offset === undefined ? {} : { offset: query.offset }),
             ...(query.includeFlagged === undefined
               ? {}
               : { includeFlagged: query.includeFlagged }),
-          }),
-        ),
+          });
+          return entries;
+        }),
     }),
     read_tournament_standings: createTool({
       id: "read_tournament_standings",
@@ -299,7 +350,9 @@ export const createIntegratorTools = (
         "Standings of a tournament: the bracket round by round for a bracket tournament, the best score per player for a leaderboard one.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       execute: async ({ tournamentId }) =>
-        guarded(() => integrator.standings.read(scope, tournamentId)),
+        guarded(log, "read_tournament_standings", () =>
+          integrator.standings.read(scope, tournamentId),
+        ),
     }),
     create_tournament: createTool({
       id: "create_tournament",
@@ -307,13 +360,14 @@ export const createIntegratorTools = (
         "Create a tournament in draft for a game of this organization, with format leaderboard or bracket and a slug unique in the organization. Open it before players can register.",
       inputSchema: toStandardSchema<CreateTournamentBody>(CreateTournamentBody),
       requireApproval: true,
-      execute: async (body) =>
-        guarded(async () => {
+      execute: (body) =>
+        writeTool(ctx, log, { tool: "create_tournament", action: "tournament.created", resourceType: "tournament" }, async () => {
           const tournament = await integrator.tournaments.create(scope, { body });
 
-          await auditWrite(ctx, "create_tournament", "tournament.created", "tournament", tournament.id);
-
-          return `created tournament ${tournament.id} (${tournament.name}, ${tournament.format}, ${tournament.status})`;
+          return {
+            id: tournament.id,
+            text: `created tournament ${tournament.id} (${tournament.name}, ${tournament.format}, ${tournament.status})`,
+          };
         }),
     }),
     open_tournament: createTool({
@@ -321,13 +375,11 @@ export const createIntegratorTools = (
       description: "Open a draft tournament so players can register for it.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
-      execute: async ({ tournamentId }) =>
-        guarded(async () => {
+      execute: ({ tournamentId }) =>
+        writeTool(ctx, log, { tool: "open_tournament", action: "tournament.updated", resourceType: "tournament" }, async () => {
           const tournament = await integrator.tournaments.open(scope, tournamentId);
 
-          await auditWrite(ctx, "open_tournament", "tournament.updated", "tournament", tournament.id);
-
-          return `tournament ${tournament.id} is ${tournament.status}`;
+          return { id: tournament.id, text: `tournament ${tournament.id} is ${tournament.status}` };
         }),
     }),
     register_player: createTool({
@@ -335,8 +387,8 @@ export const createIntegratorTools = (
       description: "Register one player of a platform in a tournament that is open.",
       inputSchema: toStandardSchema<Static<typeof registerPlayerInput>>(registerPlayerInput),
       requireApproval: true,
-      execute: async (player) =>
-        guarded(async () => {
+      execute: (player) =>
+        writeTool(ctx, log, { tool: "register_player", action: "participant.created", resourceType: "participant" }, async () => {
           const participant = await integrator.participants.register(scope, {
             tournamentId: player.tournamentId,
             platformId: player.platformId,
@@ -346,9 +398,10 @@ export const createIntegratorTools = (
               : { displayName: player.displayName }),
           });
 
-          await auditWrite(ctx, "register_player", "participant.created", "participant", participant.id);
-
-          return `registered ${participant.id} for ${player.externalUserId} in tournament ${player.tournamentId}`;
+          return {
+            id: participant.id,
+            text: `registered ${participant.id} for ${player.externalUserId} in tournament ${player.tournamentId}`,
+          };
         }),
     }),
     seed_tournament: createTool({
@@ -357,13 +410,14 @@ export const createIntegratorTools = (
         "Seed the bracket of an open bracket tournament from its registered players and start it. Needs at least two registered players.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
-      execute: async ({ tournamentId }) =>
-        guarded(async () => {
+      execute: ({ tournamentId }) =>
+        writeTool(ctx, log, { tool: "seed_tournament", action: "tournament.updated", resourceType: "tournament" }, async () => {
           const bracket = await integrator.brackets.generateBracket(scope, tournamentId);
 
-          await auditWrite(ctx, "seed_tournament", "tournament.updated", "tournament", tournamentId);
-
-          return `seeded a bracket of ${bracket.bracketSize} slots over ${bracket.totalRounds} rounds`;
+          return {
+            id: tournamentId,
+            text: `seeded a bracket of ${bracket.bracketSize} slots over ${bracket.totalRounds} rounds`,
+          };
         }),
     }),
     cancel_tournament: createTool({
@@ -371,13 +425,11 @@ export const createIntegratorTools = (
       description: "Cancel a tournament that has not completed.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
-      execute: async ({ tournamentId }) =>
-        guarded(async () => {
+      execute: ({ tournamentId }) =>
+        writeTool(ctx, log, { tool: "cancel_tournament", action: "tournament.cancelled", resourceType: "tournament" }, async () => {
           const tournament = await integrator.tournaments.cancel(scope, tournamentId);
 
-          await auditWrite(ctx, "cancel_tournament", "tournament.cancelled", "tournament", tournament.id);
-
-          return `tournament ${tournament.id} is ${tournament.status}`;
+          return { id: tournament.id, text: `tournament ${tournament.id} is ${tournament.status}` };
         }),
     }),
     start_duel: createTool({
@@ -386,8 +438,8 @@ export const createIntegratorTools = (
         "Create a match of exactly two players on one game. The answer lists both participant ids, which complete_match needs to name a winner.",
       inputSchema: toStandardSchema<Static<typeof startDuelInput>>(startDuelInput),
       requireApproval: true,
-      execute: async ({ gameId, name, players }) =>
-        guarded(async () => {
+      execute: ({ gameId, name, players }) =>
+        writeTool(ctx, log, { tool: "start_duel", action: "match.created", resourceType: "match" }, async () => {
           const match = await integrator.matches.create(scope, {
             body: { gameId, participants: players, ...(name === undefined ? {} : { name }) },
           });
@@ -396,9 +448,7 @@ export const createIntegratorTools = (
 
           const sides = seated.map((entry) => `${entry.id}=${entry.externalUserId}`).join(" versus ");
 
-          await auditWrite(ctx, "start_duel", "match.created", "match", match.id);
-
-          return `created match ${match.id} (${match.status}): ${sides}`;
+          return { id: match.id, text: `created match ${match.id} (${match.status}): ${sides}` };
         }),
     }),
     complete_match: createTool({
@@ -407,17 +457,18 @@ export const createIntegratorTools = (
         "Close a match by naming its winner, either with a participant id from start_duel or read_match, or with the winner's platformId and externalUserId.",
       inputSchema: toStandardSchema<Static<typeof completeMatchInput>>(completeMatchInput),
       requireApproval: true,
-      execute: async ({ matchId, winnerParticipantId, winner }) =>
-        guarded(async () => {
+      execute: ({ matchId, winnerParticipantId, winner }) =>
+        writeTool(ctx, log, { tool: "complete_match", action: "match.updated", resourceType: "match" }, async () => {
           const match = await integrator.matches.complete(scope, {
             matchId,
             ...(winnerParticipantId === undefined ? {} : { winnerParticipantId }),
             ...(winner === undefined ? {} : { winnerExternal: winner }),
           });
 
-          await auditWrite(ctx, "complete_match", "match.updated", "match", match.id);
-
-          return `match ${match.id} is ${match.status}, winner ${match.winnerParticipantId ?? "none — drawn"}`;
+          return {
+            id: match.id,
+            text: `match ${match.id} is ${match.status}, winner ${match.winnerParticipantId ?? "none — drawn"}`,
+          };
         }),
     }),
     record_score: createTool({
@@ -426,17 +477,96 @@ export const createIntegratorTools = (
         "Record a score for a game session from the server side. The answer is the stored score with its status, flags and verification outcome, so a flagged or refused score is visible.",
       inputSchema: toStandardSchema<Static<typeof recordScoreInput>>(recordScoreInput),
       requireApproval: true,
-      execute: async ({ platformId, sessionId, score, endSession }) =>
-        guarded(async () => {
+      execute: ({ sessionId, score, endSession }) =>
+        writeTool(ctx, log, { tool: "record_score", action: "score.created", resourceType: "score" }, async () => {
           const view = await integrator.scores.submitFromServer(scope, {
-            platformId,
             sessionId,
             body: { score, ...(endSession === undefined ? {} : { endSession }) },
           });
 
-          await auditWrite(ctx, "record_score", "score.created", "score", view.id);
+          return {
+            id: view.id,
+            text: `recorded ${view.score} as ${view.status}, verification ${view.verificationStatus}, flags ${view.flags.join(", ") || "none"}`,
+          };
+        }),
+    }),
+    create_platform: createTool({
+      id: "create_platform",
+      description:
+        "Create a platform in this organization. A platform is one place the organization's games are used, and sessions and leaderboards name one of its ids.",
+      inputSchema: toStandardSchema<CreatePlatformBody>(CreatePlatformBody),
+      requireApproval: true,
+      execute: (body) =>
+        writeTool(ctx, log, { tool: "create_platform", action: "platform.created", resourceType: "platform" }, async () => {
+          const platform = await integrator.platforms.create(scope, body);
 
-          return `recorded ${view.score} as ${view.status}, verification ${view.verificationStatus}, flags ${view.flags.join(", ") || "none"}`;
+          return {
+            id: platform.id,
+            text: `created platform ${platform.id} (${platform.name}, ${platform.slug})`,
+          };
+        }),
+    }),
+    list_tournaments: createTool({
+      id: "list_tournaments",
+      description: "The tournaments of this organization, optionally filtered to one game.",
+      inputSchema: toStandardSchema<Static<typeof listTournamentsInput>>(listTournamentsInput),
+      execute: async ({ gameId }) =>
+        guarded(log, "list_tournaments", () =>
+          integrator.tournaments.list(scope, gameId === undefined ? {} : { gameId }),
+        ),
+    }),
+    read_tournament: createTool({
+      id: "read_tournament",
+      description:
+        "One tournament with its game id, game name, format, status and timings.",
+      inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
+      execute: async ({ tournamentId }) =>
+        guarded(log, "read_tournament", () =>
+          integrator.tournaments.get(scope, tournamentId),
+        ),
+    }),
+    create_assignment: createTool({
+      id: "create_assignment",
+      description:
+        "Assign a game to one platform. A game takes sessions only on platforms it is assigned to.",
+      inputSchema: toStandardSchema<Static<typeof createAssignmentInput>>(createAssignmentInput),
+      requireApproval: true,
+      execute: (input) =>
+        writeTool(ctx, log, { tool: "create_assignment", action: "assignment.created", resourceType: "assignment" }, async () => {
+          const assignment = await integrator.assignments.create(scope, {
+            ...input,
+            memberId: actor.memberId,
+          });
+
+          return {
+            id: assignment.id,
+            text: `assigned game ${assignment.gameId} to platform ${assignment.platformId} (${assignment.id})`,
+          };
+        }),
+    }),
+    list_assignments: createTool({
+      id: "list_assignments",
+      description: "The platforms one game is assigned to.",
+      inputSchema: toStandardSchema<Static<typeof gameIdInput>>(gameIdInput),
+      execute: async ({ gameId }) =>
+        guarded(log, "list_assignments", () =>
+          integrator.assignments.listByGame(scope, gameId),
+        ),
+    }),
+    create_api_key: createTool({
+      id: "create_api_key",
+      description:
+        "Issue an api key for this organization. scope organization (sk_org_) is for MCP and the agent; scope platform (sk_plt_) with a platformId is for one platform's game server. The key value is returned exactly once and is never stored.",
+      inputSchema: toStandardSchema<CreateApiKeyBody>(CreateApiKeyBody),
+      requireApproval: true,
+      execute: (body) =>
+        writeTool(ctx, log, { tool: "create_api_key", action: "key.created", resourceType: "key" }, async () => {
+          const key = await integrator.apiKeys.create(scope, actor.userId, body);
+
+          return {
+            id: key.id,
+            text: `created ${key.scope} api key ${key.id} (prefix ${key.prefix}). key: ${key.key}`,
+          };
         }),
     }),
   };

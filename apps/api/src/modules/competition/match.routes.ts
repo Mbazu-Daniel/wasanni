@@ -9,6 +9,7 @@ import {
   OrganizationIdParams,
   PERMISSION,
   PlatformMatchParams,
+  PlatformWinnerBody,
   PlatformWinnerParams,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
@@ -118,11 +119,11 @@ export const createMatchRoutes = <T extends PrincipalApi>(
     )
     .post(
       "/api/v1/matches/:matchId/players/:externalUserId/win",
-      async ({ principal, params }) => ({
+      async ({ principal, params, body }) => ({
         match: await deps.matches.complete(organizationScope(principal), {
           matchId: params.matchId,
           winnerExternal: {
-            platformId: principal.platformId,
+            platformId: body.platformId,
             externalUserId: params.externalUserId,
           },
         }),
@@ -130,6 +131,7 @@ export const createMatchRoutes = <T extends PrincipalApi>(
       {
         platformAuth: PERMISSION.matchComplete,
         params: PlatformWinnerParams,
+        body: PlatformWinnerBody,
         response: { 200: MatchSingle },
         detail: {
           tags: ["matches"],

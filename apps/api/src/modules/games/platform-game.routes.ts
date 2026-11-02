@@ -4,13 +4,14 @@ import {
   DownloadUrlSingle,
   GameConfigList,
   GameFileList,
+  OptionalPlatformQuery,
   PERMISSION,
   PlatformGameFileParams,
   PlatformGameParams,
 } from "@wasanni/contracts";
-import { ForbiddenError, organizationScope } from "@wasanni/kit";
+import { ForbiddenError, NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import { readAssignmentState } from "./game-state.ts";
+import { platformInScope, readAssignmentState } from "./game-state.ts";
 import type { PlatformGameRouteDeps } from "./types.ts";
 
 export const createPlatformGameRoutes = <T extends PrincipalApi>(
@@ -21,14 +22,12 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
     .get(
       "/api/v1/platforms/:platformId/games",
       async ({ principal, params }) => {
-        if (params.platformId !== principal.platformId) {
-          throw new ForbiddenError("this api key belongs to another platform");
+        const scope = organizationScope(principal);
+        if (!(await platformInScope(db, scope, params.platformId))) {
+          throw new NotFoundError("platform not found");
         }
         return {
-          assignments: await assignments.listGamesByPlatform(
-            organizationScope(principal),
-            principal.platformId,
-          ),
+          assignments: await assignments.listGamesByPlatform(scope, params.platformId),
         };
       },
       {
@@ -37,71 +36,72 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
         response: { 200: AssignmentList },
         detail: {
           tags: ["games"],
-          summary: "List the games assigned to this platform (platform api key)",
+          summary: "List the games assigned to a platform of your organization (platform api key)",
         },
       },
     )
     .get(
       "/api/v1/games/:gameId/configs",
-      async ({ principal, params }) => {
+      async ({ principal, params, query }) => {
         const scope = organizationScope(principal);
-        const assignment = await readAssignmentState(
-          db,
-          scope,
-          principal.platformId,
-          params.gameId,
-        );
-        if (assignment === null) throw new ForbiddenError("this game is not assigned to your platform");
+        const assignment =
+          query.platformId === undefined
+            ? null
+            : await readAssignmentState(db, scope, query.platformId, params.gameId);
+
+        if (query.platformId !== undefined && assignment === null) {
+          throw new ForbiddenError("this game is not assigned to the platform");
+        }
 
         return {
-          configs: await configs.list(scope, params.gameId, assignment.id),
+          configs: await configs.list(scope, params.gameId, assignment?.id),
         };
       },
       {
         platformAuth: PERMISSION.gameConfigRead,
         params: PlatformGameParams,
+        query: OptionalPlatformQuery,
         response: { 200: GameConfigList },
         detail: {
           tags: ["games"],
-          summary: "List the configs this platform has for a game (platform api key)",
+          summary: "List the configs of a game across your organization (platform api key)",
         },
       },
     )
     .get(
       "/api/v1/games/:gameId/files",
-      async ({ principal, params }) => {
+      async ({ principal, params, query }) => {
         const scope = organizationScope(principal);
-        const assignment = await readAssignmentState(
-          db,
-          scope,
-          principal.platformId,
-          params.gameId,
-        );
-        if (assignment === null) throw new ForbiddenError("this game is not assigned to your platform");
+        if (
+          query.platformId !== undefined &&
+          (await readAssignmentState(db, scope, query.platformId, params.gameId)) === null
+        ) {
+          throw new ForbiddenError("this game is not assigned to the platform");
+        }
 
         return { files: await files.list(scope, params.gameId) };
       },
       {
         platformAuth: PERMISSION.gameFileRead,
         params: PlatformGameParams,
+        query: OptionalPlatformQuery,
         response: { 200: GameFileList },
         detail: {
           tags: ["games"],
-          summary: "List the files of a game this platform holds (platform api key)",
+          summary: "List the files of a game in your organization (platform api key)",
         },
       },
     )
     .get(
       "/api/v1/games/:gameId/files/:fileId/download-url",
-      async ({ principal, params }) => {
+      async ({ principal, params, query }) => {
         const scope = organizationScope(principal);
-        const assignment = await readAssignmentState(
-          db,
-          scope,
-          principal.platformId,
-          params.gameId,
-        );
-        if (assignment === null) throw new ForbiddenError("this game is not assigned to your platform");
+        if (
+          query.platformId !== undefined &&
+          (await readAssignmentState(db, scope, query.platformId, params.gameId)) === null
+        ) {
+          throw new ForbiddenError("this game is not assigned to the platform");
+        }
 
         return {
           url: await files.createDownloadUrl(
@@ -114,6 +114,7 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
       {
         platformAuth: PERMISSION.gameFileRead,
         params: PlatformGameFileParams,
+        query: OptionalPlatformQuery,
         response: { 200: DownloadUrlSingle },
         detail: {
           tags: ["games"],

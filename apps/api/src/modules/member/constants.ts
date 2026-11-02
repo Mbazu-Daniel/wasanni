@@ -4,7 +4,7 @@ export const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avi
 
 export const AVATAR_UPLOAD_TTL_SECONDS = 300;
 
-export const AVATAR_KEY_PATTERN = /^members\/[^/]+\/[^/]+\/[0-9a-f-]{36}\.[a-z0-9]+$/;
+export const AVATAR_KEY_PATTERN = /^[^/]+\/members\/[^/]+\/[0-9a-f-]{36}\.[a-z0-9]+$/;
 
 export const AVATAR_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",

@@ -46,17 +46,16 @@ export type ScoreRow = (typeof gameSessionScore.$inferSelect);
 
 export type SessionCreateInput = {
   platformId: string;
-  body: CreateGameSessionBody;
+  body: Omit<CreateGameSessionBody, "platformId">;
 };
 
 export type ScoreSubmitInput = {
-  platformId: string;
   sessionId: string;
   body: SubmitScoreBody;
 };
 
 export type HidePlayerScoresInput = {
-  platformId: string;
+  platformId?: string;
   externalUserId: string;
   gameId?: string;
 };

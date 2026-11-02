@@ -56,7 +56,10 @@ const failureEvent = (error: unknown): RunEvent => {
   };
 };
 
-const sse = (events: AsyncGenerator<RunEvent, void, void>): Response =>
+const sse = (
+  events: AsyncGenerator<RunEvent, void, void>,
+  onCancel?: () => void,
+): Response =>
   new Response(
     new ReadableStream<Uint8Array>({
       async pull(controller) {
@@ -81,6 +84,7 @@ const sse = (events: AsyncGenerator<RunEvent, void, void>): Response =>
         );
       },
       async cancel() {
+        onCancel?.();
         await events.return();
       },
     }),
@@ -93,6 +97,17 @@ const sse = (events: AsyncGenerator<RunEvent, void, void>): Response =>
     },
   );
 
+const streaming = (
+  request: Request,
+  make: (signal: AbortSignal) => AsyncGenerator<RunEvent, void, void>,
+): Response => {
+  const controller = new AbortController();
+
+  request.signal.addEventListener("abort", () => controller.abort(), { once: true });
+
+  return sse(make(controller.signal), () => controller.abort());
+};
+
 export const createAgentRoutes = <T extends PrincipalApi>(
   api: T,
   { service }: { service: AgentService },
@@ -102,7 +117,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
       "/api/v1/organizations/:organizationId/agents/specs",
       async () => ({ specs: await service.specs() }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         response: { 200: AgentSpecList },
         detail: { tags: ["agents"], summary: "List the model providers this API can reach" },
@@ -114,7 +129,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         providers: await service.listProviders(organizationScope(principal)),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         response: { 200: AgentProviderList },
         detail: { tags: ["agents"], summary: "List the model providers of an organization" },
@@ -132,7 +147,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           ),
         ),
       {
-        organizationAuth: PERMISSION.agentCreate,
+        memberAuth: PERMISSION.agentCreate,
         params: OrganizationIdAgentParams,
         body: CreateAgentProviderBody,
         response: { 201: AgentProviderView },
@@ -148,7 +163,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           body,
         ),
       {
-        organizationAuth: PERMISSION.agentUpdate,
+        memberAuth: PERMISSION.agentUpdate,
         params: AgentParams,
         body: UpdateAgentProviderBody,
         response: { 200: AgentProviderView },
@@ -162,7 +177,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         return status(204);
       },
       {
-        organizationAuth: PERMISSION.agentDelete,
+        memberAuth: PERMISSION.agentDelete,
         params: AgentParams,
         detail: { tags: ["agents"], summary: "Remove a model provider" },
       },
@@ -176,7 +191,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         ),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         response: { 200: AgentSessionList },
         detail: { tags: ["agents"], summary: "List the agent sessions of an organization" },
@@ -191,7 +206,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         ),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         response: { 200: AgentProjectList },
         detail: { tags: ["agents"], summary: "List the agent projects of an organization" },
@@ -209,7 +224,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           ),
         ),
       {
-        organizationAuth: PERMISSION.agentCreate,
+        memberAuth: PERMISSION.agentCreate,
         params: OrganizationIdAgentParams,
         body: CreateAgentProjectBody,
         response: { 201: AgentProjectView },
@@ -226,7 +241,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           body,
         ),
       {
-        organizationAuth: PERMISSION.agentUpdate,
+        memberAuth: PERMISSION.agentUpdate,
         params: AgentProjectParams,
         body: RenameAgentProjectBody,
         response: { 200: AgentProjectView },
@@ -244,7 +259,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         return status(204);
       },
       {
-        organizationAuth: PERMISSION.agentDelete,
+        memberAuth: PERMISSION.agentDelete,
         params: AgentProjectParams,
         detail: {
           tags: ["agents"],
@@ -264,7 +279,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           ),
         ),
       {
-        organizationAuth: PERMISSION.agentCreate,
+        memberAuth: PERMISSION.agentCreate,
         params: OrganizationIdAgentParams,
         body: CreateAgentSessionBody,
         response: { 201: AgentSessionView },
@@ -281,7 +296,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           body,
         ),
       {
-        organizationAuth: PERMISSION.agentUpdate,
+        memberAuth: PERMISSION.agentUpdate,
         params: AgentSessionParams,
         body: UpdateAgentSessionBody,
         response: { 200: AgentSessionView },
@@ -299,7 +314,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         return status(204);
       },
       {
-        organizationAuth: PERMISSION.agentDelete,
+        memberAuth: PERMISSION.agentDelete,
         params: AgentSessionParams,
         detail: { tags: ["agents"], summary: "Delete an agent session and its runs" },
       },
@@ -314,7 +329,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         ),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: AgentSessionParams,
         response: { 200: AgentSessionMessages },
         detail: { tags: ["agents"], summary: "List the turns of an agent session" },
@@ -326,7 +341,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         models: await service.models(organizationScope(principal), body),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         body: ListAgentModelsBody,
         response: { 200: AgentModelList },
@@ -339,7 +354,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         runs: await service.listRuns(organizationScope(principal), RECENT_RUNS_LIMIT),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         response: { 200: AgentRunList },
         detail: { tags: ["agents"], summary: "List the recent agent runs" },
@@ -353,7 +368,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
           query.days ?? SPEND_WINDOW_DAYS,
         ),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: OrganizationIdAgentParams,
         query: AgentSpendQuery,
         response: { 200: AgentSpendView },
@@ -363,17 +378,18 @@ export const createAgentRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/organizations/:organizationId/agents/run",
       async ({ principal, body, request }) =>
-        sse(
+        streaming(request, (signal) =>
           service.run(
             organizationScope(principal),
             principal.memberId,
             principal.userId,
             body,
             requestContextOf(request).requestId,
+            signal,
           ),
         ),
       {
-        organizationAuth: PERMISSION.agentCreate,
+        memberAuth: PERMISSION.agentCreate,
         params: OrganizationIdAgentParams,
         body: RunAgentBody,
         detail: { tags: ["agents"], summary: "Run a prompt through a model provider" },
@@ -391,7 +407,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         ),
       }),
       {
-        organizationAuth: PERMISSION.agentRead,
+        memberAuth: PERMISSION.agentRead,
         params: AgentSessionParams,
         response: { 200: AgentApprovalList },
         detail: {
@@ -403,17 +419,18 @@ export const createAgentRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/organizations/:organizationId/agents/sessions/:sessionId/approvals",
       async ({ principal, body, request }) =>
-        sse(
+        streaming(request, (signal) =>
           service.approve(
             organizationScope(principal),
             principal.memberId,
             principal.userId,
             body,
             requestContextOf(request).requestId,
+            signal,
           ),
         ),
       {
-        organizationAuth: PERMISSION.agentCreate,
+        memberAuth: PERMISSION.agentCreate,
         params: AgentSessionParams,
         body: ApproveAgentRunBody,
         detail: {

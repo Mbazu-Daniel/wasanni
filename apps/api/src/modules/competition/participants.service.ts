@@ -27,10 +27,6 @@ export function createParticipantsService(db: Db) {
     ): Promise<ParticipantView> {
       const current = await readRow(scope, input.tournamentId);
 
-      if (current.status !== "open") {
-        throw new ConflictError("registration is not open");
-      }
-
       const [existing] = await db
         .select()
         .from(tournamentParticipant)
@@ -46,6 +42,10 @@ export function createParticipantsService(db: Db) {
       if (existing !== undefined) {
         if (existing.status !== "withdrawn") return toParticipantView(existing);
 
+        if (current.status !== "open") {
+          throw new ConflictError("registration is not open");
+        }
+
         const [revived] = await db
           .update(tournamentParticipant)
           .set({
@@ -58,6 +58,10 @@ export function createParticipantsService(db: Db) {
 
         if (revived === undefined) throw new NotFoundError("registration not found");
         return toParticipantView(revived);
+      }
+
+      if (current.status !== "open") {
+        throw new ConflictError("registration is not open");
       }
 
       if (current.maxParticipants !== null) {

@@ -18,7 +18,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
       "/api/v1/sessions",
       async ({ principal, body, status }) => {
         const created = await service.create(organizationScope(principal), {
-          platformId: principal.platformId,
+          platformId: body.platformId,
           body,
         });
         return status(201, created);
@@ -39,7 +39,6 @@ export const createSessionRoutes = <T extends PrincipalApi>(
       async ({ principal, params }) => ({
         session: await service.get(
           organizationScope(principal),
-          principal.platformId,
           params.sessionId,
         ),
       }),
@@ -58,7 +57,6 @@ export const createSessionRoutes = <T extends PrincipalApi>(
       async ({ principal, params }) => ({
         session: await service.end(
           organizationScope(principal),
-          principal.platformId,
           params.sessionId,
         ),
       }),

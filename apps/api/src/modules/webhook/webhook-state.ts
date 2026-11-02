@@ -16,6 +16,7 @@ export const toWebhookView = (row: WebhookRow): WebhookConfigView => ({
   secretLast4: row.secretLast4,
   events: row.events,
   enabled: row.enabled,
+  expiresAt: row.expiresAt === null ? null : row.expiresAt.toISOString(),
   lastDeliveryAt: row.lastDeliveryAt === null ? null : row.lastDeliveryAt.toISOString(),
   lastFailureAt: row.lastFailureAt === null ? null : row.lastFailureAt.toISOString(),
   createdAt: row.createdAt.toISOString(),

@@ -10,13 +10,16 @@ import type { createPrincipalPlugin } from "./principal.ts";
 export type PrincipalDeps = {
   db: Db;
   auth: BetterAuth;
+  encryptionKey: string;
 };
 
 export type Session = NonNullable<Awaited<ReturnType<BetterAuth["api"]["getSession"]>>>;
 
 export type AuthResult = { user: Session["user"]; session: Session["session"] };
 
-export type OrganizationAuthResult = { principal: UserPrincipal };
+export type MemberAuthResult = { principal: UserPrincipal };
+
+export type OrganizationAuthResult = { principal: UserPrincipal | PlatformPrincipal };
 
 export type PlatformAuthResult = { principal: PlatformPrincipal };
 

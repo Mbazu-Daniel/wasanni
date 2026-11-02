@@ -13,7 +13,7 @@ import {
   UsageQuotaParams,
   UsageView,
 } from "@wasanni/contracts";
-import { ForbiddenError, organizationScope } from "@wasanni/kit";
+import { NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import { currentPeriodStart, periodEnd } from "./usage.service.ts";
 import type { UsageService } from "./types.ts";
@@ -85,10 +85,10 @@ export const createUsageRoutes = <T extends PrincipalApi>(
     .get(
       "/api/v1/platforms/:platformId/usage",
       async ({ principal, params, query }) => {
-        if (params.platformId !== principal.platformId) {
-          throw new ForbiddenError("this api key belongs to another platform");
-        }
         const scope = organizationScope(principal);
+        if (!(await service.platformExists(scope.organizationId, params.platformId))) {
+          throw new NotFoundError("platform not found");
+        }
         const period = query.period === undefined
           ? currentPeriodStart()
           : new Date(`${query.period}-01T00:00:00.000Z`);
@@ -96,25 +96,25 @@ export const createUsageRoutes = <T extends PrincipalApi>(
         const [sessions, scores, matches, tournaments] = await Promise.all([
           service.read({
             organizationId: scope.organizationId,
-            platformId: principal.platformId,
+            platformId: params.platformId,
             metric: "sessions_created",
             period,
           }),
           service.read({
             organizationId: scope.organizationId,
-            platformId: principal.platformId,
+            platformId: params.platformId,
             metric: "scores_submitted",
             period,
           }),
           service.read({
             organizationId: scope.organizationId,
-            platformId: principal.platformId,
+            platformId: params.platformId,
             metric: "matches_created",
             period,
           }),
           service.read({
             organizationId: scope.organizationId,
-            platformId: principal.platformId,
+            platformId: params.platformId,
             metric: "tournaments_created",
             period,
           }),

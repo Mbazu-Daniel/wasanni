@@ -1,6 +1,7 @@
 import { betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI, organization } from "better-auth/plugins";
+import { apiKey } from "@better-auth/api-key";
 import * as schema from "@wasanni/db/schema";
 import { readMembership } from "@wasanni/db";
 import { InternalServerError, newId, sendDevEmail } from "@wasanni/kit";
@@ -81,6 +82,7 @@ export function createBetterAuth(deps: ModuleDeps) {
         organization: schema.organization,
         member: schema.member,
         invitation: schema.invitation,
+        apikey: schema.apikey,
       },
     }),
 
@@ -173,6 +175,25 @@ export function createBetterAuth(deps: ModuleDeps) {
           },
         },
       }),
+      apiKey([
+        {
+          configId: "organization",
+          references: "organization",
+          defaultPrefix: "sk_org_",
+          maximumNameLength: 120,
+          rateLimit: { enabled: false },
+          keyExpiration: { minExpiresIn: 0 },
+        },
+        {
+          configId: "platform",
+          references: "organization",
+          defaultPrefix: "sk_plt_",
+          maximumNameLength: 120,
+          enableMetadata: true,
+          rateLimit: { enabled: false },
+          keyExpiration: { minExpiresIn: 0 },
+        },
+      ]),
       openAPI(),
     ],
   });

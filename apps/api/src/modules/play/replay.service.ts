@@ -14,7 +14,6 @@ export function createReplayService(
   return {
     async getSessionEvents(
       scope: Scope,
-      platformId: string,
       sessionId: string,
     ): Promise<ReplayView> {
       const [score] = await db
@@ -29,7 +28,6 @@ export function createReplayService(
             scope,
             gameSessionScore,
             eq(gameSessionScore.sessionId, sessionId),
-            eq(gameSessionScore.platformId, platformId),
           ),
         )
         .limit(1);

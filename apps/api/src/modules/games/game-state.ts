@@ -1,9 +1,23 @@
 import { eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { game, gameConfig, gameFile, gamePlatformAssignment } from "@wasanni/db/schema";
+import { game, gameConfig, gameFile, gamePlatformAssignment, platform } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import { encryptSecret, withoutCallbackSecret, callbackSecretOf, type Scope } from "@wasanni/kit";
 import type { AssignmentConfig, AssignmentState, GameState } from "./types.ts";
+
+export async function platformInScope(
+  db: Db,
+  scope: Scope,
+  platformId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: platform.id })
+    .from(platform)
+    .where(scopeTo(scope, platform, eq(platform.id, platformId)))
+    .limit(1);
+
+  return row !== undefined;
+}
 
 export async function readGameState(
   db: Db,

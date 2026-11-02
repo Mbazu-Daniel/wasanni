@@ -1,5 +1,5 @@
-import { asc, eq } from "drizzle-orm";
-import type { Db } from "@wasanni/db";
+import { asc, eq, inArray } from "drizzle-orm";
+import type { Db, DbExecutor } from "@wasanni/db";
 import { gameConfig, gamePlatformAssignment } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
@@ -9,16 +9,24 @@ import type { GameConfigCreateInput, GameConfigRow, GameConfigUpdateInput } from
 
 const toView = (row: GameConfigRow): GameConfigView => ({
   id: row.id,
-  organizationId: row.organizationId,
   assignmentId: row.assignmentId,
   name: row.name,
   config: withoutCallbackSecret(row.config),
-  schemaVersion: row.schemaVersion,
-  revision: row.revision,
   isDefault: row.isDefault,
   createdAt: row.createdAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
 });
+
+const clearDefaultConfigs = async (
+  executor: DbExecutor,
+  scope: Scope,
+  assignmentId: string,
+): Promise<void> => {
+  await executor
+    .update(gameConfig)
+    .set({ isDefault: false })
+    .where(scopeTo(scope, gameConfig, eq(gameConfig.assignmentId, assignmentId)));
+};
 
 export function createGameConfigService(
   db: Db,
@@ -88,14 +96,33 @@ export function createGameConfigService(
     async list(
       scope: Scope,
       gameId: string,
-      assignmentId: string,
+      assignmentId?: string,
     ): Promise<GameConfigView[]> {
-      await assertAssignment(scope, gameId, assignmentId);
+      if (assignmentId !== undefined) await assertAssignment(scope, gameId, assignmentId);
+
+      const gameAssignments = db
+        .select({ id: gamePlatformAssignment.id })
+        .from(gamePlatformAssignment)
+        .where(
+          scopeTo(
+            scope,
+            gamePlatformAssignment,
+            eq(gamePlatformAssignment.gameId, gameId),
+          ),
+        );
 
       const rows = await db
         .select()
         .from(gameConfig)
-        .where(scopeTo(scope, gameConfig, eq(gameConfig.assignmentId, assignmentId)))
+        .where(
+          scopeTo(
+            scope,
+            gameConfig,
+            assignmentId === undefined
+              ? inArray(gameConfig.assignmentId, gameAssignments)
+              : eq(gameConfig.assignmentId, assignmentId),
+          ),
+        )
         .orderBy(asc(gameConfig.name));
 
       return rows.map(toView);
@@ -107,16 +134,7 @@ export function createGameConfigService(
       try {
         return await db.transaction(async (tx) => {
           if (input.body.isDefault === true) {
-            await tx
-              .update(gameConfig)
-              .set({ isDefault: false })
-              .where(
-                scopeTo(
-                  scope,
-                  gameConfig,
-                  eq(gameConfig.assignmentId, input.assignmentId),
-                ),
-              );
+            await clearDefaultConfigs(tx, scope, input.assignmentId);
           }
 
           const [row] = await tx
@@ -150,12 +168,7 @@ export function createGameConfigService(
         const current = await getConfig(scope, input.assignmentId, input.configId, tx);
 
         if (input.body.isDefault === true) {
-          await tx
-            .update(gameConfig)
-            .set({ isDefault: false })
-            .where(
-              scopeTo(scope, gameConfig, eq(gameConfig.assignmentId, input.assignmentId)),
-            );
+          await clearDefaultConfigs(tx, scope, input.assignmentId);
         }
 
         const nextConfig = input.body.config === undefined

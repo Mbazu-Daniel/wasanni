@@ -158,6 +158,11 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
         throw new ConflictError("tournament slug already exists");
       }
 
+      const startsAt =
+        body.startsAt === undefined ? null : new Date(body.startsAt);
+      const status =
+        startsAt !== null && startsAt > new Date() ? "scheduled" : "draft";
+
       const [row] = await db
         .insert(tournament)
         .values({
@@ -172,8 +177,9 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
           description: body.description ?? null,
           format: body.format,
           maxParticipants: body.maxParticipants ?? null,
-          startsAt: body.startsAt === undefined ? null : new Date(body.startsAt),
+          startsAt,
           endsAt: body.endsAt === undefined ? null : new Date(body.endsAt),
+          status,
         })
         .returning();
 
@@ -284,6 +290,7 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
       if (body.name !== undefined) patch.name = body.name;
       if (body.slug !== undefined) patch.slug = body.slug;
       if (body.description !== undefined) patch.description = body.description;
+      if (body.imageUrl !== undefined) patch.imageUrl = body.imageUrl;
       if (body.maxParticipants !== undefined) {
         patch.maxParticipants = body.maxParticipants;
       }
@@ -295,6 +302,15 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
       }
       if (body.gameConfigId !== undefined) patch.gameConfigId = body.gameConfigId;
       if (body.templateId !== undefined) patch.templateId = body.templateId;
+
+      if (current.status === "draft" || current.status === "scheduled") {
+        const startsAt = patch.startsAt !== undefined ? patch.startsAt : current.startsAt;
+
+        patch.status =
+          startsAt !== null && startsAt !== undefined && startsAt > new Date()
+            ? "scheduled"
+            : "draft";
+      }
 
       const [row] = await db
         .update(tournament)
@@ -309,8 +325,8 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
     async open(scope: Scope, tournamentId: string): Promise<TournamentView> {
       const current = await readRow(scope, tournamentId);
 
-      if (current.status !== "draft") {
-        throw new ConflictError("only a draft tournament can be opened");
+      if (current.status !== "draft" && current.status !== "scheduled") {
+        throw new ConflictError("only a draft or scheduled tournament can be opened");
       }
 
       const [row] = await db

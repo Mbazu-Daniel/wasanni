@@ -42,6 +42,7 @@ export const createAgentGamePort = (deps: Pick<GamesDeps, "db" | "storage" | "co
 
   return {
     list: (scope) => games.list(scope, {}),
+    create: (scope, input) => games.create(scope, input),
     async context(scope, gameId) {
       const [row] = await deps.db
         .select({

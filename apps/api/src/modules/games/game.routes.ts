@@ -3,8 +3,11 @@ import {
   GameIdParams,
   GameList,
   GameSingle,
+  ImageUploadTicketSingle,
   ListGamesQuery,
   PERMISSION,
+  RequestImageUpload,
+  SetImage,
   UpdateGameBody,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
@@ -65,6 +68,47 @@ export const createGameRoutes = <T extends PrincipalApi>(api: T, { service }: Ga
         body: UpdateGameBody,
         response: { 200: GameSingle },
         detail: { tags: ["games"], summary: "Update a game" },
+      },
+    )
+    .post(
+      "/api/v1/organizations/:organizationId/games/:gameId/image",
+      async ({ principal, params, body, status }) =>
+        status(
+          201,
+          {
+            upload: await service.imageTicket(
+              organizationScope(principal),
+              params.gameId,
+              body.contentType,
+            ),
+          },
+        ),
+      {
+        organizationAuth: PERMISSION.gameUpdate,
+        params: GameIdParams,
+        body: RequestImageUpload,
+        response: { 201: ImageUploadTicketSingle },
+        detail: {
+          tags: ["games"],
+          summary: "Request a presigned url to upload this game's image",
+        },
+      },
+    )
+    .put(
+      "/api/v1/organizations/:organizationId/games/:gameId/image",
+      async ({ principal, params, body }) => ({
+        game: await service.attachImage(
+          organizationScope(principal),
+          params.gameId,
+          body.key,
+        ),
+      }),
+      {
+        organizationAuth: PERMISSION.gameUpdate,
+        params: GameIdParams,
+        body: SetImage,
+        response: { 200: GameSingle },
+        detail: { tags: ["games"], summary: "Attach an uploaded game image" },
       },
     )
     .post(

@@ -33,10 +33,10 @@ const AGENT_ACTIONS: Readonly<Record<string, AuditEventShape>> = {
 const RESOURCE_TYPES: Readonly<Record<string, AuditResourceType>> = {
   assignments: "assignment",
   configs: "game_config",
+  enter: "participant",
   export: "export",
   files: "game_file",
   games: "game",
-  join: "participant",
   keys: "key",
   leave: "participant",
   matches: "match",
@@ -156,7 +156,7 @@ export const createAuditPlugin = (audit: AuditService) =>
       const status = typeof set.status === "number" ? set.status : 200;
       if (status >= 400) return;
 
-      const actor = (context as { principal?: Principal }).principal ?? principalOf(request);
+      const actor = principalOf(request);
       if (actor === undefined) return;
 
       void audit.record({
