@@ -2,7 +2,7 @@ import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-cor
 import type { AuditActorType, AuditSource } from "@wasanni/contracts";
 import { organization } from "../organization/organization.ts";
 import { user } from "../identity/user.ts";
-import { apiKey } from "../api-key/api-key.ts";
+import { apikey } from "../api-key/apikey.ts";
 
 export const auditLog = pgTable(
   "audit_log",
@@ -15,7 +15,7 @@ export const auditLog = pgTable(
     actorUserId: uuid("actor_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
-    actorApiKeyId: uuid("actor_api_key_id").references(() => apiKey.id, {
+    actorApiKeyId: uuid("actor_api_key_id").references(() => apikey.id, {
       onDelete: "set null",
     }),
     source: text("source").notNull().$type<AuditSource>(),

@@ -28,6 +28,7 @@ export const webhookConfig = pgTable(
     secretLast4: text("secret_last4").notNull(),
     events: jsonb("events").$type<WebhookEvent[]>().notNull().default([]),
     enabled: boolean("enabled").notNull().default(true),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
     lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
     lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

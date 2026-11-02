@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization } from "../organization/organization.ts";
 import type { GameHosting, GameStatus } from "@wasanni/contracts";
 
@@ -12,6 +12,8 @@ export const game = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
+    imageUrl: text("image_url"),
+    hints: jsonb("hints").notNull().default([]).$type<string[]>(),
     hosting: text("hosting").notNull().$type<GameHosting>(),
     status: text("status").notNull().default("draft").$type<GameStatus>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,0 +1,1 @@
+ALTER TABLE "webhook_config" ADD COLUMN "expires_at" timestamp with time zone;
