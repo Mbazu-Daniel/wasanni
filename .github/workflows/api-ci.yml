@@ -2,18 +2,11 @@ name: API — Build and Publish
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - "apps/api/**"
-      - "packages/**"
-      - "Dockerfile"
-      - "bun.lock"
-      - "package.json"
-      - ".github/workflows/api-ci.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "apps/api/**"
+      - "apps/realtime/**"
+      - "apps/worker/**"
       - "packages/**"
       - "Dockerfile"
       - "bun.lock"
@@ -21,23 +14,8 @@ on:
       - ".github/workflows/api-ci.yml"
 
 jobs:
-  build:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v4
-
-      - name: Build API image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: false
-          tags: wasanni-api:pr
-
   build-and-publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -88,3 +66,35 @@ jobs:
           package-type: container
           delete-only-untagged-versions: true
           min-versions-to-keep: 5
+
+      # A missing webhook fails here on purpose: the image is pushed but nothing
+      # deploys it, and a silent skip hides that until someone checks Dokploy.
+      - name: Trigger Dokploy webhook
+        env:
+          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DOKPLOY_WEBHOOK_URL" ]; then
+            echo "::error::DOKPLOY_WEBHOOK_URL is not set; image pushed but nothing deployed"
+            exit 1
+          fi
+          # Docker/GHCR apps need registry_package plus a matching tag. A bare
+          # POST can return success while redeploying the cached local image.
+          IMAGE="ghcr.io/${REPO}:${GITHUB_REF_NAME}"
+          BODY=$(jq -nc \
+            --arg url "$IMAGE" \
+            --arg id "${GITHUB_SHA}" \
+            --arg msg "CI deploy ${GITHUB_SHA:0:7} (${GITHUB_REF_NAME})" \
+            '{
+              head_commit: {id: $id, message: $msg},
+              registry_package: {package_version: {package_url: $url}}
+            }')
+          RESP=$(curl -sS -w "\n%{http_code}" -X POST "$DOKPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: registry_package" \
+            -d "$BODY")
+          CODE=$(echo "$RESP" | tail -n1)
+          BODY_OUT=$(echo "$RESP" | sed '$d')
+          echo "Dokploy response ($CODE) for $IMAGE: $BODY_OUT"
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
+            exit 22
+          fi
