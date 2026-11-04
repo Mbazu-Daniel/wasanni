@@ -24,7 +24,7 @@ export const createLeaderboardRoutes = <T extends PrincipalApi>(
       response: { 200: LeaderboardList },
       detail: {
         tags: ["leaderboards"],
-        summary: "Read the best scores of a game (platform api key)",
+        summary: "Read the best scores of a game",
       },
     },
   );

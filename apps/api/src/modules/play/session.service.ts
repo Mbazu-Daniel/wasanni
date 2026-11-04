@@ -317,8 +317,12 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
       return toView(await readGameSessionRow(db, scope, sessionId));
     },
 
-    async end(scope: Scope, sessionId: string): Promise<GameSessionView> {
+    async end(scope: Scope, sessionId: string, platformId?: string): Promise<GameSessionView> {
       const current = await readGameSessionRow(db, scope, sessionId);
+
+      if (platformId !== undefined && current.platformId !== platformId) {
+        throw new NotFoundError("game session not found");
+      }
 
       if (current.status === "ended") return toView(current);
 

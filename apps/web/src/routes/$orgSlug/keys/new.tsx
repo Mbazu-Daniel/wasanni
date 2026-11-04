@@ -139,34 +139,43 @@ function NewKeyPage() {
           </div>
           {scopes.size === ALL_SCOPES.length && (
             <p className="text-[11px] text-rose-400">
-              Every scope: this key acts like an organization owner on API and MCP
-              calls. Prefer a short expiry.
+              Every scope: this key acts like an organization owner on API calls.
+              Prefer a short expiry. Session and score calls need a platform key.
             </p>
           )}
-          <div className="space-y-4 rounded-lg border border-border p-3">
-            {SCOPE_GROUPS.map((group) => (
-              <div key={group.label}>
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  {group.label}
-                </p>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {group.scopes.map((scope) => (
-                    <label
-                      key={scope}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 hover:bg-ink/[0.05]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={scopes.has(scope)}
-                        onChange={() => toggleScope(scope)}
-                        className="size-3.5 shrink-0 rounded border-border"
-                      />
-                      <span className="truncate font-mono text-xs">{scope}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="space-y-1 rounded-lg border border-border p-2">
+            {SCOPE_GROUPS.map((group) => {
+              const picked = group.scopes.filter((scope) => scopes.has(scope)).length;
+
+              return (
+                <details key={group.label} className="rounded-md">
+                  <summary className="flex cursor-pointer list-none items-center justify-between rounded-md px-2 py-1.5 hover:bg-ink/[0.05] [&::-webkit-details-marker]:hidden">
+                    <span className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      {group.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {picked}/{group.scopes.length} selected
+                    </span>
+                  </summary>
+                  <div className="grid grid-cols-2 gap-1.5 px-1 pb-2 pt-1 sm:grid-cols-3 lg:grid-cols-4">
+                    {group.scopes.map((scope) => (
+                      <label
+                        key={scope}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 hover:bg-ink/[0.05]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={scopes.has(scope)}
+                          onChange={() => toggleScope(scope)}
+                          className="size-3.5 shrink-0 rounded border-border"
+                        />
+                        <span className="truncate font-mono text-xs">{scope}</span>
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
           </div>
         </div>
 

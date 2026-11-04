@@ -199,3 +199,42 @@ export const ROLE_PERMISSIONS: Record<RoleName, Record<Resource, readonly Action
     role: [],
   },
 };
+
+export const PLATFORM_ONLY_RESOURCES = ["session", "score"] as const;
+export type PlatformOnlyResource = (typeof PLATFORM_ONLY_RESOURCES)[number];
+
+export const PLATFORM_KEY_PERMISSIONS: Record<string, readonly string[]> = {
+  session: ["create", "read", "update"],
+  score: ["create", "read", "hide"],
+  assignment: ["read"],
+  gameConfig: ["read"],
+  gameFile: ["read"],
+  tournament: ["read", "create", "update", "register", "seed", "start", "complete"],
+  match: ["read", "complete"],
+  audit: ["read"],
+};
+
+export type PlatformToolOperation = {
+  tool: string;
+  method: "GET" | "POST" | "DELETE";
+  path: string;
+  permission: Permission;
+};
+
+export const PLATFORM_OPERATIONS: readonly PlatformToolOperation[] = [
+  { tool: "session_create", method: "POST", path: "/api/v1/sessions", permission: "session:create" },
+  { tool: "session_read", method: "GET", path: "/api/v1/sessions/{sessionId}", permission: "session:read" },
+  { tool: "session_end", method: "POST", path: "/api/v1/sessions/{sessionId}/end", permission: "session:update" },
+  { tool: "session_events", method: "GET", path: "/api/v1/sessions/{sessionId}/events", permission: "score:read" },
+  { tool: "score_submit", method: "POST", path: "/api/v1/sessions/{sessionId}/score", permission: "score:create" },
+  { tool: "score_hide", method: "POST", path: "/api/v1/players/{externalUserId}/scores/hide", permission: "score:hide" },
+  { tool: "leaderboard", method: "GET", path: "/api/v1/games/{gameId}/leaderboards", permission: "score:read" },
+  { tool: "tournament_list", method: "GET", path: "/api/v1/tournaments", permission: "tournament:read" },
+  { tool: "duel_enter", method: "POST", path: "/api/v1/duels/enter", permission: "session:create" },
+  { tool: "tournament_enter", method: "POST", path: "/api/v1/tournaments/{tournamentId}/enter", permission: "tournament:register" },
+  { tool: "tournament_leave", method: "DELETE", path: "/api/v1/tournaments/{tournamentId}/players/{externalUserId}/leave", permission: "tournament:register" },
+  { tool: "tournament_leaderboards", method: "GET", path: "/api/v1/tournaments/{tournamentId}/leaderboards", permission: "tournament:read" },
+  { tool: "tournament_bracket", method: "GET", path: "/api/v1/tournaments/{tournamentId}/bracket", permission: "tournament:read" },
+  { tool: "match_win", method: "POST", path: "/api/v1/matches/{matchId}/players/{externalUserId}/win", permission: "match:complete" },
+  { tool: "usage", method: "GET", path: "/api/v1/platforms/{platformId}/usage", permission: "audit:read" },
+];

@@ -6,8 +6,6 @@ import type { Tool, ToolResult } from "./tools.ts";
 
 const MAX_DOCS_CHARS = 16_000;
 
-const PLATFORM_CREDENTIAL = "(platform api key)";
-
 const schema = Type.Object({
   path: Type.Optional(
     Type.String({
@@ -47,18 +45,13 @@ const summaryOf = (operation: unknown): string => {
   return summary === "" ? description.slice(0, 120) : summary;
 };
 
-const platformKeyed = (item: unknown): boolean =>
-  isRecord(item) &&
-  Object.values(item).some((operation) => summaryOf(operation).includes(PLATFORM_CREDENTIAL));
-
 const listed = (paths: Record<string, unknown>): string =>
   Object.entries(paths)
-    .sort(([, left], [, right]) => Number(platformKeyed(right)) - Number(platformKeyed(left)))
     .flatMap(([route, item]) =>
       isRecord(item)
         ? Object.entries(item).map(
             ([method, operation]) =>
-              `${method.toUpperCase()} ${route} — ${summaryOf(operation)}`.trimEnd(),
+              `${method.toUpperCase()} ${route}: ${summaryOf(operation)}`.trimEnd(),
           )
         : [],
     )

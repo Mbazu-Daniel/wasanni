@@ -10,7 +10,7 @@ import {
   template,
   tournament,
 } from "@wasanni/db/schema";
-import { ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
+import { BadRequestError, ConflictError, InternalServerError, newId, NotFoundError } from "@wasanni/kit";
 import type { Scope } from "@wasanni/kit";
 import type { UsageService } from "../usage/types.ts";
 import type { TournamentView } from "@wasanni/contracts";
@@ -104,7 +104,7 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
     });
   };
 
-  return {
+  const service = {
     async create(
       scope: Scope,
       input: CreateTournamentInput,
@@ -374,7 +374,11 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
       return toTournamentView(row);
     },
 
-    async listOpen(scope: Scope, gameId?: string): Promise<TournamentView[]> {
+    async listOpen(
+      scope: Scope,
+      gameId?: string,
+      status?: TournamentFilter["status"],
+    ): Promise<TournamentView[]> {
       const rows = await db
         .select()
         .from(tournament)
@@ -382,7 +386,7 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
           scopeTo(
             scope,
             tournament,
-            eq(tournament.status, "open"),
+            eq(tournament.status, status ?? "open"),
             gameId === undefined ? undefined : eq(tournament.gameId, gameId),
           ),
         )
@@ -390,5 +394,86 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
 
       return rows.map(toTournamentView);
     },
+
+    async requirePlatformTournament(
+      scope: Scope,
+      platformId: string,
+      tournamentId: string,
+    ): Promise<TournamentView> {
+      const [row] = await db
+        .select()
+        .from(tournament)
+        .innerJoin(
+          gamePlatformAssignment,
+          eq(gamePlatformAssignment.id, tournament.assignmentId),
+        )
+        .where(
+          and(
+            scopeTo(scope, tournament, eq(tournament.id, tournamentId)),
+            eq(gamePlatformAssignment.platformId, platformId),
+          ),
+        )
+        .limit(1);
+
+      if (row === undefined) throw new NotFoundError("tournament not found");
+      return toTournamentView(row.tournament);
+    },
+
+    async createForPlatform(
+      scope: Scope,
+      platformId: string,
+      body: CreateTournamentInput["body"],
+    ): Promise<TournamentView> {
+      const [assignment] = await db
+        .select({ id: gamePlatformAssignment.id })
+        .from(gamePlatformAssignment)
+        .where(
+          scopeTo(
+            scope,
+            gamePlatformAssignment,
+            eq(gamePlatformAssignment.gameId, body.gameId),
+            eq(gamePlatformAssignment.platformId, platformId),
+          ),
+        )
+        .limit(1);
+
+      if (assignment === undefined) {
+        throw new NotFoundError("the game is not assigned to this platform");
+      }
+
+      if (body.assignmentId !== undefined && body.assignmentId !== assignment.id) {
+        throw new BadRequestError("assignmentId does not belong to this platform and game");
+      }
+
+      return service.create(scope, { body: { ...body, assignmentId: assignment.id } });
+    },
+
+    forPlatform(scope: Scope, platformId: string) {
+      const guarded = async (tournamentId: string): Promise<TournamentView> =>
+        service.requirePlatformTournament(scope, platformId, tournamentId);
+
+      return {
+        create: (body: CreateTournamentInput["body"]): Promise<TournamentView> =>
+          service.createForPlatform(scope, platformId, body),
+        update: async (input: UpdateTournamentInput): Promise<TournamentView> => {
+          await guarded(input.tournamentId);
+          return service.update(scope, input);
+        },
+        open: async (tournamentId: string): Promise<TournamentView> => {
+          await guarded(tournamentId);
+          return service.open(scope, tournamentId);
+        },
+        cancel: async (tournamentId: string): Promise<TournamentView> => {
+          await guarded(tournamentId);
+          return service.cancel(scope, tournamentId);
+        },
+        complete: async (tournamentId: string): Promise<TournamentView> => {
+          await guarded(tournamentId);
+          return service.complete(scope, tournamentId);
+        },
+      };
+    },
   };
+
+  return service;
 }

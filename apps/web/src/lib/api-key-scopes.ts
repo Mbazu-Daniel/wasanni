@@ -1,4 +1,4 @@
-import { ROLE_PERMISSIONS } from "@wasanni/contracts";
+import { PLATFORM_ONLY_RESOURCES, ROLE_PERMISSIONS } from "@wasanni/contracts";
 import type { Action } from "@wasanni/contracts";
 
 export type ScopeGroup = {
@@ -7,8 +7,10 @@ export type ScopeGroup = {
   scopes: string[];
 };
 
+const platformOnly = PLATFORM_ONLY_RESOURCES as readonly string[];
+
 export const SCOPE_GROUPS: ScopeGroup[] = Object.entries(ROLE_PERMISSIONS.owner)
-  .filter(([, actions]) => actions.length > 0)
+  .filter(([resource, actions]) => actions.length > 0 && !platformOnly.includes(resource))
   .map(([resource, actions]) => ({
     label: resource,
     actions,
@@ -17,9 +19,4 @@ export const SCOPE_GROUPS: ScopeGroup[] = Object.entries(ROLE_PERMISSIONS.owner)
 
 export const ALL_SCOPES = SCOPE_GROUPS.flatMap((group) => group.scopes);
 
-export const DEFAULT_SCOPES = [
-  "session:create",
-  "session:read",
-  "score:create",
-  "score:read",
-];
+export const DEFAULT_SCOPES = ["platform:read", "game:read", "tournament:read"];

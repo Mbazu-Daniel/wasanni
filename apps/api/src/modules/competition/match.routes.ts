@@ -113,7 +113,7 @@ export const createMatchRoutes = <T extends PrincipalApi>(
         response: { 200: MatchParticipants },
         detail: {
           tags: ["matches"],
-          summary: "Get a match and its players (platform api key)",
+          summary: "Get a match and its players",
         },
       },
     )
@@ -135,7 +135,7 @@ export const createMatchRoutes = <T extends PrincipalApi>(
         response: { 200: MatchSingle },
         detail: {
           tags: ["matches"],
-          summary: "Declare the winning player of a match (platform api key)",
+          summary: "Declare the winning player of a match",
         },
       },
     );

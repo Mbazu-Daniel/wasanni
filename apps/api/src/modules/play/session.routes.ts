@@ -6,6 +6,7 @@ import {
   PERMISSION,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
+import { callingPlatform } from "../../plugins/principal.ts";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { SessionRouteDeps } from "./types.ts";
 
@@ -18,7 +19,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
       "/api/v1/sessions",
       async ({ principal, body, status }) => {
         const created = await service.create(organizationScope(principal), {
-          platformId: body.platformId,
+          platformId: callingPlatform(principal, body.platformId),
           body,
         });
         return status(201, created);
@@ -30,7 +31,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
         response: { 201: CreatedGameSession },
         detail: {
           tags: ["sessions"],
-          summary: "Open a game session for a player (platform api key)",
+          summary: "Open a game session for a player",
         },
       },
     )
@@ -48,7 +49,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
         response: { 200: GameSessionSingle },
         detail: {
           tags: ["sessions"],
-          summary: "Read one game session (platform api key)",
+          summary: "Read one game session",
         },
       },
     )
@@ -58,6 +59,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
         session: await service.end(
           organizationScope(principal),
           params.sessionId,
+          callingPlatform(principal),
         ),
       }),
       {
@@ -66,7 +68,7 @@ export const createSessionRoutes = <T extends PrincipalApi>(
         response: { 200: GameSessionSingle },
         detail: {
           tags: ["sessions"],
-          summary: "End a game session (platform api key)",
+          summary: "End a game session",
         },
       },
     );

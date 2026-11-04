@@ -20,7 +20,7 @@ export const createReplayRoutes = <T extends PrincipalApi>(
       response: { 200: ReplayView },
       detail: {
       tags: ["replays"],
-      summary: "Read the events of a game session (platform api key)",
+      summary: "Read the events of a game session",
     },
     },
   );

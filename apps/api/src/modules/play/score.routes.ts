@@ -9,6 +9,7 @@ import {
 } from "@wasanni/contracts";
 import { t } from "elysia";
 import { ForbiddenError, organizationScope } from "@wasanni/kit";
+import { callingPlatform } from "../../plugins/principal.ts";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { ScoreRouteDeps } from "./types.ts";
 
@@ -47,6 +48,7 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         const score = await service.submitFromServer(organizationScope(principal), {
           sessionId: params.sessionId,
           body,
+          platformId: callingPlatform(principal),
         });
         return status(201, { score });
       },
@@ -57,7 +59,7 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         response: { 201: ScoreSingle },
         detail: {
           tags: ["scores"],
-          summary: "Record the score of a game session (platform api key)",
+          summary: "Record the score of a game session",
         },
       },
     )
@@ -67,7 +69,7 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         const hidden = await service.hideForPlayer(organizationScope(principal), {
           externalUserId: params.externalUserId,
           ...(body?.gameId === undefined ? {} : { gameId: body.gameId }),
-          ...(body?.platformId === undefined ? {} : { platformId: body.platformId }),
+          platformId: callingPlatform(principal, body?.platformId),
         });
         return status(200, { hidden });
       },
@@ -78,7 +80,7 @@ export const createScoreRoutes = <T extends PrincipalApi>(
         response: { 200: HideScoresResult },
         detail: {
           tags: ["scores"],
-          summary: "Hide the scores of a player (platform api key)",
+          summary: "Hide the scores of a player",
         },
       },
     );

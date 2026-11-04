@@ -9,7 +9,7 @@ import {
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
 import { defaultKeyHasher } from "@better-auth/api-key";
-import { InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
+import { BadRequestError, InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
 import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
 import type { Principal } from "@wasanni/kit";
 import type { ApiKeyCredential } from "@wasanni/db";
@@ -67,9 +67,25 @@ const keyPrincipalOf = (
   kind: "platform",
   apiKeyId: credential.id,
   organizationId: credential.referenceId,
+  scope: credential.configId === "platform" ? "platform" : "organization",
   platformId: platformIdFromMetadata(credential.metadata, encryptionKey),
   permissions: flattenPermissions(parsePermissionGrant(credential.permissions)),
 });
+
+export const callingPlatform = (
+  principal: PlatformPrincipal,
+  claimed?: string,
+): string => {
+  if (principal.scope !== "platform" || principal.platformId === null) {
+    throw new ForbiddenError("a platform api key is required");
+  }
+
+  if (claimed !== undefined && claimed !== principal.platformId) {
+    throw new BadRequestError("platformId does not belong to this platform");
+  }
+
+  return principal.platformId;
+};
 
 export const createPrincipalPlugin = ({ db, auth, encryptionKey }: PrincipalDeps) => {
   const organizationIdOf = (params: Record<string, unknown>, macro: string): string => {
@@ -163,6 +179,9 @@ export const createPrincipalPlugin = ({ db, auth, encryptionKey }: PrincipalDeps
           if (principal.organizationId !== organizationId) {
             throw new ForbiddenError("the api key belongs to another organization");
           }
+          if (principal.scope !== "organization") {
+            throw new ForbiddenError("an organization api key is required");
+          }
 
           return authorize(request, principal, required);
         },
@@ -171,6 +190,9 @@ export const createPrincipalPlugin = ({ db, auth, encryptionKey }: PrincipalDeps
       platformAuth: (required: string | null) => ({
         async resolve({ request }): Promise<PlatformAuthResult> {
           const principal = await apiKeyPrincipalOf(request, "an api key is required");
+          if (principal.scope !== "platform" || principal.platformId === null) {
+            throw new ForbiddenError("a platform api key is required");
+          }
 
           return authorize(request, principal, required);
         },
