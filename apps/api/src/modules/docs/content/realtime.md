@@ -15,15 +15,16 @@ score that broadcasts instead of being polled.
 
 `realtimeUrl` from `POST /api/v1/sessions` is the address to open. The same
 `sessionToken` and `realtimeUrl` come back from the enter calls: `POST
-/api/v1/duels/enter` and `POST /api/v1/tournaments/{tournamentId}/enter`: so a
-duel or tournament player uses this socket the moment they enter; see
-`tournaments`.
+/api/v1/duels/enter` and `POST /api/v1/tournaments/{tournamentId}/enter`, plus
+a 10-character `joinCode` and a `playUrl`: so a duel or tournament player uses
+this socket the moment they enter; see `tournaments`.
 
 ```
 wss://rt.wasanni.test/rt/<sessionId>?token=<sessionToken>
 ```
 
-The path is `/rt/{sessionId}`. The token is the session token, either in the
+The path is `/rt/{sessionId}`. The token is the session token or the session's
+join code — the code authenticates exactly like the token — either in the
 `token` query parameter or an `authorization: Bearer` header on the handshake.
 The handshake is refused before it completes when the token hashes to no session
 (`401`), when it belongs to a different session than the path names

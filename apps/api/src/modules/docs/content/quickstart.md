@@ -22,10 +22,12 @@ In the dashboard, once: each step names the endpoint the dashboard calls, so
 an integration can drive the same flow with a signed-in member session:
 
 1. Create a platform (`POST /api/v1/organizations/:organizationId/platforms`):
-   a name and a slug of 2–60 characters of `[a-z0-9-]`.
+   a name and a slug of 2–60 characters of `[a-z0-9-]`. The slug never
+   changes afterwards: deploy urls embed it.
 2. Create a game (`POST /api/v1/organizations/:organizationId/games`).
    `hosting: "external"` is a game you serve yourself; `hosting: "hosted"`
-   needs an uploaded game file that reaches `ready`. A game also carries a
+   needs an uploaded game file that reaches `ready`. The game slug never
+   changes afterwards either. A game also carries a
    cover image and a list of short `hints` (up to 20 strings), both optional
    and set from the dashboard's game settings.
 3. Assign the game to the platform (`POST
@@ -34,7 +36,12 @@ an integration can drive the same flow with a signed-in member session:
    /api/v1/organizations/:organizationId/games/:gameId/publish`). A session
    only opens on a game that is assigned to the named platform, `active`, and
    published.
-4. Create a platform api key on that platform's page
+4. Open a leaderboard tournament for the game (`POST
+   /api/v1/organizations/:organizationId/tournaments` with the game's
+   `gameId`, `"format": "leaderboard"`, and the game's name and slug,
+   then `POST …/:tournamentId/open`). Every game ships with one, so every
+   session and score names a tournament and every score counts on its board.
+5. Create a platform api key on that platform's page
    (`POST /api/v1/organizations/:organizationId/keys` with `"scope":
    "platform"` and the platform's `"platformId"`). Tick the scopes the
    calls below need: `session: create`, `session: read`, `score: create`,
@@ -66,13 +73,18 @@ curl -s -X POST http://localhost:3000/api/v1/sessions \
 {
   "session": { "id": "ses_…", "status": "active", "expiresAt": "…", "config": { … } },
   "sessionToken": "…",
-  "realtimeUrl": "ws://localhost:3001/rt/ses_…?token=…"
+  "realtimeUrl": "ws://localhost:3001/rt/ses_…?token=…",
+  "joinCode": "K7qZ2mX4pQ",
+  "playUrl": "http://localhost:3000/s/arcade/drift-kings/?sessionId=ses_…&code=K7qZ2mX4pQ"
 }
 ```
 
-`sessionToken` is returned only here. The game client sends it as
-`Authorization: Bearer …`; your backend never needs it, because it already holds
-the api key.
+`sessionToken` is returned only here. Your backend never needs it, because it
+already holds the api key. Hand the player the `joinCode`: a 10-character code
+that opens the same session over the socket or the score endpoint, and that
+dies with the session. Or hand over the `playUrl`: the platform's current
+build with the session already attached. The default session lasts 30 minutes;
+after that no score and no join code is accepted for it again.
 
 ## 3. Record the score
 

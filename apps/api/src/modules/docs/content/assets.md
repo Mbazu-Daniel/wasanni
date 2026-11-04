@@ -63,14 +63,28 @@ written once and only replaced, never read back.
 
 `GET /api/v1/games/{gameId}/files` answers `{ "files": […] }`: every version of
 that game, each with `status` (`pending_upload`, `extracting`, `ready`,
-`failed`), `kind` (`single` or `bundle`), `version`, `sizeBytes`, `entryPoint`,
-and `isCurrent`. Exactly one version carries `isCurrent: true` once a file is
-`ready`.
+`failed`), `kind` (`single` or `bundle`), `version`, `platformSlug`,
+`sizeBytes`, `entryPoint`, and `isCurrent`. One version per platform carries
+`isCurrent: true` once a file is `ready`.
 
 `GET /api/v1/games/{gameId}/files/{fileId}/download-url` answers
 `{ "url": "…" }`: a signed get url for that one version's bytes. It is the way
 to cache a game outside Wasanni; a game played inside a browser is served by the
-`/play/{gameId}/{fileId}/…` url instead, and needs no key.
+`/s/{platformSlug}/{gameSlug}/` url, which always plays the current build of
+that platform with no cache lifetime, or by a timestamped
+`/s/{platformSlug}/{gameSlug}/{timestamp}.html` url, and needs no key.
+
+## Join codes
+
+Every session, tournament enter, and duel enter answers `joinCode`, a 10-character alphanumeric
+code, and `playUrl`. Give the player the code, not the token: the game
+resolves it with `GET /api/v1/join/{code}` — no key, rate-limited per caller —
+and gets back the `playUrl` to load, the `realtimeUrl` socket to play on, and
+the `platformSlug` and `gameSlug` it resolved to. The code is the session
+credential: the client opens the socket with `?token=<code>` and sends
+`{"type":"score","score":n}` over it, or posts with
+`Authorization: Bearer <code>`. A code stops working when its session ends or
+expires, and wrong guesses answer 404.
 
 ## What a platform used
 

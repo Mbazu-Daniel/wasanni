@@ -145,8 +145,10 @@ call, addressed by the platform they play on:
 ```
 
 `POST /api/v1/tournaments/{tournamentId}/enter` answers `201 { "session": …,
-"sessionToken": …, "realtimeUrl": … }`: the same three fields a game session
-create returns, so the player can connect and start playing immediately.
+"sessionToken": …, "realtimeUrl": …, "joinCode": …, "playUrl": … }`: the same
+fields a game session create returns, so the player can connect and start
+playing immediately. Give the player the 10-character `joinCode`; it resolves
+at `GET /api/v1/join/:code` and authenticates exactly like the token.
 Entering the same `externalUserId` twice is not an error: an existing
 registration comes back as-is and the call issues a fresh session and token.
 
@@ -276,5 +278,6 @@ player into the duel pool of that game:
   gets a new session.
 
 The answer is `201 { "matchId": …, "opponent": …, "session": …, "sessionToken":
-…, "realtimeUrl": … }`. When two seatings race for the same last free seat, the
-loser gets `409 the pairing just changed, enter again`.
+…, "realtimeUrl": …, "joinCode": …, "playUrl": … }`. When two seatings race
+for the same last free seat, the loser gets `409 the pairing just changed,
+enter again`.
