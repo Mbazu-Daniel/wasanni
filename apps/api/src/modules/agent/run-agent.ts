@@ -11,6 +11,7 @@ import {
   RUN_TIMEOUT_MS,
 } from "./constants.ts";
 import type { AgentRuntime } from "./mastra.ts";
+import { createSpacingState, spaceSentences } from "../assistant/spacing.ts";
 import { historyCompat } from "./provider-compat.ts";
 import type { ProviderEndpoint } from "./transport.ts";
 import type { RunEvent } from "./types.ts";
@@ -77,6 +78,7 @@ const consume = async function* (
   let step = 0;
   let contentFilter = false;
   let parked = false;
+  const spacing = createSpacingState();
 
   for await (const chunk of stream.fullStream) {
     if (chunk.type === "step-start") {
@@ -85,7 +87,11 @@ const consume = async function* (
     }
 
     if (chunk.type === "text-delta") {
-      yield { kind: "delta", text: chunk.payload.text, step };
+      yield {
+        kind: "delta",
+        text: spaceSentences(chunk.payload.text, spacing, { glossary: true }),
+        step,
+      };
       continue;
     }
 

@@ -74,7 +74,13 @@ export type AgentGamePort = {
   list(scope: Scope): Promise<GameView[]>;
   create(scope: Scope, input: CreateGameBody): Promise<GameView>;
   context(scope: Scope, gameId: string): Promise<AgentGameContext | null>;
-  deploy(scope: Scope, memberId: string, gameId: string, html: string): Promise<string>;
+  deploy(
+    scope: Scope,
+    memberId: string,
+    gameId: string,
+    html: string,
+    platformId?: string,
+  ): Promise<{ version: string; url: string }>
 };
 
 export type AgentIntegrator = {
