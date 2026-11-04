@@ -58,6 +58,7 @@ export const tournament = pgTable(
   (t) => [
     uniqueIndex("tournament_organization_slug_ux").on(t.organizationId, t.slug),
     index("tournament_organization_ix").on(t.organizationId),
+    index("tournament_organization_game_ix").on(t.organizationId, t.gameId),
     index("tournament_status_ix").on(t.status),
   ],
 );

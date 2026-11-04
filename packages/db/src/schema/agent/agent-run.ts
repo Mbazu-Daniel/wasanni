@@ -33,9 +33,6 @@ export const agentRun = pgTable(
     prompt: text("prompt").notNull(),
     output: text("output"),
     status: text("status", { enum: AGENT_RUN_STATUSES }).notNull(),
-    promptTokens: integer("prompt_tokens").notNull().default(0),
-    completionTokens: integer("completion_tokens").notNull().default(0),
-    costMicros: integer("cost_micros").notNull().default(0),
     durationMs: integer("duration_ms").notNull().default(0),
     error: text("error"),
     createdAt: timestamp("created_at", { withTimezone: true })

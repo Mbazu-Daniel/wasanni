@@ -49,6 +49,7 @@ export const match = pgTable(
       t.bracketSlot,
     ),
     index("match_organization_game_ix").on(t.organizationId, t.gameId),
+    index("match_organization_game_status_ix").on(t.organizationId, t.gameId, t.status),
     index("match_tournament_ix").on(t.tournamentId),
   ],
 );
