@@ -16,7 +16,9 @@ import { WaitingNote } from "./waiting-note.tsx";
 export function ConversationPane({
   orgSlug,
   sessionId,
-  sessionGameName,
+  games,
+  selectedGameId,
+  onGameChange,
   hasProviders,
   providers,
   chosenProviderId,
@@ -41,7 +43,9 @@ export function ConversationPane({
 }: {
   orgSlug: string;
   sessionId: string | null;
-  sessionGameName: string | null;
+  games: { id: string; name: string; imageUrl: string | null }[];
+  selectedGameId: string | null;
+  onGameChange: (gameId: string | null) => void;
   hasProviders: boolean;
   providers: { id: string; name: string; model: string }[];
   chosenProviderId: string;
@@ -71,11 +75,17 @@ export function ConversationPane({
           <IconRobot size={14} /> {sessionId === null ? "New chat" : "Conversation"}
         </p>
         <div className="flex min-w-0 items-center gap-2">
-          {sessionId !== null && sessionGameName !== null && (
-            <p className="truncate font-mono text-[10px] uppercase tracking-[0.12em] text-launch-ink/55">
-              game · {sessionGameName}
-            </p>
-          )}
+          <SearchableSelect
+            compact
+            className="w-44 shrink-0"
+            value={selectedGameId ?? "none"}
+            onValueChange={(value) => onGameChange(value === "none" ? null : value)}
+            placeholder="Pick a game…"
+            options={[{ value: "none", label: "No game" }, ...games.map((game) => ({
+              value: game.id,
+              label: game.name,
+              imageUrl: game.imageUrl,
+            }))]} />
           {providers.length > 0 && (
             <SearchableSelect
               compact

@@ -3,6 +3,24 @@ import { IconChevronDown, IconSearch } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import type { SelectOption } from "./select";
 
+const initialsOf = (label: string): string => {
+  const words = label.trim().split(/\s+/).slice(0, 2);
+  const initials = words.map((word) => word.charAt(0)).join("");
+  return initials === "" ? "?" : initials.toUpperCase();
+};
+
+export function GameAvatar({ label, imageUrl }: { label: string; imageUrl: string | null }) {
+  if (imageUrl !== null) {
+    return <img src={imageUrl} alt="" className="size-4 shrink-0 rounded-full object-cover" />;
+  }
+
+  return (
+    <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-muted text-[8px] font-semibold uppercase text-muted-foreground">
+      {initialsOf(label)}
+    </span>
+  );
+}
+
 export function SearchableSelect({
   value,
   onValueChange,
@@ -47,8 +65,11 @@ export function SearchableSelect({
           compact ? "h-7 gap-1 rounded-md px-2 text-[11px]" : "h-9 gap-2 px-3 text-sm",
         )}
       >
-        <span className={cn("truncate", selected === undefined && "text-muted-foreground")}>
-          {selected?.label ?? placeholder}
+        <span className={cn("flex min-w-0 items-center gap-1.5", selected === undefined && "text-muted-foreground")}>
+          {selected !== undefined && selected.imageUrl !== undefined && (
+            <GameAvatar label={selected.label} imageUrl={selected.imageUrl} />
+          )}
+          <span className="truncate">{selected?.label ?? placeholder}</span>
         </span>
         <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
       </button>
@@ -86,12 +107,15 @@ export function SearchableSelect({
                   disabled={option.disabled}
                   onClick={() => choose(option)}
                   className={cn(
-                    "block w-full rounded-md px-2 py-2 text-left hover:bg-ink/[0.06] disabled:opacity-50",
+                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-ink/[0.06] disabled:opacity-50",
                     compact ? "text-xs" : "text-sm",
                     option.value === value && "bg-ink/[0.06] font-medium",
                   )}
                 >
-                  {option.label}
+                  {option.imageUrl !== undefined && (
+                    <GameAvatar label={option.label} imageUrl={option.imageUrl} />
+                  )}
+                  <span className="truncate">{option.label}</span>
                 </button>
               ))
             )}

@@ -5,6 +5,7 @@ export interface SelectOption {
   value: string;
   label: string;
   disabled?: boolean;
+  imageUrl?: string | null;
 }
 
 export function Select({

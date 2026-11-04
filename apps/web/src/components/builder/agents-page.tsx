@@ -16,6 +16,7 @@ import type {
   AgentStreamEvent,
   AgentTurnView,
 } from "@/lib/agent-types";
+import type { GameFileView } from "@wasanni/contracts";
 import type { GameView } from "@/lib/game-types";
 import { ArtifactPane } from "./artifact-pane.tsx";
 import { Composer } from "./composer.tsx";
@@ -30,6 +31,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
   const queryClient = useQueryClient();
 
   const [sessionId, setSessionId] = React.useState<string | null>(null);
+  const [pendingGameId, setPendingGameId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState("");
   const [live, setLive] = React.useState<LiveReply | null>(null);
   const [thinkingOpen, setThinkingOpen] = React.useState(true);
@@ -220,6 +222,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           organizationId,
           prompt,
           ...(sessionId === null ? {} : { sessionId }),
+          ...(sessionId === null && pendingGameId !== null ? { gameId: pendingGameId } : {}),
           ...(chosen === null ? {} : { providerId: chosen.id }),
           mode: useMode,
           ...(files.length === 0 ? {} : { attachments: files }),
@@ -297,8 +300,29 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
     setAttachments((current) => [...current, ...loaded]);
   };
 
+  const bindGame = async (gameId: string | null): Promise<void> => {
+    if (sessionId === null) {
+      setPendingGameId(gameId);
+      setArtifactFile(null);
+      return;
+    }
+
+    setArtifactFile(null);
+
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/agents/sessions/${sessionId}`,
+        { method: "PATCH", data: { gameId } },
+      );
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not bind the game");
+    }
+  };
+
   const start = (): void => {
     setSessionId(null);
+    setPendingGameId(null);
     setPinned(null);
     setDraft("");
     setPending(null);
@@ -306,12 +330,19 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
   };
 
   const startInProject = async (project: AgentProjectView): Promise<void> => {
+    const boundGameId = pendingGameId;
     start();
 
     try {
       const created = await apiFetch<AgentSessionView>(
         `/api/v1/organizations/${organizationId}/agents/sessions`,
-        { method: "POST", data: { projectId: project.id } },
+        {
+          method: "POST",
+          data: {
+            projectId: project.id,
+            ...(boundGameId === null ? {} : { gameId: boundGameId }),
+          },
+        },
       );
       setSessionId(created.id);
       refresh();
@@ -425,10 +456,51 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
   const shownTurn =
     pinned === null ? lastAssistant : (turns.find((turn) => turn.id === pinned) ?? null);
 
-  const artifact = React.useMemo(
-    () => artifactView(live?.answer ?? null, shownTurn?.text ?? ""),
-    [live?.answer, shownTurn?.text],
-  );
+  const activeSession = sessions.find((session) => session.id === sessionId) ?? null;
+  const selectedGameId = sessionId === null ? pendingGameId : (activeSession?.gameId ?? null);
+  const sessionGame = games.find((game) => game.id === selectedGameId);
+
+  const { data: boundBuild = null } = useQuery({
+    queryKey: ["games", organizationId, selectedGameId, "current-build"],
+    queryFn: async (): Promise<{ version: string; name: string; body: string } | null> => {
+      if (selectedGameId === null) return null;
+
+      const { files } = await apiFetch<{ files: GameFileView[] }>(
+        `/api/v1/organizations/${organizationId}/games/${selectedGameId}/files`,
+      );
+      const current = files.find(
+        (file) => file.isCurrent && file.status === "ready" && file.kind === "single",
+      );
+
+      if (current === undefined || current.sizeBytes > 2_000_000) return null;
+
+      const { url } = await apiFetch<{ url: string }>(
+        `/api/v1/organizations/${organizationId}/games/${selectedGameId}/files/${current.id}/download-url`,
+      );
+      const response = await fetch(url);
+
+      if (!response.ok) return null;
+
+      return { version: current.version, name: current.entryPoint, body: await response.text() };
+    },
+    enabled: selectedGameId !== null,
+    staleTime: 30_000,
+  });
+
+  const { artifact, showingBuild } = React.useMemo(() => {
+    const fromChat = artifactView(live?.answer ?? null, shownTurn?.text ?? "");
+
+    if (fromChat.files.length > 0 || fromChat.html !== null || boundBuild === null) {
+      return { artifact: fromChat, showingBuild: false };
+    }
+
+    const file = { name: boundBuild.name, language: "html", body: boundBuild.body, complete: true };
+
+    return {
+      artifact: { html: boundBuild.body, files: [file], drafting: false },
+      showingBuild: true,
+    };
+  }, [live?.answer, shownTurn?.text, boundBuild]);
 
   const pane = paneChoice ?? (artifact.drafting ? "code" : "preview");
 
@@ -452,9 +524,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
         ? `answer ${answerNumber} of ${answers.length}`
         : null;
 
-  const sessionGame = games.find(
-    (game) => game.id === sessions.find((session) => session.id === sessionId)?.gameId,
-  );
+  const shownVersion = showingBuild && boundBuild !== null ? `build ${boundBuild.version}` : artifactVersion;
 
   return (
     <ResizablePanelGroup className="h-full">
@@ -476,6 +546,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           onNewSession={start}
           onSelect={(session) => {
             setSessionId(session.id);
+            setPendingGameId(null);
             setPinned(null);
             setLastSent(null);
           }}
@@ -495,7 +566,9 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
         <ConversationPane
           orgSlug={org.slug}
           sessionId={sessionId}
-          sessionGameName={sessionGame?.name ?? null}
+          games={games}
+          selectedGameId={selectedGameId}
+          onGameChange={(gameId) => void bindGame(gameId)}
           hasProviders={providers.length > 0}
           providers={providers}
           chosenProviderId={chosen?.id ?? ""}
@@ -553,7 +626,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           files={artifact.files}
           selectedName={artifactFile}
           onSelect={openFile}
-          version={artifactVersion}
+          version={shownVersion}
           onIntegrate={(file) => startIntegration(file)}
         />
       </ResizablePanel>
