@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { IconMessageCircle } from "@tabler/icons-react";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { askAboutGuide } from "@/lib/assistant-ask";
 import type { DocList, DocView } from "@wasanni/contracts";
 import { DocsMarkdown } from "@/components/docs/docs-markdown";
 import { fetchDocs } from "./route";
@@ -54,6 +56,16 @@ function GuidePage() {
 
   return (
     <article>
+      <div className="mb-6 flex justify-end">
+        <button
+          type="button"
+          onClick={() => askAboutGuide(guide.data.title)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+        >
+          <IconMessageCircle className="size-3.5" />
+          Ask about {guide.data.title.toLowerCase()}
+        </button>
+      </div>
       <DocsMarkdown text={guide.data.markdown} />
       <GuidePager docs={listing ?? null} slug={slug} />
     </article>

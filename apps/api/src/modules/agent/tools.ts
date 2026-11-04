@@ -49,15 +49,6 @@ type Document = {
 
 const MAX_INDEX_CHARS = 16_000;
 
-const MAX_DOC_CHARS = 20_000;
-
-const PLATFORM_CREDENTIAL = "(platform api key)";
-
-const platformKeyed = (operations: Record<string, Operation> | undefined): boolean =>
-  Object.values(operations ?? {}).some((operation) =>
-    (operation.summary ?? operation.description ?? "").includes(PLATFORM_CREDENTIAL),
-  );
-
 const routeKey = (route: string): string =>
   route.replace(/\{([^}]+)\}/g, ":$1").replace(/:[^/]+/g, ":");
 
@@ -175,35 +166,61 @@ export const createApiDocsTool = (input: {
 
     if (path !== undefined) {
       const wanted = routeKey(path);
-      const item = Object.entries(doc.paths ?? {}).find(
-        ([key]) => routeKey(key) === wanted,
-      );
+      const entries = Object.entries(doc.paths ?? {});
+      const item = entries.find(([key]) => routeKey(key) === wanted);
 
-      return item === undefined
+      if (item !== undefined) {
+        return JSON.stringify({ [item[0]]: item[1] }, null, 2);
+      }
+
+      const tail = path.split("/").filter(Boolean).at(-1) ?? "";
+      const near = entries
+        .filter(([key]) => key.split("/").filter(Boolean).at(-1) === tail)
+        .map(([key]) => key)
+        .slice(0, 8);
+
+      return near.length === 0
         ? `no documented path matches ${path}`
-        : JSON.stringify({ [item[0]]: item[1] }, null, 2).slice(0, MAX_DOC_CHARS);
+        : `no documented path matches ${path}. Paths ending in ${tail}: ${near.join(", ")}`;
     }
 
     const lines = Object.entries(doc.paths ?? {})
-      .sort(
-        ([, left], [, right]) =>
-          Number(platformKeyed(right)) - Number(platformKeyed(left)),
-      )
       .flatMap(([key, item]) =>
         Object.entries(item).map(
           ([method, operation]) =>
-            `${method.toUpperCase()} ${key} — ${operation.summary ?? operation.description?.split("\n")[0] ?? ""}`.trimEnd(),
+            `${method.toUpperCase()} ${key}: ${operation.summary ?? operation.description?.split("\n")[0] ?? ""}`.trimEnd(),
         ),
       );
 
-    return lines.join("\n").slice(0, MAX_INDEX_CHARS);
+    const listed: string[] = [];
+    let chars = 0;
+
+    for (const line of lines) {
+      if (chars + line.length + 1 > MAX_INDEX_CHARS) break;
+      listed.push(line);
+      chars += line.length + 1;
+    }
+
+    const endNote = (missing: number): string =>
+      missing === 0
+        ? ""
+        : `\n… plus ${missing} more endpoints, each readable by passing its path.`;
+
+    let missing = lines.length - listed.length;
+
+    while (missing > 0 && listed.join("\n").length + endNote(missing).length > MAX_INDEX_CHARS) {
+      listed.pop();
+      missing += 1;
+    }
+
+    return listed.join("\n") + endNote(missing);
   };
 
   return {
     api_docs: createTool({
       id: "api_docs",
       description:
-        "Endpoints of the Wasanni API this game integrates with. Without a path it lists every METHOD /path; with a path it returns that path's full request and response schemas.",
+        "Ground truth for the Wasanni API. Call it before naming any endpoint, header, or payload. Without a path it lists every METHOD /path with a one-line summary; with a path it returns that path's full request and response schemas. When a lookup misses it suggests the closest real paths, so use one of those instead of guessing.",
       inputSchema: toStandardSchema<Static<typeof apiDocsInput>>(apiDocsInput),
       execute: async ({ path }) => apiDocs(path),
     }),
@@ -214,12 +231,12 @@ export const createGuideTool = () => ({
   integration_guide: createTool({
     id: "integration_guide",
     description:
-      "The written integration guides: start-to-finish how-tos for api keys, sessions, scores, leaderboards, realtime, webhooks, tournaments and matches. Without a slug it lists the slugs; with one it returns that guide.",
+      "Start-to-finish how-tos for api keys, sessions, scores, leaderboards, realtime, webhooks, tournaments and matches. Read the slug that matches the task before explaining any multi-step flow; api_docs still owns the exact schemas. Without a slug it lists the available slugs.",
     inputSchema: toStandardSchema<Static<typeof integrationGuideInput>>(integrationGuideInput),
     execute: async ({ slug }) => {
       if (slug === undefined) {
         const lines = (await readDocs()).map(
-          (doc) => `- ${doc.slug}: ${doc.title} — ${doc.summary}`,
+          (doc) => `- ${doc.slug}: ${doc.title}: ${doc.summary}`,
         );
 
         return lines.join("\n").slice(0, MAX_INDEX_CHARS);
@@ -229,7 +246,7 @@ export const createGuideTool = () => ({
 
       return doc === undefined
         ? `no integration guide is stored under ${slug}`
-        : doc.markdown.slice(0, MAX_DOC_CHARS);
+        : doc.markdown;
     },
   }),
 });
@@ -246,14 +263,14 @@ export const createGameTools = (input: WriteContext & {
     list_games: createTool({
       id: "list_games",
       description:
-        "The games of this organization with their hosting, status, and current version.",
+        "The games of this organization with their hosting, status, and current version. Call it to resolve a game id before any game-scoped read or write; never guess one.",
       inputSchema: toStandardSchema<Static<typeof emptyInput>>(emptyInput),
       execute: async () => games.list(scope),
     }),
     deploy_game: createTool({
       id: "deploy_game",
       description:
-        "Publish an HTML file as the current version of the game bound to this chat and make it live. Requires the chat to be bound to a hosted game.",
+        "Publish a complete self-contained HTML document as the current version of the game bound to this chat and make it live. The bound game is implicit, so the only argument is the whole file, never a fragment; it replaces the current version. Requires the chat to be bound to a hosted game.",
       inputSchema: toStandardSchema<Static<typeof deployGameInput>>(deployGameInput),
       requireApproval: true,
       execute: async ({ html }) => {
@@ -280,7 +297,7 @@ export const createGameTools = (input: WriteContext & {
     create_game: createTool({
       id: "create_game",
       description:
-        "Create a game in this organization. Create it here first, then deploy_game publishes its html once the chat is bound to it.",
+        "Create a game in this organization with a name, a slug, and hosting external for a game you serve yourself or hosted for one this platform serves. Create it here first, then bind the chat to it before deploy_game can publish its html.",
       inputSchema: toStandardSchema<CreateGameBody>(CreateGameBody),
       requireApproval: true,
       execute: (body) =>
@@ -311,14 +328,14 @@ export const createIntegratorTools = (
     list_platforms: createTool({
       id: "list_platforms",
       description:
-        "The platforms of this organization. Sessions, scores, leaderboards and tournament registrations each name one of these ids.",
+        "The platforms of this organization. Call it to resolve a platformId before any session, score, leaderboard, assignment, or tournament registration that names one; never guess one.",
       inputSchema: toStandardSchema<Static<typeof emptyInput>>(emptyInput),
       execute: async () => integrator.platforms.list(scope),
     }),
     read_match: createTool({
       id: "read_match",
       description:
-        "One match with its participants: slots, scores, outcomes and participant ids.",
+        "One match with its participants: slots, scores, outcomes and participant ids. Call it to resolve the participant ids that complete_match needs.",
       inputSchema: toStandardSchema<Static<typeof matchIdInput>>(matchIdInput),
       execute: async ({ matchId }) =>
         guarded(log, "read_match", async () => ({
@@ -329,7 +346,7 @@ export const createIntegratorTools = (
     read_leaderboard: createTool({
       id: "read_leaderboard",
       description:
-        "The best accepted score per player for one game, highest first; without a platformId the board spans every platform of the organization.",
+        "The best accepted score per player for one game, highest first. Resolve the gameId with list_games first; pass a platformId to narrow the board to one platform, otherwise it spans every platform of the organization.",
       inputSchema: toStandardSchema<Static<typeof readLeaderboardInput>>(readLeaderboardInput),
       execute: async (query) =>
         guarded(log, "read_leaderboard", async () => {
@@ -347,7 +364,7 @@ export const createIntegratorTools = (
     read_tournament_standings: createTool({
       id: "read_tournament_standings",
       description:
-        "Standings of a tournament: the bracket round by round for a bracket tournament, the best score per player for a leaderboard one.",
+        "Standings of a tournament: the bracket round by round for a bracket tournament, the best score per player for a leaderboard one. Resolve the tournamentId with list_tournaments first.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       execute: async ({ tournamentId }) =>
         guarded(log, "read_tournament_standings", () =>
@@ -357,7 +374,7 @@ export const createIntegratorTools = (
     create_tournament: createTool({
       id: "create_tournament",
       description:
-        "Create a tournament in draft for a game of this organization, with format leaderboard or bracket and a slug unique in the organization. Open it before players can register.",
+        "Create a tournament in draft for a game of this organization, with format leaderboard or bracket and a slug unique in the organization. Resolve the gameId with list_games first. It stays in draft until open_tournament, so players cannot register yet.",
       inputSchema: toStandardSchema<CreateTournamentBody>(CreateTournamentBody),
       requireApproval: true,
       execute: (body) =>
@@ -372,7 +389,7 @@ export const createIntegratorTools = (
     }),
     open_tournament: createTool({
       id: "open_tournament",
-      description: "Open a draft tournament so players can register for it.",
+      description: "Open a draft tournament so players can register for it. Confirm it is still draft with read_tournament first.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
       execute: ({ tournamentId }) =>
@@ -384,7 +401,7 @@ export const createIntegratorTools = (
     }),
     register_player: createTool({
       id: "register_player",
-      description: "Register one player of a platform in a tournament that is open.",
+      description: "Register one player of a platform in a tournament that is open. Confirm the tournament is open with read_tournament and resolve the platformId with list_platforms first.",
       inputSchema: toStandardSchema<Static<typeof registerPlayerInput>>(registerPlayerInput),
       requireApproval: true,
       execute: (player) =>
@@ -407,7 +424,7 @@ export const createIntegratorTools = (
     seed_tournament: createTool({
       id: "seed_tournament",
       description:
-        "Seed the bracket of an open bracket tournament from its registered players and start it. Needs at least two registered players.",
+        "Seed the bracket of an open bracket tournament from its registered players and start it. Needs at least two registered players; leaderboard tournaments never need this call.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
       execute: ({ tournamentId }) =>
@@ -422,7 +439,7 @@ export const createIntegratorTools = (
     }),
     cancel_tournament: createTool({
       id: "cancel_tournament",
-      description: "Cancel a tournament that has not completed.",
+      description: "Cancel a tournament that has not completed. Confirm its status with read_tournament first; completed tournaments stay as they are.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       requireApproval: true,
       execute: ({ tournamentId }) =>
@@ -435,7 +452,7 @@ export const createIntegratorTools = (
     start_duel: createTool({
       id: "start_duel",
       description:
-        "Create a match of exactly two players on one game. The answer lists both participant ids, which complete_match needs to name a winner.",
+        "Create a match of exactly two players on one game. Resolve the gameId with list_games and the platformIds with list_platforms first. The answer lists both participant ids, which complete_match needs to name a winner.",
       inputSchema: toStandardSchema<Static<typeof startDuelInput>>(startDuelInput),
       requireApproval: true,
       execute: ({ gameId, name, players }) =>
@@ -454,7 +471,7 @@ export const createIntegratorTools = (
     complete_match: createTool({
       id: "complete_match",
       description:
-        "Close a match by naming its winner, either with a participant id from start_duel or read_match, or with the winner's platformId and externalUserId.",
+        "Close a match by naming its winner, either with a participant id from start_duel or read_match, or with the winner's platformId and externalUserId. Read the match first when the participant ids are unknown.",
       inputSchema: toStandardSchema<Static<typeof completeMatchInput>>(completeMatchInput),
       requireApproval: true,
       execute: ({ matchId, winnerParticipantId, winner }) =>
@@ -467,14 +484,14 @@ export const createIntegratorTools = (
 
           return {
             id: match.id,
-            text: `match ${match.id} is ${match.status}, winner ${match.winnerParticipantId ?? "none — drawn"}`,
+            text: `match ${match.id} is ${match.status}, winner ${match.winnerParticipantId ?? "none: drawn"}`,
           };
         }),
     }),
     record_score: createTool({
       id: "record_score",
       description:
-        "Record a score for a game session from the server side. The answer is the stored score with its status, flags and verification outcome, so a flagged or refused score is visible.",
+        "Record a score for a game session from the server side with x-api-key authority, skipping the per-session rate limit the client path enforces. The answer is the stored score with its status, flags and verification outcome, so report a flagged or refused score instead of treating it as stored.",
       inputSchema: toStandardSchema<Static<typeof recordScoreInput>>(recordScoreInput),
       requireApproval: true,
       execute: ({ sessionId, score, endSession }) =>
@@ -493,7 +510,7 @@ export const createIntegratorTools = (
     create_platform: createTool({
       id: "create_platform",
       description:
-        "Create a platform in this organization. A platform is one place the organization's games are used, and sessions and leaderboards name one of its ids.",
+        "Create a platform in this organization with a name and a slug of 2-60 [a-z0-9-] characters. A platform is one place the organization's games are used; sessions and leaderboards name one of its ids, and a game takes sessions only on platforms it is assigned to.",
       inputSchema: toStandardSchema<CreatePlatformBody>(CreatePlatformBody),
       requireApproval: true,
       execute: (body) =>
@@ -508,7 +525,7 @@ export const createIntegratorTools = (
     }),
     list_tournaments: createTool({
       id: "list_tournaments",
-      description: "The tournaments of this organization, optionally filtered to one game.",
+      description: "The tournaments of this organization, optionally filtered to one game. Call it to resolve a tournamentId before any tournament-scoped read or write; never guess one.",
       inputSchema: toStandardSchema<Static<typeof listTournamentsInput>>(listTournamentsInput),
       execute: async ({ gameId }) =>
         guarded(log, "list_tournaments", () =>
@@ -518,7 +535,7 @@ export const createIntegratorTools = (
     read_tournament: createTool({
       id: "read_tournament",
       description:
-        "One tournament with its game id, game name, format, status and timings.",
+        "One tournament with its game id, game name, format, status and timings. Call it to confirm the status a write needs: draft before open_tournament, open before register_player and seed_tournament, uncompleted before cancel_tournament.",
       inputSchema: toStandardSchema<Static<typeof tournamentIdInput>>(tournamentIdInput),
       execute: async ({ tournamentId }) =>
         guarded(log, "read_tournament", () =>
@@ -528,7 +545,7 @@ export const createIntegratorTools = (
     create_assignment: createTool({
       id: "create_assignment",
       description:
-        "Assign a game to one platform. A game takes sessions only on platforms it is assigned to.",
+        "Assign a game to one platform so it can take sessions there. Resolve the gameId with list_games and the platformId with list_platforms first; a session only opens on a game that is assigned to the named platform, active, and published.",
       inputSchema: toStandardSchema<Static<typeof createAssignmentInput>>(createAssignmentInput),
       requireApproval: true,
       execute: (input) =>
@@ -546,7 +563,7 @@ export const createIntegratorTools = (
     }),
     list_assignments: createTool({
       id: "list_assignments",
-      description: "The platforms one game is assigned to.",
+      description: "The platforms one game is assigned to. Call it to confirm the assignment a session needs before telling the developer the wiring is ready.",
       inputSchema: toStandardSchema<Static<typeof gameIdInput>>(gameIdInput),
       execute: async ({ gameId }) =>
         guarded(log, "list_assignments", () =>
@@ -556,7 +573,7 @@ export const createIntegratorTools = (
     create_api_key: createTool({
       id: "create_api_key",
       description:
-        "Issue an api key for this organization. scope organization (sk_org_) is for MCP and the agent; scope platform (sk_plt_) with a platformId is for one platform's game server. The key value is returned exactly once and is never stored.",
+        "Issue an api key for this organization. Scope organization (sk_org_) is for management calls and never carries session or score permissions; scope platform (sk_plt_) with a platformId is for game servers, sessions, scores and MCP, and stays on that server, never in browser html. The key value is returned exactly once and is never stored, so hand it over verbatim and never ask for it again.",
       inputSchema: toStandardSchema<CreateApiKeyBody>(CreateApiKeyBody),
       requireApproval: true,
       execute: (body) =>

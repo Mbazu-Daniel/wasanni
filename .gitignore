@@ -41,3 +41,4 @@ tests/
 *impeccable*
 playwright-report
 *.playwright*
+!apps/api/src/modules/docs/content/*.md

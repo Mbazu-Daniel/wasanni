@@ -1,15 +1,20 @@
 import type { Logger } from "@wasanni/kit";
 import type { ProviderErrorCode } from "../agent/provider-error.ts";
-import type { ProviderEndpoint } from "../agent/transport.ts";
 import type { createAssistantService } from "./assistant.service.ts";
 
 export type AssistantService = ReturnType<typeof createAssistantService>;
+
+export type AssistantProvider = {
+  readonly apiKey: string;
+  readonly baseUrl: string;
+  readonly model: string;
+};
 
 export type AssistantDeps = {
   api: { handle(request: Request): Response | Promise<Response> };
   logger: Logger;
   allowPrivateOutbound: boolean;
-  platformProvider: { apiKey: string; baseUrl: string; model: string } | null;
+  platformProvider: AssistantProvider | null;
 };
 
 export type AssistantEvent =
@@ -23,5 +28,3 @@ export type AssistantEvent =
       message: string;
       retryable: boolean;
     };
-
-export type { ProviderEndpoint };

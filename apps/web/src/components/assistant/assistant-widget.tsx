@@ -17,11 +17,12 @@ import {
   writeTurns,
   type AssistantTurn,
 } from "@/lib/assistant";
+import { onAssistantAsk } from "@/lib/assistant-ask";
 
 const SUGGESTIONS = [
   "How do I post a verified score?",
   "Which endpoints create a tournament?",
-  "How does the realtime leaderboard connection work?",
+  "How does a session token reach the game client?",
 ];
 
 const TOOL_NOTES: Record<string, string> = {
@@ -99,6 +100,21 @@ export function AssistantWidget() {
       setRunning(false);
     }
   };
+
+  const asked = React.useRef(send);
+
+  React.useEffect(() => {
+    asked.current = send;
+  }, [send]);
+
+  React.useEffect(
+    () =>
+      onAssistantAsk((question) => {
+        setOpen(true);
+        void asked.current(question);
+      }),
+    [],
+  );
 
   if (pathname.endsWith("/builder")) return null;
 
@@ -208,7 +224,7 @@ export function AssistantWidget() {
               {running ? (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="destructive"
                   size="icon-sm"
                   aria-label="Stop the answer"
                   onClick={() => abort.current?.abort()}

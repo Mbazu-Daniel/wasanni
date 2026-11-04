@@ -12,6 +12,7 @@
     "db:migrate": "bun run --cwd packages/db migrate",
     "db:studio": "bun run --cwd packages/db studio",
     "agent:traces": "bun --env-file=.env scripts/agent-traces.ts",
+    "agent:eval": "bun --env-file=.env scripts/agent-prompt-eval.ts",
     "agent:studio": "bun --env-file=.env apps/api/src/mastra-server.ts",
     "studio": "mastra dev",
     "infra:up": "docker compose up -d --wait",

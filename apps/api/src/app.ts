@@ -27,6 +27,7 @@ import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
 import { createAgentModule } from "./modules/agent/index.ts";
 import { createAgentRuntime } from "./modules/agent/mastra.ts";
 import { createAssistantModule } from "./modules/assistant/index.ts";
+import { assistantBucketOf } from "./modules/assistant/constants.ts";
 import { createOrganizationModule } from "./modules/organization/index.ts";
 import { createUsageService } from "./modules/usage/usage.service.ts";
 import { createRoleRoutes } from "./modules/role/index.ts";
@@ -36,6 +37,7 @@ import { createAssignmentService } from "./modules/games/assignment.service.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes, createPlayServices } from "./modules/play/index.ts";
 import { createScoreVerifier } from "./modules/play/score-verifier.ts";
+import { createVisionReferee } from "./modules/play/score-vision.ts";
 import { createCompetition } from "./modules/competition/index.ts";
 import { createAuditRoutes } from "./modules/audit/index.ts";
 import { createAuditService } from "./modules/audit/service.ts";
@@ -46,6 +48,7 @@ import { createDocsRoutes } from "./modules/docs/index.ts";
 import {
   AUTH_ROUTE_PREFIX,
   ASSISTANT_RATE_LIMIT_PER_MINUTE,
+  ASSISTANT_TOTAL_RATE_LIMIT_PER_MINUTE,
   DOCS_PATH,
   LEADERBOARD_RATE_LIMIT_PER_MINUTE,
   METRICS_PATH,
@@ -107,8 +110,12 @@ export async function createApp(deps: AppDeps) {
       assistant: {
         limit: ASSISTANT_RATE_LIMIT_PER_MINUTE,
         windowMs: 60_000,
-        key: ({ request }) =>
-          `rl:assistant:${request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "shared"}`,
+        key: ({ request }) => `rl:assistant:${assistantBucketOf(request.headers)}`,
+      },
+      assistantTotal: {
+        limit: ASSISTANT_TOTAL_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: () => "rl:assistant:total",
       },
     },
     deps.logger,
@@ -119,8 +126,25 @@ export async function createApp(deps: AppDeps) {
     enabled: deps.env.USAGE_METERING_ENABLED,
   });
 
+  const platformProvider =
+    deps.env.AGENT_API_KEY !== undefined &&
+    deps.env.AGENT_BASE_URL !== undefined &&
+    deps.env.AGENT_MODEL !== undefined
+      ? {
+          apiKey: deps.env.AGENT_API_KEY,
+          baseUrl: deps.env.AGENT_BASE_URL,
+          model: deps.env.AGENT_MODEL,
+        }
+      : null;
+
+  const visionReferee = createVisionReferee(
+    deps.logger,
+    deps.env.ALLOW_PRIVATE_OUTBOUND_URLS,
+    platformProvider,
+  );
+
   const verifier = deps.env.SCORE_VERIFICATION_ENABLED
-    ? createScoreVerifier(deps.logger, deps.env.ALLOW_PRIVATE_OUTBOUND_URLS)
+    ? createScoreVerifier(deps.logger, deps.env.ALLOW_PRIVATE_OUTBOUND_URLS, visionReferee)
     : null;
 
   const metrics = createMetrics();
@@ -144,17 +168,6 @@ export async function createApp(deps: AppDeps) {
     usage,
     encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
   });
-
-  const platformProvider =
-    deps.env.AGENT_API_KEY !== undefined &&
-    deps.env.AGENT_BASE_URL !== undefined &&
-    deps.env.AGENT_MODEL !== undefined
-      ? {
-          apiKey: deps.env.AGENT_API_KEY,
-          baseUrl: deps.env.AGENT_BASE_URL,
-          model: deps.env.AGENT_MODEL,
-        }
-      : null;
 
   const socialProviders = [
     ...(deps.env.GOOGLE_CLIENT_ID !== undefined && deps.env.GOOGLE_CLIENT_SECRET !== undefined

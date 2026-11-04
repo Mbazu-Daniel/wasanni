@@ -60,7 +60,7 @@ export const createAssistantRoutes = <T extends PrincipalApi>(
     },
     {
       body: AssistantRunBody,
-      beforeHandle: deps.rateLimit("assistant"),
+      beforeHandle: [deps.rateLimit("assistant"), deps.rateLimit("assistantTotal")],
       detail: { tags: ["assistant"], summary: "Ask the Wasanni docs assistant a question" },
     },
   );
