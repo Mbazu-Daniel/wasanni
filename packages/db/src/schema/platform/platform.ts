@@ -16,6 +16,7 @@ export const platform = pgTable(
   },
   (t) => [
     uniqueIndex("platform_organization_slug_ux").on(t.organizationId, t.slug),
+    uniqueIndex("platform_slug_ux").on(t.slug),
     index("platform_organization_ix").on(t.organizationId),
   ],
 );

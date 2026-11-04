@@ -260,6 +260,20 @@
       "when": 1793727819082,
       "tag": "0036_brave_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793806703472,
+      "tag": "0037_silly_naoko",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793813870335,
+      "tag": "0038_mighty_robbie_robertson",
+      "breakpoints": true
     }
   ]
 }

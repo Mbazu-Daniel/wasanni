@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization } from "../organization/organization.ts";
 import { member } from "../organization/member.ts";
+import { platform } from "../platform/platform.ts";
 import { game } from "./game.ts";
 import type { GameFileKind, GameFileStatus } from "@wasanni/contracts";
 
@@ -25,6 +26,7 @@ export const gameFile = pgTable(
       .notNull()
       .references(() => game.id, { onDelete: "cascade" }),
     version: text("version").notNull(),
+    platformId: uuid("platform_id").references(() => platform.id, { onDelete: "set null" }),
     objectKey: text("object_key").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     contentType: text("content_type").notNull(),
@@ -47,6 +49,11 @@ export const gameFile = pgTable(
   (t) => [
     uniqueIndex("game_file_object_key_ux").on(t.objectKey),
     index("game_file_game_ix").on(t.gameId),
-    uniqueIndex("game_file_current_ux").on(t.gameId).where(sql`${t.isCurrent} = true`),
+    uniqueIndex("game_file_current_ux")
+      .on(t.gameId)
+      .where(sql`${t.isCurrent} = true AND ${t.platformId} IS NULL`),
+    uniqueIndex("game_file_current_platform_ux")
+      .on(t.gameId, t.platformId)
+      .where(sql`${t.isCurrent} = true`),
   ],
 );
