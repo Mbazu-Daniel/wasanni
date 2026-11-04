@@ -13,6 +13,7 @@
     "db:studio": "bun run --cwd packages/db studio",
     "agent:traces": "bun --env-file=.env scripts/agent-traces.ts",
     "agent:studio": "bun --env-file=.env apps/api/src/mastra-server.ts",
+    "studio": "mastra dev",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
     "ci": "bun run typecheck && bun test",
@@ -25,6 +26,7 @@
     "drizzle-orm": "0.45.4",
     "elysia": "1.4.30",
     "fflate": "0.8.3",
+    "mastra": "1.37.0",
     "turbo": "2.11.10",
     "typescript": "7.0.2"
   }

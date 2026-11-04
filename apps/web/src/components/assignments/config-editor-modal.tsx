@@ -8,19 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Tabs } from "@/components/ui/tabs";
 import type { ScoreFlagRule, ScoreGameType } from "@wasanni/contracts";
 
 export type ConfigRow = {
   id: string;
-  organizationId: string;
   assignmentId: string;
   name: string;
   config: Record<string, unknown>;
-  schemaVersion: number;
-  revision: number;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -287,15 +283,6 @@ export function ConfigEditorModal({
       }
       className="w-[min(92vw,640px)] max-h-[92vh] overflow-y-auto p-0"
     >
-      {existing && (
-        <div className="flex items-center gap-2 border-b border-border px-6 py-3 text-xs text-muted-foreground">
-          <Badge variant="muted" className="font-mono">
-            revision v{existing.revision}
-          </Badge>
-          <span>each save increments the revision</span>
-        </div>
-      )}
-
       <form onSubmit={submit} className="space-y-4 px-6 py-5">
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <div className="space-y-1.5">

@@ -348,9 +348,11 @@ Every feature that touches the bucket asks it, and `R2_*` being optional in
 `Env` means a deployment with no bucket boots and answers
 `400 object storage is not configured`.
 
-Key grammar: `{location}/{organizationId}/{segments}/{uuid}-{filename}`, with
-locations `game-bundles`, `template-bundles` and the member prefix
-`members/{organizationId}/{memberId}/{uuid7}.{ext}`. The location is the
+Key grammar: `{organizationId}/{location}/{segments}/{uuid}-{filename}`, with
+locations `members`, `organizations`, `game-bundles`, `template-bundles` and
+`session-events`. Avatar uploads use the simple key
+`${organizationId}/members/${memberId}/${uuid7}.{ext}`, and organization logo uploads use
+`${organizationId}/organizations/${uuid7}.{ext}`. The location is the
 namespace, so two kinds of bundle cannot collide. A key cannot carry a path
 traversal; `tests/kit/storage.test.ts` proves it.
 

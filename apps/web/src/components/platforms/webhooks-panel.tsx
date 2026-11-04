@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 import { WebhookDeliveriesDrawer } from "./webhook-deliveries-drawer";
 import { CreateWebhookModal } from "./create-webhook-modal";
+import { ExpiryCell } from "@/components/primitives/expiry-cell";
 
 
 type WebhookRow = {
@@ -27,6 +28,7 @@ type WebhookRow = {
   secretLast4: string;
   events: string[];
   enabled: boolean;
+  expiresAt: string | null;
   lastDeliveryAt: string | null;
   lastFailureAt: string | null;
   createdAt: string;
@@ -165,6 +167,12 @@ export function PlatformWebhooksPanel({
           onCheckedChange={(checked) => void toggleEnabled(row, checked)}
         />
       ),
+    },
+    {
+      key: "expiresAt",
+      header: "Expires",
+      sortValue: (row) => row.expiresAt ?? "",
+      render: (row) => <ExpiryCell expiresAt={row.expiresAt} />,
     },
     {
       key: "lastDeliveryAt",

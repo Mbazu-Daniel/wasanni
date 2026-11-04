@@ -1,4 +1,5 @@
 import { Mastra } from "@mastra/core/mastra";
+import type { MetricEvent } from "@mastra/core/observability";
 import { Memory } from "@mastra/memory";
 import { MastraStorageExporter, Observability } from "@mastra/observability";
 import { OtelExporter } from "@mastra/otel-exporter";
@@ -17,11 +18,17 @@ export type AgentRuntime = {
   readonly flush: () => Promise<void>;
 };
 
+class SpanStorageExporter extends MastraStorageExporter {
+  override onMetricEvent(_event: MetricEvent): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 const exporters = (otelEndpoint: string | undefined) =>
   otelEndpoint === undefined
-    ? [new MastraStorageExporter({ maxBatchWaitMs: SPAN_FLUSH_MS })]
+    ? [new SpanStorageExporter({ maxBatchWaitMs: SPAN_FLUSH_MS })]
     : [
-        new MastraStorageExporter({ maxBatchWaitMs: SPAN_FLUSH_MS }),
+        new SpanStorageExporter({ maxBatchWaitMs: SPAN_FLUSH_MS }),
         new OtelExporter({
           provider: { custom: { endpoint: otelEndpoint, protocol: "http/json" } },
           signals: { logs: false },
@@ -44,6 +51,7 @@ export const createAgentRuntime = (
     configs: {
       default: {
         serviceName: MASTRA_SERVICE_NAME,
+        logging: { enabled: false },
         exporters: exporters(otelEndpoint),
       },
     },

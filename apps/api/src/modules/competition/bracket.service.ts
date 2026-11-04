@@ -19,11 +19,20 @@ import type {
 } from "./types.ts";
 import { toMatchParticipantView } from "./views.ts";
 
-async function readBracketRows(db: Db, tournamentId: string): Promise<MatchRow[]> {
+async function readBracketRows(
+  db: Db,
+  scope: Scope,
+  tournamentId: string,
+): Promise<MatchRow[]> {
   return db
     .select()
     .from(match)
-    .where(eq(match.tournamentId, tournamentId))
+    .where(
+      and(
+        eq(match.tournamentId, tournamentId),
+        eq(match.organizationId, scope.organizationId),
+      ),
+    )
     .orderBy(asc(match.bracketRound), asc(match.bracketSlot));
 }
 
@@ -65,7 +74,7 @@ export function createBracketService(db: Db) {
       throw new BadRequestError("only a bracket tournament has a bracket");
     }
 
-    const matches = await readBracketRows(db, tournamentId);
+    const matches = await readBracketRows(db, scope, tournamentId);
     const seated = groupByMatch(
       await readSeated(
         db,
@@ -132,7 +141,7 @@ export function createBracketService(db: Db) {
       throw new ConflictError("the tournament must be open before seeding");
     }
 
-    const existingMatches = await readBracketRows(db, tournamentId);
+    const existingMatches = await readBracketRows(db, scope, tournamentId);
     if (existingMatches.length > 0) {
       throw new ConflictError("the tournament bracket has already been seeded");
     }

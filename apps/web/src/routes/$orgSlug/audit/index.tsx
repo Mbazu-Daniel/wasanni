@@ -144,17 +144,14 @@ function AuditPage() {
   const [source, setSource] = React.useState("");
   const [timeRange, setTimeRange] = React.useState("");
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
-  const page = useCursorPage();
+  const page = useCursorPage(`${actor}|${action}|${resourceType}|${source}|${timeRange}`);
 
-  React.useEffect(() => {
-    page.reset();
-  }, [actor, action, resourceType, source, timeRange, page.reset]);
-
-  React.useEffect(() => {
-    if (resourceType !== "" && action !== "" && !action.startsWith(`${resourceType}.`)) {
+  const changeResourceType = (next: string): void => {
+    setResourceType(next);
+    if (next !== "" && action !== "" && !action.startsWith(`${next}.`)) {
       setAction("");
     }
-  }, [resourceType, action]);
+  };
 
   const { data: members = [] } = useQuery({
     queryKey: ["members", organizationId],
@@ -222,52 +219,47 @@ function AuditPage() {
         title="Audit"
       />
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-3">
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Actor</label>
-          <SearchableSelect
-            value={actor}
-            onValueChange={setActor}
-            options={actorOptions}
-            placeholder="All actors"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Action</label>
-          <SearchableSelect
-            value={action}
-            onValueChange={setAction}
-            options={actionOptionsFor(resourceType)}
-            placeholder="All actions"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Resource type</label>
-          <SearchableSelect
-            value={resourceType}
-            onValueChange={setResourceType}
-            options={RESOURCE_OPTIONS}
-            placeholder="All resources"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Source</label>
-          <SearchableSelect
-            value={source}
-            onValueChange={setSource}
-            options={SOURCE_OPTIONS}
-            placeholder="All sources"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Time range</label>
-          <SearchableSelect
-            value={timeRange}
-            onValueChange={setTimeRange}
-            options={TIME_OPTIONS}
-            placeholder="Any time"
-          />
-        </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <SearchableSelect
+          compact
+          value={actor}
+          onValueChange={setActor}
+          options={actorOptions}
+          placeholder="All actors"
+          className="w-44"
+        />
+        <SearchableSelect
+          compact
+          value={action}
+          onValueChange={setAction}
+          options={actionOptionsFor(resourceType)}
+          placeholder="All actions"
+          className="w-44"
+        />
+        <SearchableSelect
+          compact
+          value={resourceType}
+          onValueChange={changeResourceType}
+          options={RESOURCE_OPTIONS}
+          placeholder="All resources"
+          className="w-48"
+        />
+        <SearchableSelect
+          compact
+          value={source}
+          onValueChange={setSource}
+          options={SOURCE_OPTIONS}
+          placeholder="All sources"
+          className="w-44"
+        />
+        <SearchableSelect
+          compact
+          value={timeRange}
+          onValueChange={setTimeRange}
+          options={TIME_OPTIONS}
+          placeholder="Any time"
+          className="w-40"
+        />
       </div>
 
       {isLoading ? (

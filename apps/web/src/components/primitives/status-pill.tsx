@@ -7,6 +7,7 @@ const styles: Record<string, string> = {
   running: "border-blue/30 bg-blue/10 text-blue",
   pending_upload: "border-amber-400/30 bg-amber-400/10 text-amber-300",
   extracting: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  scheduled: "border-amber-400/30 bg-amber-400/10 text-amber-300",
   pending: "border-border bg-ink/[0.05] text-muted-foreground",
   draft: "border-border bg-ink/[0.05] text-muted-foreground",
   disabled: "border-border bg-ink/[0.05] text-muted-foreground",

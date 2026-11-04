@@ -2,14 +2,16 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { IconAlertTriangle } from "@tabler/icons-react";
+import { IconAlertTriangle, IconTrash } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/primitives/page-header";
+import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 
 export const Route = createFileRoute("/$orgSlug/settings/organization")({
   head: () => ({ meta: [{ title: "Organization · Wasanni" }] }),
@@ -26,6 +28,8 @@ function OrganizationSettingsPage() {
   const [name, setName] = React.useState(org?.name ?? "");
   const [slug, setSlug] = React.useState(org?.slug ?? "");
   const [saving, setSaving] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
 
   if (org === null) return null;
 
@@ -41,7 +45,7 @@ function OrganizationSettingsPage() {
       });
 
       if (error) {
-        toast.error(error.message ?? "Could not update organization");
+        toastAuthError(error, "Could not update organization");
         return;
       }
 
@@ -62,11 +66,32 @@ function OrganizationSettingsPage() {
     }
   }
 
+  async function deleteOrganization() {
+    setDeleting(true);
+
+    try {
+      const { error } = await authClient.organization.delete({
+        organizationId,
+      });
+
+      if (error) {
+        toastAuthError(error, "Could not delete organization");
+        setDeleting(false);
+        return;
+      }
+
+      toast.success("Organization deleted");
+      queryClient.clear();
+      navigate({ to: "/" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete");
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="max-w-xl">
-      <PageHeader
-        title="Organization"
-      />
+      <PageHeader title="Organization" />
 
       <div className="space-y-4 rounded-xl border border-border bg-card/40 p-5">
         <div className="space-y-1.5">
@@ -112,15 +137,43 @@ function OrganizationSettingsPage() {
 
       <Separator className="my-8" />
 
-      <div>
-        <h2 className="text-sm font-semibold">About this organization</h2>
-        <dl className="mt-3 space-y-2 text-sm">
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <dt className="text-xs text-muted-foreground">Organization ID</dt>
-            <dd className="font-mono text-xs">{org.id}</dd>
+      <div className="rounded-xl border border-rose-400/30 bg-rose-400/[0.03] p-5">
+        <div className="flex items-start gap-3">
+          <div className="grid size-9 shrink-0 place-items-center rounded-lg border border-rose-400/30 bg-rose-400/10 text-rose-300">
+            <IconTrash className="size-4" />
           </div>
-        </dl>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-rose-200">
+              Delete this organization
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Deletes every game, platform, session, score, tournament, and match
+              in this organization. Files in the bucket are not removed
+              automatically. This cannot be undone.
+            </p>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="mt-3"
+              onClick={() => setDeleteOpen(true)}
+            >
+              Delete organization
+            </Button>
+          </div>
+        </div>
       </div>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete ${org.name}?`}
+        description="Every row for this organization is removed. Files in storage are not affected. This cannot be undone."
+        confirmPhrase={org.slug}
+        confirmLabel="Delete organization"
+        destructive
+        busy={deleting}
+        onConfirm={deleteOrganization}
+      />
     </div>
   );
 }

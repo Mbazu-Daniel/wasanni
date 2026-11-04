@@ -17,17 +17,20 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as OrgSlugMembersRouteImport } from './routes/$orgSlug/members'
 import { Route as OrgSlugOverviewRouteImport } from './routes/$orgSlug/overview'
+import { Route as OrgSlugProvidersRouteImport } from './routes/$orgSlug/providers'
 import { Route as OrgSlugSettingsRouteRouteImport } from './routes/$orgSlug/settings/route'
-import { Route as AcceptInvitationIdRouteImport } from './routes/accept-invitation.$id'
+import { Route as AcceptInvitationInvitationIdRouteImport } from './routes/accept-invitation.$invitationId'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as DocsSlugRouteImport } from './routes/docs/$slug'
-import { Route as OrgSlugAgentsIndexRouteImport } from './routes/$orgSlug/agents/index'
 import { Route as OrgSlugAssignmentsIndexRouteImport } from './routes/$orgSlug/assignments/index'
 import { Route as OrgSlugAuditIndexRouteImport } from './routes/$orgSlug/audit/index'
+import { Route as OrgSlugBuilderIndexRouteImport } from './routes/$orgSlug/builder/index'
 import { Route as OrgSlugGamesIndexRouteImport } from './routes/$orgSlug/games/index'
 import { Route as OrgSlugGamesNewRouteImport } from './routes/$orgSlug/games/new'
 import { Route as OrgSlugKeysIndexRouteImport } from './routes/$orgSlug/keys/index'
+import { Route as OrgSlugKeysNewRouteImport } from './routes/$orgSlug/keys/new'
 import { Route as OrgSlugMatchesIndexRouteImport } from './routes/$orgSlug/matches/index'
 import { Route as OrgSlugMatchesMatchIdRouteImport } from './routes/$orgSlug/matches/$matchId'
 import { Route as OrgSlugMatchesNewRouteImport } from './routes/$orgSlug/matches/new'
@@ -36,10 +39,8 @@ import { Route as OrgSlugPlatformsPlatformSlugRouteImport } from './routes/$orgS
 import { Route as OrgSlugPlatformsNewRouteImport } from './routes/$orgSlug/platforms/new'
 import { Route as OrgSlugSettingsIndexRouteImport } from './routes/$orgSlug/settings/index'
 import { Route as OrgSlugSettingsAccountRouteImport } from './routes/$orgSlug/settings/account'
-import { Route as OrgSlugSettingsDangerRouteImport } from './routes/$orgSlug/settings/danger'
-import { Route as OrgSlugSettingsMembersRouteImport } from './routes/$orgSlug/settings/members'
 import { Route as OrgSlugSettingsOrganizationRouteImport } from './routes/$orgSlug/settings/organization'
-import { Route as OrgSlugSettingsProvidersRouteImport } from './routes/$orgSlug/settings/providers'
+import { Route as OrgSlugSettingsSessionsRouteImport } from './routes/$orgSlug/settings/sessions'
 import { Route as OrgSlugTemplatesIndexRouteImport } from './routes/$orgSlug/templates/index'
 import { Route as OrgSlugTemplatesTemplateIdRouteImport } from './routes/$orgSlug/templates/$templateId'
 import { Route as OrgSlugTemplatesNewRouteImport } from './routes/$orgSlug/templates/new'
@@ -47,7 +48,6 @@ import { Route as OrgSlugTournamentsIndexRouteImport } from './routes/$orgSlug/t
 import { Route as OrgSlugTournamentsTournamentSlugRouteImport } from './routes/$orgSlug/tournaments/$tournamentSlug'
 import { Route as OrgSlugTournamentsNewRouteImport } from './routes/$orgSlug/tournaments/new'
 import { Route as OrgSlugUsageIndexRouteImport } from './routes/$orgSlug/usage/index'
-import { Route as OrgSlugWebhooksIndexRouteImport } from './routes/$orgSlug/webhooks/index'
 import { Route as OrgSlugGamesGameSlugIndexRouteImport } from './routes/$orgSlug/games/$gameSlug/index'
 import { Route as OrgSlugGamesGameSlugAssignmentsPlatformSlugRouteImport } from './routes/$orgSlug/games/$gameSlug/assignments/$platformSlug'
 
@@ -91,9 +91,19 @@ const SignUpRoute = SignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrgSlugMembersRoute = OrgSlugMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
 const OrgSlugOverviewRoute = OrgSlugOverviewRouteImport.update({
   id: '/overview',
   path: '/overview',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugProvidersRoute = OrgSlugProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
   getParentRoute: () => OrgSlugRouteRoute,
 } as any)
 const OrgSlugSettingsRouteRoute = OrgSlugSettingsRouteRouteImport.update({
@@ -101,11 +111,12 @@ const OrgSlugSettingsRouteRoute = OrgSlugSettingsRouteRouteImport.update({
   path: '/settings',
   getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const AcceptInvitationIdRoute = AcceptInvitationIdRouteImport.update({
-  id: '/accept-invitation/$id',
-  path: '/accept-invitation/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AcceptInvitationInvitationIdRoute =
+  AcceptInvitationInvitationIdRouteImport.update({
+    id: '/accept-invitation/$invitationId',
+    path: '/accept-invitation/$invitationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DocsIndexRoute = DocsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -116,11 +127,6 @@ const DocsSlugRoute = DocsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => DocsRouteRoute,
 } as any)
-const OrgSlugAgentsIndexRoute = OrgSlugAgentsIndexRouteImport.update({
-  id: '/agents/',
-  path: '/agents/',
-  getParentRoute: () => OrgSlugRouteRoute,
-} as any)
 const OrgSlugAssignmentsIndexRoute = OrgSlugAssignmentsIndexRouteImport.update({
   id: '/assignments/',
   path: '/assignments/',
@@ -129,6 +135,11 @@ const OrgSlugAssignmentsIndexRoute = OrgSlugAssignmentsIndexRouteImport.update({
 const OrgSlugAuditIndexRoute = OrgSlugAuditIndexRouteImport.update({
   id: '/audit/',
   path: '/audit/',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugBuilderIndexRoute = OrgSlugBuilderIndexRouteImport.update({
+  id: '/builder/',
+  path: '/builder/',
   getParentRoute: () => OrgSlugRouteRoute,
 } as any)
 const OrgSlugGamesIndexRoute = OrgSlugGamesIndexRouteImport.update({
@@ -144,6 +155,11 @@ const OrgSlugGamesNewRoute = OrgSlugGamesNewRouteImport.update({
 const OrgSlugKeysIndexRoute = OrgSlugKeysIndexRouteImport.update({
   id: '/keys/',
   path: '/keys/',
+  getParentRoute: () => OrgSlugRouteRoute,
+} as any)
+const OrgSlugKeysNewRoute = OrgSlugKeysNewRouteImport.update({
+  id: '/keys/new',
+  path: '/keys/new',
   getParentRoute: () => OrgSlugRouteRoute,
 } as any)
 const OrgSlugMatchesIndexRoute = OrgSlugMatchesIndexRouteImport.update({
@@ -187,28 +203,17 @@ const OrgSlugSettingsAccountRoute = OrgSlugSettingsAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => OrgSlugSettingsRouteRoute,
 } as any)
-const OrgSlugSettingsDangerRoute = OrgSlugSettingsDangerRouteImport.update({
-  id: '/danger',
-  path: '/danger',
-  getParentRoute: () => OrgSlugSettingsRouteRoute,
-} as any)
-const OrgSlugSettingsMembersRoute = OrgSlugSettingsMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
-  getParentRoute: () => OrgSlugSettingsRouteRoute,
-} as any)
 const OrgSlugSettingsOrganizationRoute =
   OrgSlugSettingsOrganizationRouteImport.update({
     id: '/organization',
     path: '/organization',
     getParentRoute: () => OrgSlugSettingsRouteRoute,
   } as any)
-const OrgSlugSettingsProvidersRoute =
-  OrgSlugSettingsProvidersRouteImport.update({
-    id: '/providers',
-    path: '/providers',
-    getParentRoute: () => OrgSlugSettingsRouteRoute,
-  } as any)
+const OrgSlugSettingsSessionsRoute = OrgSlugSettingsSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => OrgSlugSettingsRouteRoute,
+} as any)
 const OrgSlugTemplatesIndexRoute = OrgSlugTemplatesIndexRouteImport.update({
   id: '/templates/',
   path: '/templates/',
@@ -246,11 +251,6 @@ const OrgSlugUsageIndexRoute = OrgSlugUsageIndexRouteImport.update({
   path: '/usage/',
   getParentRoute: () => OrgSlugRouteRoute,
 } as any)
-const OrgSlugWebhooksIndexRoute = OrgSlugWebhooksIndexRouteImport.update({
-  id: '/webhooks/',
-  path: '/webhooks/',
-  getParentRoute: () => OrgSlugRouteRoute,
-} as any)
 const OrgSlugGamesGameSlugIndexRoute =
   OrgSlugGamesGameSlugIndexRouteImport.update({
     id: '/games/$gameSlug/',
@@ -274,27 +274,28 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/$orgSlug/settings': typeof OrgSlugSettingsRouteRouteWithChildren
+  '/$orgSlug/members': typeof OrgSlugMembersRoute
   '/$orgSlug/overview': typeof OrgSlugOverviewRoute
-  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/$orgSlug/providers': typeof OrgSlugProvidersRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/docs/$slug': typeof DocsSlugRoute
   '/docs/': typeof DocsIndexRoute
   '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/keys/new': typeof OrgSlugKeysNewRoute
   '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
   '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
   '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
   '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
   '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
-  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
-  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
   '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
-  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/settings/sessions': typeof OrgSlugSettingsSessionsRoute
   '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
   '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
   '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
   '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
-  '/$orgSlug/agents/': typeof OrgSlugAgentsIndexRoute
   '/$orgSlug/assignments/': typeof OrgSlugAssignmentsIndexRoute
   '/$orgSlug/audit/': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/builder/': typeof OrgSlugBuilderIndexRoute
   '/$orgSlug/games/': typeof OrgSlugGamesIndexRoute
   '/$orgSlug/keys/': typeof OrgSlugKeysIndexRoute
   '/$orgSlug/matches/': typeof OrgSlugMatchesIndexRoute
@@ -303,7 +304,6 @@ export interface FileRoutesByFullPath {
   '/$orgSlug/templates/': typeof OrgSlugTemplatesIndexRoute
   '/$orgSlug/tournaments/': typeof OrgSlugTournamentsIndexRoute
   '/$orgSlug/usage/': typeof OrgSlugUsageIndexRoute
-  '/$orgSlug/webhooks/': typeof OrgSlugWebhooksIndexRoute
   '/$orgSlug/games/$gameSlug/': typeof OrgSlugGamesGameSlugIndexRoute
   '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -315,27 +315,28 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/$orgSlug/members': typeof OrgSlugMembersRoute
   '/$orgSlug/overview': typeof OrgSlugOverviewRoute
-  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/$orgSlug/providers': typeof OrgSlugProvidersRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/docs/$slug': typeof DocsSlugRoute
   '/docs': typeof DocsIndexRoute
   '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/keys/new': typeof OrgSlugKeysNewRoute
   '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
   '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
   '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
   '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
   '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
-  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
-  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
   '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
-  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/settings/sessions': typeof OrgSlugSettingsSessionsRoute
   '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
   '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
   '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
   '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
-  '/$orgSlug/agents': typeof OrgSlugAgentsIndexRoute
   '/$orgSlug/assignments': typeof OrgSlugAssignmentsIndexRoute
   '/$orgSlug/audit': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/builder': typeof OrgSlugBuilderIndexRoute
   '/$orgSlug/games': typeof OrgSlugGamesIndexRoute
   '/$orgSlug/keys': typeof OrgSlugKeysIndexRoute
   '/$orgSlug/matches': typeof OrgSlugMatchesIndexRoute
@@ -344,7 +345,6 @@ export interface FileRoutesByTo {
   '/$orgSlug/templates': typeof OrgSlugTemplatesIndexRoute
   '/$orgSlug/tournaments': typeof OrgSlugTournamentsIndexRoute
   '/$orgSlug/usage': typeof OrgSlugUsageIndexRoute
-  '/$orgSlug/webhooks': typeof OrgSlugWebhooksIndexRoute
   '/$orgSlug/games/$gameSlug': typeof OrgSlugGamesGameSlugIndexRoute
   '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -359,27 +359,28 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/$orgSlug/settings': typeof OrgSlugSettingsRouteRouteWithChildren
+  '/$orgSlug/members': typeof OrgSlugMembersRoute
   '/$orgSlug/overview': typeof OrgSlugOverviewRoute
-  '/accept-invitation/$id': typeof AcceptInvitationIdRoute
+  '/$orgSlug/providers': typeof OrgSlugProvidersRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/docs/$slug': typeof DocsSlugRoute
   '/docs/': typeof DocsIndexRoute
   '/$orgSlug/games/new': typeof OrgSlugGamesNewRoute
+  '/$orgSlug/keys/new': typeof OrgSlugKeysNewRoute
   '/$orgSlug/matches/$matchId': typeof OrgSlugMatchesMatchIdRoute
   '/$orgSlug/matches/new': typeof OrgSlugMatchesNewRoute
   '/$orgSlug/platforms/$platformSlug': typeof OrgSlugPlatformsPlatformSlugRoute
   '/$orgSlug/platforms/new': typeof OrgSlugPlatformsNewRoute
   '/$orgSlug/settings/account': typeof OrgSlugSettingsAccountRoute
-  '/$orgSlug/settings/danger': typeof OrgSlugSettingsDangerRoute
-  '/$orgSlug/settings/members': typeof OrgSlugSettingsMembersRoute
   '/$orgSlug/settings/organization': typeof OrgSlugSettingsOrganizationRoute
-  '/$orgSlug/settings/providers': typeof OrgSlugSettingsProvidersRoute
+  '/$orgSlug/settings/sessions': typeof OrgSlugSettingsSessionsRoute
   '/$orgSlug/templates/$templateId': typeof OrgSlugTemplatesTemplateIdRoute
   '/$orgSlug/templates/new': typeof OrgSlugTemplatesNewRoute
   '/$orgSlug/tournaments/$tournamentSlug': typeof OrgSlugTournamentsTournamentSlugRoute
   '/$orgSlug/tournaments/new': typeof OrgSlugTournamentsNewRoute
-  '/$orgSlug/agents/': typeof OrgSlugAgentsIndexRoute
   '/$orgSlug/assignments/': typeof OrgSlugAssignmentsIndexRoute
   '/$orgSlug/audit/': typeof OrgSlugAuditIndexRoute
+  '/$orgSlug/builder/': typeof OrgSlugBuilderIndexRoute
   '/$orgSlug/games/': typeof OrgSlugGamesIndexRoute
   '/$orgSlug/keys/': typeof OrgSlugKeysIndexRoute
   '/$orgSlug/matches/': typeof OrgSlugMatchesIndexRoute
@@ -388,7 +389,6 @@ export interface FileRoutesById {
   '/$orgSlug/templates/': typeof OrgSlugTemplatesIndexRoute
   '/$orgSlug/tournaments/': typeof OrgSlugTournamentsIndexRoute
   '/$orgSlug/usage/': typeof OrgSlugUsageIndexRoute
-  '/$orgSlug/webhooks/': typeof OrgSlugWebhooksIndexRoute
   '/$orgSlug/games/$gameSlug/': typeof OrgSlugGamesGameSlugIndexRoute
   '/$orgSlug/games/$gameSlug/assignments/$platformSlug': typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
@@ -404,27 +404,28 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/$orgSlug/settings'
+    | '/$orgSlug/members'
     | '/$orgSlug/overview'
-    | '/accept-invitation/$id'
+    | '/$orgSlug/providers'
+    | '/accept-invitation/$invitationId'
     | '/docs/$slug'
     | '/docs/'
     | '/$orgSlug/games/new'
+    | '/$orgSlug/keys/new'
     | '/$orgSlug/matches/$matchId'
     | '/$orgSlug/matches/new'
     | '/$orgSlug/platforms/$platformSlug'
     | '/$orgSlug/platforms/new'
     | '/$orgSlug/settings/account'
-    | '/$orgSlug/settings/danger'
-    | '/$orgSlug/settings/members'
     | '/$orgSlug/settings/organization'
-    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/settings/sessions'
     | '/$orgSlug/templates/$templateId'
     | '/$orgSlug/templates/new'
     | '/$orgSlug/tournaments/$tournamentSlug'
     | '/$orgSlug/tournaments/new'
-    | '/$orgSlug/agents/'
     | '/$orgSlug/assignments/'
     | '/$orgSlug/audit/'
+    | '/$orgSlug/builder/'
     | '/$orgSlug/games/'
     | '/$orgSlug/keys/'
     | '/$orgSlug/matches/'
@@ -433,7 +434,6 @@ export interface FileRouteTypes {
     | '/$orgSlug/templates/'
     | '/$orgSlug/tournaments/'
     | '/$orgSlug/usage/'
-    | '/$orgSlug/webhooks/'
     | '/$orgSlug/games/$gameSlug/'
     | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -445,27 +445,28 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/$orgSlug/members'
     | '/$orgSlug/overview'
-    | '/accept-invitation/$id'
+    | '/$orgSlug/providers'
+    | '/accept-invitation/$invitationId'
     | '/docs/$slug'
     | '/docs'
     | '/$orgSlug/games/new'
+    | '/$orgSlug/keys/new'
     | '/$orgSlug/matches/$matchId'
     | '/$orgSlug/matches/new'
     | '/$orgSlug/platforms/$platformSlug'
     | '/$orgSlug/platforms/new'
     | '/$orgSlug/settings/account'
-    | '/$orgSlug/settings/danger'
-    | '/$orgSlug/settings/members'
     | '/$orgSlug/settings/organization'
-    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/settings/sessions'
     | '/$orgSlug/templates/$templateId'
     | '/$orgSlug/templates/new'
     | '/$orgSlug/tournaments/$tournamentSlug'
     | '/$orgSlug/tournaments/new'
-    | '/$orgSlug/agents'
     | '/$orgSlug/assignments'
     | '/$orgSlug/audit'
+    | '/$orgSlug/builder'
     | '/$orgSlug/games'
     | '/$orgSlug/keys'
     | '/$orgSlug/matches'
@@ -474,7 +475,6 @@ export interface FileRouteTypes {
     | '/$orgSlug/templates'
     | '/$orgSlug/tournaments'
     | '/$orgSlug/usage'
-    | '/$orgSlug/webhooks'
     | '/$orgSlug/games/$gameSlug'
     | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   id:
@@ -488,27 +488,28 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/$orgSlug/settings'
+    | '/$orgSlug/members'
     | '/$orgSlug/overview'
-    | '/accept-invitation/$id'
+    | '/$orgSlug/providers'
+    | '/accept-invitation/$invitationId'
     | '/docs/$slug'
     | '/docs/'
     | '/$orgSlug/games/new'
+    | '/$orgSlug/keys/new'
     | '/$orgSlug/matches/$matchId'
     | '/$orgSlug/matches/new'
     | '/$orgSlug/platforms/$platformSlug'
     | '/$orgSlug/platforms/new'
     | '/$orgSlug/settings/account'
-    | '/$orgSlug/settings/danger'
-    | '/$orgSlug/settings/members'
     | '/$orgSlug/settings/organization'
-    | '/$orgSlug/settings/providers'
+    | '/$orgSlug/settings/sessions'
     | '/$orgSlug/templates/$templateId'
     | '/$orgSlug/templates/new'
     | '/$orgSlug/tournaments/$tournamentSlug'
     | '/$orgSlug/tournaments/new'
-    | '/$orgSlug/agents/'
     | '/$orgSlug/assignments/'
     | '/$orgSlug/audit/'
+    | '/$orgSlug/builder/'
     | '/$orgSlug/games/'
     | '/$orgSlug/keys/'
     | '/$orgSlug/matches/'
@@ -517,7 +518,6 @@ export interface FileRouteTypes {
     | '/$orgSlug/templates/'
     | '/$orgSlug/tournaments/'
     | '/$orgSlug/usage/'
-    | '/$orgSlug/webhooks/'
     | '/$orgSlug/games/$gameSlug/'
     | '/$orgSlug/games/$gameSlug/assignments/$platformSlug'
   fileRoutesById: FileRoutesById
@@ -531,7 +531,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
-  AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
+  AcceptInvitationInvitationIdRoute: typeof AcceptInvitationInvitationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -592,11 +592,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$orgSlug/members': {
+      id: '/$orgSlug/members'
+      path: '/members'
+      fullPath: '/$orgSlug/members'
+      preLoaderRoute: typeof OrgSlugMembersRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
     '/$orgSlug/overview': {
       id: '/$orgSlug/overview'
       path: '/overview'
       fullPath: '/$orgSlug/overview'
       preLoaderRoute: typeof OrgSlugOverviewRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
+    '/$orgSlug/providers': {
+      id: '/$orgSlug/providers'
+      path: '/providers'
+      fullPath: '/$orgSlug/providers'
+      preLoaderRoute: typeof OrgSlugProvidersRouteImport
       parentRoute: typeof OrgSlugRouteRoute
     }
     '/$orgSlug/settings': {
@@ -606,11 +620,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugSettingsRouteRouteImport
       parentRoute: typeof OrgSlugRouteRoute
     }
-    '/accept-invitation/$id': {
-      id: '/accept-invitation/$id'
-      path: '/accept-invitation/$id'
-      fullPath: '/accept-invitation/$id'
-      preLoaderRoute: typeof AcceptInvitationIdRouteImport
+    '/accept-invitation/$invitationId': {
+      id: '/accept-invitation/$invitationId'
+      path: '/accept-invitation/$invitationId'
+      fullPath: '/accept-invitation/$invitationId'
+      preLoaderRoute: typeof AcceptInvitationInvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/': {
@@ -627,13 +641,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSlugRouteImport
       parentRoute: typeof DocsRouteRoute
     }
-    '/$orgSlug/agents/': {
-      id: '/$orgSlug/agents/'
-      path: '/agents'
-      fullPath: '/$orgSlug/agents/'
-      preLoaderRoute: typeof OrgSlugAgentsIndexRouteImport
-      parentRoute: typeof OrgSlugRouteRoute
-    }
     '/$orgSlug/assignments/': {
       id: '/$orgSlug/assignments/'
       path: '/assignments'
@@ -646,6 +653,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/$orgSlug/audit/'
       preLoaderRoute: typeof OrgSlugAuditIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
+    '/$orgSlug/builder/': {
+      id: '/$orgSlug/builder/'
+      path: '/builder'
+      fullPath: '/$orgSlug/builder/'
+      preLoaderRoute: typeof OrgSlugBuilderIndexRouteImport
       parentRoute: typeof OrgSlugRouteRoute
     }
     '/$orgSlug/games/': {
@@ -667,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: '/keys'
       fullPath: '/$orgSlug/keys/'
       preLoaderRoute: typeof OrgSlugKeysIndexRouteImport
+      parentRoute: typeof OrgSlugRouteRoute
+    }
+    '/$orgSlug/keys/new': {
+      id: '/$orgSlug/keys/new'
+      path: '/keys/new'
+      fullPath: '/$orgSlug/keys/new'
+      preLoaderRoute: typeof OrgSlugKeysNewRouteImport
       parentRoute: typeof OrgSlugRouteRoute
     }
     '/$orgSlug/matches/': {
@@ -725,20 +746,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugSettingsAccountRouteImport
       parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/$orgSlug/settings/danger': {
-      id: '/$orgSlug/settings/danger'
-      path: '/danger'
-      fullPath: '/$orgSlug/settings/danger'
-      preLoaderRoute: typeof OrgSlugSettingsDangerRouteImport
-      parentRoute: typeof OrgSlugSettingsRouteRoute
-    }
-    '/$orgSlug/settings/members': {
-      id: '/$orgSlug/settings/members'
-      path: '/members'
-      fullPath: '/$orgSlug/settings/members'
-      preLoaderRoute: typeof OrgSlugSettingsMembersRouteImport
-      parentRoute: typeof OrgSlugSettingsRouteRoute
-    }
     '/$orgSlug/settings/organization': {
       id: '/$orgSlug/settings/organization'
       path: '/organization'
@@ -746,11 +753,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugSettingsOrganizationRouteImport
       parentRoute: typeof OrgSlugSettingsRouteRoute
     }
-    '/$orgSlug/settings/providers': {
-      id: '/$orgSlug/settings/providers'
-      path: '/providers'
-      fullPath: '/$orgSlug/settings/providers'
-      preLoaderRoute: typeof OrgSlugSettingsProvidersRouteImport
+    '/$orgSlug/settings/sessions': {
+      id: '/$orgSlug/settings/sessions'
+      path: '/sessions'
+      fullPath: '/$orgSlug/settings/sessions'
+      preLoaderRoute: typeof OrgSlugSettingsSessionsRouteImport
       parentRoute: typeof OrgSlugSettingsRouteRoute
     }
     '/$orgSlug/templates/': {
@@ -802,13 +809,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgSlugUsageIndexRouteImport
       parentRoute: typeof OrgSlugRouteRoute
     }
-    '/$orgSlug/webhooks/': {
-      id: '/$orgSlug/webhooks/'
-      path: '/webhooks'
-      fullPath: '/$orgSlug/webhooks/'
-      preLoaderRoute: typeof OrgSlugWebhooksIndexRouteImport
-      parentRoute: typeof OrgSlugRouteRoute
-    }
     '/$orgSlug/games/$gameSlug/': {
       id: '/$orgSlug/games/$gameSlug/'
       path: '/games/$gameSlug'
@@ -828,19 +828,15 @@ declare module '@tanstack/react-router' {
 
 interface OrgSlugSettingsRouteRouteChildren {
   OrgSlugSettingsAccountRoute: typeof OrgSlugSettingsAccountRoute
-  OrgSlugSettingsDangerRoute: typeof OrgSlugSettingsDangerRoute
-  OrgSlugSettingsMembersRoute: typeof OrgSlugSettingsMembersRoute
   OrgSlugSettingsOrganizationRoute: typeof OrgSlugSettingsOrganizationRoute
-  OrgSlugSettingsProvidersRoute: typeof OrgSlugSettingsProvidersRoute
+  OrgSlugSettingsSessionsRoute: typeof OrgSlugSettingsSessionsRoute
   OrgSlugSettingsIndexRoute: typeof OrgSlugSettingsIndexRoute
 }
 
 const OrgSlugSettingsRouteRouteChildren: OrgSlugSettingsRouteRouteChildren = {
   OrgSlugSettingsAccountRoute: OrgSlugSettingsAccountRoute,
-  OrgSlugSettingsDangerRoute: OrgSlugSettingsDangerRoute,
-  OrgSlugSettingsMembersRoute: OrgSlugSettingsMembersRoute,
   OrgSlugSettingsOrganizationRoute: OrgSlugSettingsOrganizationRoute,
-  OrgSlugSettingsProvidersRoute: OrgSlugSettingsProvidersRoute,
+  OrgSlugSettingsSessionsRoute: OrgSlugSettingsSessionsRoute,
   OrgSlugSettingsIndexRoute: OrgSlugSettingsIndexRoute,
 }
 
@@ -849,8 +845,11 @@ const OrgSlugSettingsRouteRouteWithChildren =
 
 interface OrgSlugRouteRouteChildren {
   OrgSlugSettingsRouteRoute: typeof OrgSlugSettingsRouteRouteWithChildren
+  OrgSlugMembersRoute: typeof OrgSlugMembersRoute
   OrgSlugOverviewRoute: typeof OrgSlugOverviewRoute
+  OrgSlugProvidersRoute: typeof OrgSlugProvidersRoute
   OrgSlugGamesNewRoute: typeof OrgSlugGamesNewRoute
+  OrgSlugKeysNewRoute: typeof OrgSlugKeysNewRoute
   OrgSlugMatchesMatchIdRoute: typeof OrgSlugMatchesMatchIdRoute
   OrgSlugMatchesNewRoute: typeof OrgSlugMatchesNewRoute
   OrgSlugPlatformsPlatformSlugRoute: typeof OrgSlugPlatformsPlatformSlugRoute
@@ -859,9 +858,9 @@ interface OrgSlugRouteRouteChildren {
   OrgSlugTemplatesNewRoute: typeof OrgSlugTemplatesNewRoute
   OrgSlugTournamentsTournamentSlugRoute: typeof OrgSlugTournamentsTournamentSlugRoute
   OrgSlugTournamentsNewRoute: typeof OrgSlugTournamentsNewRoute
-  OrgSlugAgentsIndexRoute: typeof OrgSlugAgentsIndexRoute
   OrgSlugAssignmentsIndexRoute: typeof OrgSlugAssignmentsIndexRoute
   OrgSlugAuditIndexRoute: typeof OrgSlugAuditIndexRoute
+  OrgSlugBuilderIndexRoute: typeof OrgSlugBuilderIndexRoute
   OrgSlugGamesIndexRoute: typeof OrgSlugGamesIndexRoute
   OrgSlugKeysIndexRoute: typeof OrgSlugKeysIndexRoute
   OrgSlugMatchesIndexRoute: typeof OrgSlugMatchesIndexRoute
@@ -869,15 +868,17 @@ interface OrgSlugRouteRouteChildren {
   OrgSlugTemplatesIndexRoute: typeof OrgSlugTemplatesIndexRoute
   OrgSlugTournamentsIndexRoute: typeof OrgSlugTournamentsIndexRoute
   OrgSlugUsageIndexRoute: typeof OrgSlugUsageIndexRoute
-  OrgSlugWebhooksIndexRoute: typeof OrgSlugWebhooksIndexRoute
   OrgSlugGamesGameSlugIndexRoute: typeof OrgSlugGamesGameSlugIndexRoute
   OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute: typeof OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute
 }
 
 const OrgSlugRouteRouteChildren: OrgSlugRouteRouteChildren = {
   OrgSlugSettingsRouteRoute: OrgSlugSettingsRouteRouteWithChildren,
+  OrgSlugMembersRoute: OrgSlugMembersRoute,
   OrgSlugOverviewRoute: OrgSlugOverviewRoute,
+  OrgSlugProvidersRoute: OrgSlugProvidersRoute,
   OrgSlugGamesNewRoute: OrgSlugGamesNewRoute,
+  OrgSlugKeysNewRoute: OrgSlugKeysNewRoute,
   OrgSlugMatchesMatchIdRoute: OrgSlugMatchesMatchIdRoute,
   OrgSlugMatchesNewRoute: OrgSlugMatchesNewRoute,
   OrgSlugPlatformsPlatformSlugRoute: OrgSlugPlatformsPlatformSlugRoute,
@@ -886,9 +887,9 @@ const OrgSlugRouteRouteChildren: OrgSlugRouteRouteChildren = {
   OrgSlugTemplatesNewRoute: OrgSlugTemplatesNewRoute,
   OrgSlugTournamentsTournamentSlugRoute: OrgSlugTournamentsTournamentSlugRoute,
   OrgSlugTournamentsNewRoute: OrgSlugTournamentsNewRoute,
-  OrgSlugAgentsIndexRoute: OrgSlugAgentsIndexRoute,
   OrgSlugAssignmentsIndexRoute: OrgSlugAssignmentsIndexRoute,
   OrgSlugAuditIndexRoute: OrgSlugAuditIndexRoute,
+  OrgSlugBuilderIndexRoute: OrgSlugBuilderIndexRoute,
   OrgSlugGamesIndexRoute: OrgSlugGamesIndexRoute,
   OrgSlugKeysIndexRoute: OrgSlugKeysIndexRoute,
   OrgSlugMatchesIndexRoute: OrgSlugMatchesIndexRoute,
@@ -896,7 +897,6 @@ const OrgSlugRouteRouteChildren: OrgSlugRouteRouteChildren = {
   OrgSlugTemplatesIndexRoute: OrgSlugTemplatesIndexRoute,
   OrgSlugTournamentsIndexRoute: OrgSlugTournamentsIndexRoute,
   OrgSlugUsageIndexRoute: OrgSlugUsageIndexRoute,
-  OrgSlugWebhooksIndexRoute: OrgSlugWebhooksIndexRoute,
   OrgSlugGamesGameSlugIndexRoute: OrgSlugGamesGameSlugIndexRoute,
   OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute:
     OrgSlugGamesGameSlugAssignmentsPlatformSlugRoute,
@@ -929,7 +929,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
-  AcceptInvitationIdRoute: AcceptInvitationIdRoute,
+  AcceptInvitationInvitationIdRoute: AcceptInvitationInvitationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

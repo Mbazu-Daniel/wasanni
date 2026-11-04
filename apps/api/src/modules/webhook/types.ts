@@ -1,5 +1,5 @@
 import type { WebhookConfigView, WebhookEvent } from "@wasanni/contracts";
-import type { Db } from "@wasanni/db";
+import type { Db, DbExecutor } from "@wasanni/db";
 import type { webhookConfig } from "@wasanni/db/schema";
 import type { createWebhookSecretService } from "./webhook-secret.service.ts";
 import type { createWebhookService } from "./webhook.service.ts";
@@ -14,7 +14,7 @@ export type WebhookDispatchInput = {
 };
 
 export type WebhookDispatcher = {
-  dispatch(input: WebhookDispatchInput): Promise<number>;
+  dispatch(input: WebhookDispatchInput, executor?: DbExecutor): Promise<void>;
 };
 
 export type CreatedWebhook = { webhook: WebhookConfigView; secret: string };
@@ -26,6 +26,7 @@ export type WebhookSecretService = ReturnType<typeof createWebhookSecretService>
 export type WebhookModuleDeps = {
   db: Db;
   encryptionKey: string;
+  allowPrivateOutbound: boolean;
   dispatcher: WebhookDispatcher;
 };
 

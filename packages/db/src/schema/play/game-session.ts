@@ -54,7 +54,7 @@ export const gameSession = pgTable(
       .default("none"),
     scoreVerificationCallbackSecretCiphertext: text("score_verification_callback_secret_ciphertext"),
     externalUserId: text("external_user_id").notNull(),
-    externalUserName: text("external_user_name"),
+    externalName: text("external_name"),
     mode: text("mode"),
     status: text("status").notNull().default("active").$type<GameSessionStatus>(),
     tokenHash: text("token_hash"),

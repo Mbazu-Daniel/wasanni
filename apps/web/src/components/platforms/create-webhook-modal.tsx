@@ -7,6 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Select } from "@/components/ui/select";
+import {
+  DEFAULT_EXPIRY_VALUE,
+  EXPIRY_PRESETS,
+} from "@/lib/expiry-presets";
+import {
+  expiryPresetValue,
+  secondsForPresetValue,
+} from "@/lib/expiry-preset-values";
 import { SecretReveal } from "@/components/primitives/secret-reveal";
 import {
   platformPickOptions,
@@ -46,6 +55,7 @@ export function CreateWebhookModal({
   const [url, setUrl] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [events, setEvents] = React.useState<Set<string>>(new Set(["score.submitted"]));
+  const [expiry, setExpiry] = React.useState<string>(DEFAULT_EXPIRY_VALUE);
   const [picked, setPicked] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
@@ -56,6 +66,7 @@ export function CreateWebhookModal({
     setUrl("");
     setDescription("");
     setEvents(new Set(["score.submitted"]));
+    setExpiry(DEFAULT_EXPIRY_VALUE);
     setPicked("");
   }, [open]);
 
@@ -91,6 +102,7 @@ export function CreateWebhookModal({
             url,
             description: description || undefined,
             events: Array.from(events),
+            expiresInSeconds: secondsForPresetValue(expiry) ?? undefined,
           }),
         },
       );
@@ -105,6 +117,7 @@ export function CreateWebhookModal({
 
   return (
     <Dialog
+      backdrop={false}
       open={open}
       onOpenChange={onOpenChange}
       title={revealedSecret === null ? "Add a webhook" : "Save your signing secret"}
@@ -171,6 +184,19 @@ export function CreateWebhookModal({
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Expires</Label>
+            <Select
+              value={expiry}
+              onValueChange={setExpiry}
+              options={EXPIRY_PRESETS.map((preset) => ({
+                value: expiryPresetValue(preset),
+                label: preset.label,
+              }))}
+              className="w-40"
+            />
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">

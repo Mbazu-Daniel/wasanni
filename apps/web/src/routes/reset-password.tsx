@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { IconLock } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import {
   AuthChecklist,
   AuthField,
@@ -43,7 +44,7 @@ function ResetPasswordPage() {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message ?? "Could not reset password");
+      toastAuthError(error, "Could not reset password");
       return;
     }
 

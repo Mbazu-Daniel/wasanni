@@ -1,47 +1,29 @@
-import { and, eq } from "drizzle-orm";
-import type { Db } from "@wasanni/db";
-import { webhookConfig } from "@wasanni/db/schema";
-import type { Enqueuer } from "@wasanni/jobs";
-import type { WebhookDispatcher } from "./types.ts";
+import type { Db, DbExecutor } from "@wasanni/db";
+import { outboxEvent } from "@wasanni/db/schema";
+import type { WebhookDispatchInput, WebhookDispatcher } from "./types.ts";
 
-export function createWebhookDispatcher(
-  db: Db,
-  enqueuer: Enqueuer | null,
-): WebhookDispatcher {
+const writeOutbox = async (
+  executor: DbExecutor,
+  input: WebhookDispatchInput,
+): Promise<void> => {
+  await executor.insert(outboxEvent).values({
+    organizationId: input.organizationId,
+    platformId: input.platformId,
+    eventType: input.eventType,
+    payload: input.payload,
+    status: "pending",
+  });
+};
+
+export function createWebhookDispatcher(db: Db): WebhookDispatcher {
   return {
-    async dispatch(input) {
-      if (enqueuer === null) return 0;
+    async dispatch(input, executor?: DbExecutor) {
+      if (executor !== undefined) {
+        await writeOutbox(executor, input);
+        return;
+      }
 
-      const rows = await db
-        .select({ id: webhookConfig.id, events: webhookConfig.events })
-        .from(webhookConfig)
-        .where(
-          and(
-            eq(webhookConfig.organizationId, input.organizationId),
-            eq(webhookConfig.platformId, input.platformId),
-            eq(webhookConfig.enabled, true),
-          ),
-        );
-
-      const subscribed = rows.filter((row) => row.events.includes(input.eventType));
-      if (subscribed.length === 0) return 0;
-
-      const eventId = `evt_${crypto.randomUUID()}`;
-
-      await Promise.all(
-        subscribed.map((row) =>
-          enqueuer.webhookDelivery({
-            webhookId: row.id,
-            organizationId: input.organizationId,
-            platformId: input.platformId,
-            eventId,
-            eventType: input.eventType,
-            payload: input.payload,
-          }),
-        ),
-      );
-
-      return subscribed.length;
+      await db.transaction((tx) => writeOutbox(tx, input));
     },
   };
 }

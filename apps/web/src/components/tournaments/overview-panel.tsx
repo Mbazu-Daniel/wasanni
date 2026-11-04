@@ -6,14 +6,17 @@ import {
   IconCircleCheck,
   IconX,
   IconUserPlus,
+  IconPhoto,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
+import { uploadImage } from "@/lib/image-upload";
 import { formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/primitives/status-pill";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
+import { ImagePicker } from "@/components/primitives/image-picker";
 import type { ParticipantRow, TournamentRow } from "@/lib/tournament-types";
 import { RegisterParticipantModal } from "./register-participant-modal";
 
@@ -47,6 +50,30 @@ export function TournamentOverviewPanel({
     });
     onRefresh();
   };
+
+  const refreshImage = () => {
+    queryClient.invalidateQueries({ queryKey: ["tournaments", organizationId] });
+    queryClient.invalidateQueries({
+      queryKey: ["tournament", organizationId, tournament.id],
+    });
+    onRefresh();
+  };
+
+  async function pickImage(file: File) {
+    const image = `/api/v1/organizations/${organizationId}/tournaments/${tournament.id}/image`;
+    await uploadImage<{ tournament: TournamentRow }>(image, image, file);
+    toast.success("Cover image updated");
+    refreshImage();
+  }
+
+  async function removeImage() {
+    await apiFetch(
+      `/api/v1/organizations/${organizationId}/tournaments/${tournament.id}`,
+      { method: "PATCH", data: JSON.stringify({ imageUrl: null }) },
+    );
+    toast.success("Cover image removed");
+    refreshImage();
+  }
 
   async function action(kind: "open" | "cancel" | "complete" | "seed") {
     setBusy(true);
@@ -90,7 +117,7 @@ export function TournamentOverviewPanel({
     }
   }
 
-  const canOpen = tournament.status === "draft";
+  const canOpen = tournament.status === "draft" || tournament.status === "scheduled";
   const canSeed =
     tournament.status === "open" && tournament.format === "bracket" && active.length >= 2;
   const canComplete = tournament.status === "open" && tournament.format === "leaderboard";
@@ -122,7 +149,11 @@ export function TournamentOverviewPanel({
             <p className="text-sm font-semibold">Actions</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {tournament.status === "draft" &&
-                "Open registration to start accepting participants."}
+                "Open registration to start accepting participants, or set a start time to open automatically."}
+              {tournament.status === "scheduled" &&
+                (tournament.startsAt === null
+                  ? "Registration opens automatically once the start time is reached."
+                  : `Registration opens automatically on ${formatDateTime(tournament.startsAt)}. Open early if you are ready.`)}
               {tournament.status === "open" &&
                 tournament.format === "bracket" &&
                 "Add at least 2 participants, then seed the bracket to begin."}
@@ -191,6 +222,18 @@ export function TournamentOverviewPanel({
               </Button>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card/40 p-5">
+        <p className="text-sm font-semibold">Cover image</p>
+        <div className="mt-4">
+          <ImagePicker
+            imageUrl={tournament.imageUrl}
+            onPick={pickImage}
+            onRemove={tournament.imageUrl === null ? undefined : removeImage}
+            fallback={<IconPhoto className="size-6 text-muted-foreground" />}
+          />
         </div>
       </div>
 

@@ -21,6 +21,7 @@ export const toTournamentView = (row: TournamentRow): TournamentView => ({
   name: row.name,
   slug: row.slug,
   description: row.description,
+  imageUrl: row.imageUrl,
   format: row.format,
   status: row.status,
   maxParticipants: row.maxParticipants,

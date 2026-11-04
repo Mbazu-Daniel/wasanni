@@ -31,12 +31,9 @@ export type ScoreFlagRule = (typeof SCORE_FLAG_RULES)[number];
 
 export const GameConfigView = t.Object({
   id: t.String(),
-  organizationId: t.String(),
   assignmentId: t.String(),
   name: t.String(),
   config: t.Record(t.String(), t.Unknown()),
-  schemaVersion: t.Number(),
-  revision: t.Number(),
   isDefault: t.Boolean(),
   createdAt: t.String({ format: "date-time" }),
   updatedAt: t.String({ format: "date-time" }),

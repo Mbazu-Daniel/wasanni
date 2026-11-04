@@ -2,12 +2,12 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { AuditLogPage, AuditLogView } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
-import { scopeTo } from "@wasanni/db";
+import { createAuditRecorder, scopeTo } from "@wasanni/db";
 import { auditLog, member, user } from "@wasanni/db/schema";
 import type { Logger, Scope } from "@wasanni/kit";
 import { afterCursor, decodeCursor, paginate } from "../../pagination.ts";
 import { AUDIT_PAGE_DEFAULT, AUDIT_PAGE_MAX } from "./constants.ts";
-import type { AuditEvent, AuditQuery } from "./types.ts";
+import type { AuditQuery } from "./types.ts";
 
 type AuditRow = typeof auditLog.$inferSelect & {
   actorName: string | null;
@@ -34,29 +34,7 @@ const toView = (row: AuditRow): AuditLogView => ({
 
 export function createAuditService(db: Db, logger: Logger) {
   return {
-    async record(event: AuditEvent): Promise<void> {
-      try {
-        await db.insert(auditLog).values({
-          organizationId: event.organizationId,
-          actorType: event.actor.type,
-          actorUserId: event.actor.type === "user" ? event.actor.userId : null,
-          actorApiKeyId: event.actor.type === "api_key" ? event.actor.apiKeyId : null,
-          source: event.source,
-          action: event.action,
-          resourceType: event.resourceType,
-          resourceId: event.resourceId ?? null,
-          metadata: event.metadata ?? {},
-          ipAddress: event.ipAddress ?? null,
-          userAgent: event.userAgent ?? null,
-        });
-      } catch (error) {
-        logger.warn("audit write failed", {
-          action: event.action,
-          resourceType: event.resourceType,
-          err: error,
-        });
-      }
-    },
+    ...createAuditRecorder(db, logger),
 
     async list(scope: Scope, query: AuditQuery): Promise<AuditLogPage> {
       const limit = Math.min(query.limit ?? AUDIT_PAGE_DEFAULT, AUDIT_PAGE_MAX);

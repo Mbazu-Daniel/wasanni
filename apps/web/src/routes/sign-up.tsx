@@ -8,8 +8,8 @@ import {
   IconLock,
   IconMail,
 } from "@tabler/icons-react";
-import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { useSocialProviders } from "@/lib/auth-providers";
 import {
   AuthChecklist,
@@ -47,7 +47,7 @@ function SignUpPage() {
     });
     setBusy(false);
     if (error) {
-      toast.error(error.message ?? "Could not create account");
+      toastAuthError(error, "Could not create account");
       return;
     }
     queryClient.invalidateQueries({ queryKey: ["organizations"] });
@@ -55,7 +55,11 @@ function SignUpPage() {
   }
 
   async function social(provider: "google" | "github") {
-    await authClient.signIn.social({ provider, callbackURL: "/onboarding" });
+    const { error } = await authClient.signIn.social({
+      provider,
+      callbackURL: "/onboarding",
+    });
+    if (error) toastAuthError(error, "Sign up failed");
   }
 
   return (

@@ -56,7 +56,7 @@ export const createAssignmentRoutes = <T extends PrincipalApi>(
         return status(201, { assignment: created });
       },
       {
-        organizationAuth: PERMISSION.assignmentCreate,
+        memberAuth: PERMISSION.assignmentCreate,
         params: GameIdParams,
         body: CreateAssignmentBody,
         response: { 201: AssignmentSingle },

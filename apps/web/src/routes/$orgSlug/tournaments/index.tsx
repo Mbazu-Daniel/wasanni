@@ -18,6 +18,10 @@ import { EmptyState } from "@/components/primitives/empty-state";
 import { StatusPill } from "@/components/primitives/status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TournamentRow } from "@/lib/tournament-types";
+import {
+  TOURNAMENT_STATUS_FILTERS,
+  type TournamentStatusFilter,
+} from "@/lib/tournament-filters";
 
 export const Route = createFileRoute("/$orgSlug/tournaments/")({
   head: () => ({ meta: [{ title: "Tournaments · Wasanni" }] }),
@@ -29,9 +33,8 @@ function TournamentsListPage() {
   const organizationId = org?.id ?? "";
   const orgSlug = org?.slug ?? "";
 
-  const [statusFilter, setStatusFilter] = React.useState<
-    "all" | "draft" | "open" | "running" | "completed"
-  >("all");
+  const [statusFilter, setStatusFilter] =
+    React.useState<TournamentStatusFilter>("all");
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["tournaments", organizationId],
@@ -61,7 +64,7 @@ function TournamentsListPage() {
       />
 
       <div className="mb-4 flex rounded-lg border border-border p-0.5 text-xs">
-        {(["all", "draft", "open", "running", "completed"] as const).map((option) => (
+        {TOURNAMENT_STATUS_FILTERS.map((option) => (
           <button
             key={option}
             type="button"
@@ -113,6 +116,13 @@ function TournamentsListPage() {
               search={{ tab: "overview" }}
               className="group flex flex-col rounded-xl border border-border bg-card/50 p-4 transition-colors hover:border-pink/30 hover:bg-card/80"
             >
+              {tournament.imageUrl !== null && (
+                <img
+                  src={tournament.imageUrl}
+                  alt=""
+                  className="-mx-4 -mt-4 mb-3 aspect-[16/7] w-auto rounded-t-xl object-cover"
+                />
+              )}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   {tournament.format === "bracket" ? (

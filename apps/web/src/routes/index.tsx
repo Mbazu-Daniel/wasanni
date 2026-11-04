@@ -1,5 +1,5 @@
-import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { resumeLastOrganizationSlug } from "@/lib/session";
 import { Landing } from "@/components/landing/landing";
 
@@ -19,20 +19,16 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingIndex() {
-  const navigate = Route.useNavigate();
+  const { data } = useQuery({
+    queryKey: ["resume-organization"],
+    queryFn: async () => ({ slug: await resumeLastOrganizationSlug() }),
+    retry: false,
+  });
 
-  React.useEffect(() => {
-    void resumeLastOrganizationSlug()
-      .then((slug) => {
-        if (slug === undefined) return;
-        if (slug === null) {
-          navigate({ to: "/onboarding" });
-          return;
-        }
-        navigate({ to: "/$orgSlug/overview", params: { orgSlug: slug } });
-      })
-      .catch(() => undefined);
-  }, [navigate]);
+  if (data?.slug === null) return <Navigate to="/onboarding" />;
+  if (data?.slug !== undefined) {
+    return <Navigate to="/$orgSlug/overview" params={{ orgSlug: data.slug }} />;
+  }
 
   return <Landing />;
 }

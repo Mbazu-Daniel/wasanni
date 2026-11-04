@@ -1,5 +1,3 @@
-import type { SelectOption } from "@/components/ui/select";
-
 export type PlatformSummary = { id: string; name: string };
 
 export type PlatformTarget =
@@ -18,7 +16,9 @@ export const resolvePlatformId = (target: PlatformTarget, picked: string): strin
       ? picked
       : singlePlatformId(target);
 
-export const platformPickOptions = (platforms: PlatformSummary[]): SelectOption[] => [
+export const platformPickOptions = (
+  platforms: PlatformSummary[],
+): { value: string; label: string }[] => [
   { value: "", label: "Choose a platform" },
   ...platforms.map((platform) => ({ value: platform.id, label: platform.name })),
 ];

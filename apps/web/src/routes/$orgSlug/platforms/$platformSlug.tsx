@@ -1,17 +1,18 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { IconBroadcast, IconDeviceGamepad2 } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
 import { PageHeader } from "@/components/primitives/page-header";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tabs } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { PlatformKeysPanel } from "@/components/platforms/keys-panel";
 import { PlatformWebhooksPanel } from "@/components/platforms/webhooks-panel";
 import { PlatformGamesPanel } from "@/components/platforms/games-panel";
+import { PlatformKeysPanel } from "@/components/platforms/keys-panel";
 
 const TABS = [
   { value: "overview", label: "Overview" },
-  { value: "keys", label: "API keys" },
+  { value: "keys", label: "Keys" },
   { value: "webhooks", label: "Webhooks" },
   { value: "games", label: "Games" },
 ];
@@ -31,25 +32,27 @@ function PlatformDetailPage() {
   const { org } = Route.useRouteContext();
   const { platformSlug } = useParams({ from: "/$orgSlug/platforms/$platformSlug" });
   const { tab } = Route.useSearch();
+  const navigate = useNavigate();
 
   const organizationId = org?.id ?? "";
   const orgSlug = org?.slug ?? "";
 
-  const { data: platform, isLoading } = useQuery({
-    queryKey: ["platform", organizationId, platformSlug],
-    queryFn: async () => {
-      const { platforms } = await apiFetch<{
+  const { data: platforms = [], isLoading } = useQuery({
+    queryKey: ["platforms", organizationId],
+    queryFn: () =>
+      apiFetch<{
         platforms: {
           id: string;
           slug: string;
           name: string;
           description: string | null;
         }[];
-      }>(`/api/v1/organizations/${organizationId}/platforms`);
-
-      return platforms.find((row) => row.slug === platformSlug) ?? null;
-    },
+      }>(`/api/v1/organizations/${organizationId}/platforms`).then(
+        (response) => response.platforms,
+      ),
   });
+
+  const platform = platforms.find((row) => row.slug === platformSlug) ?? null;
 
   if (org === null || isLoading) {
     return <div className="h-40 animate-pulse rounded-xl bg-card/40" />;
@@ -62,7 +65,22 @@ function PlatformDetailPage() {
   return (
     <div>
       <PageHeader
-        title={platform.name}
+        title={
+          <SearchableSelect
+            value={platform.slug}
+            onValueChange={(slug) => {
+              if (slug !== platform.slug) {
+                navigate({
+                  to: "/$orgSlug/platforms/$platformSlug",
+                  params: { orgSlug, platformSlug: slug },
+                  search: { tab: "overview" },
+                });
+              }
+            }}
+            options={platforms.map((entry) => ({ value: entry.slug, label: entry.name }))}
+            className="w-72"
+          />
+        }
         actions={
           <div className="flex items-center gap-2">
             <Badge variant="muted" className="font-mono">
@@ -94,9 +112,8 @@ function PlatformDetailPage() {
                 <p className="text-sm font-semibold">What a platform is</p>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                A platform is where a game is played. It owns the API keys the
-                server authenticates with, the webhooks the events land in, and
-                the games that are assigned to it.
+                A platform is where a game is played. Its API keys, webhooks and
+                assigned games are configured here.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card/50 p-4">
@@ -105,15 +122,18 @@ function PlatformDetailPage() {
                 <p className="text-sm font-semibold">Next</p>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Give it a key so the server can open sessions, then add a
-                webhook so the scores come back to you.
+                Assign games to it, then add a webhook so the scores and
+                sessions come back to you as events.
               </p>
             </div>
           </div>
         )}
 
         {tab === "keys" && (
-          <PlatformKeysPanel organizationId={organizationId} platformId={platform.id} />
+          <PlatformKeysPanel
+            organizationId={organizationId}
+            platformId={platform.id}
+          />
         )}
 
         {tab === "webhooks" && (

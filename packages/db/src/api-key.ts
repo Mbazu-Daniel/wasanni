@@ -1,6 +1,6 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm";
 import type { ApiKeyCredential, Db } from "./types.ts";
-import { apiKey } from "./schema/api-key/api-key.ts";
+import { apikey } from "./schema/api-key/apikey.ts";
 
 export async function readActiveApiKey(
   db: Db,
@@ -8,17 +8,17 @@ export async function readActiveApiKey(
 ): Promise<ApiKeyCredential | null> {
   const [row] = await db
     .select({
-      id: apiKey.id,
-      organizationId: apiKey.organizationId,
-      platformId: apiKey.platformId,
-      permissions: apiKey.permissions,
+      id: apikey.id,
+      referenceId: apikey.referenceId,
+      permissions: apikey.permissions,
+      metadata: apikey.metadata,
     })
-    .from(apiKey)
+    .from(apikey)
     .where(
       and(
-        eq(apiKey.keyHash, keyHash),
-        eq(apiKey.enabled, true),
-        or(isNull(apiKey.expiresAt), gt(apiKey.expiresAt, new Date())),
+        eq(apikey.key, keyHash),
+        eq(apikey.enabled, true),
+        or(isNull(apikey.expiresAt), gt(apikey.expiresAt, new Date())),
       ),
     )
     .limit(1);

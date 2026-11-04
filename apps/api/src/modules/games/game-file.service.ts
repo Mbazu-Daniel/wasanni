@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { gameFile } from "@wasanni/db/schema";
-import { scopeTo } from "@wasanni/db";
+import { scopeTo, markFileCurrent, demoteCurrentGameFile } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
   BadRequestError,
@@ -204,29 +204,14 @@ export function createGameFileService(
         return toView({ ...row, status: "extracting", etag });
       }
 
-      await db.transaction(async (tx) => {
-        await tx
-          .update(gameFile)
-          .set({ isCurrent: false })
-          .where(
-            scopeTo(
-              scope,
-              gameFile,
-              eq(gameFile.gameId, row.gameId),
-              eq(gameFile.isCurrent, true),
-            ),
-          );
-
-        await tx
-          .update(gameFile)
-          .set({
-            status: "ready",
-            etag,
-            isCurrent: true,
-            readyAt: new Date(),
-          })
-          .where(scopeTo(scope, gameFile, eq(gameFile.id, row.id)));
-      });
+      await db.transaction((tx) =>
+        markFileCurrent(tx, {
+          organizationId: scope.organizationId,
+          gameId: row.gameId,
+          fileId: row.id,
+          promote: { status: "ready", etag, readyAt: new Date() },
+        }),
+      );
 
       const [updated] = await db
         .select()
@@ -276,17 +261,7 @@ export function createGameFileService(
       });
 
       await db.transaction(async (tx) => {
-        await tx
-          .update(gameFile)
-          .set({ isCurrent: false })
-          .where(
-            scopeTo(
-              scope,
-              gameFile,
-              eq(gameFile.gameId, gameId),
-              eq(gameFile.isCurrent, true),
-            ),
-          );
+        await demoteCurrentGameFile(tx, scope.organizationId, gameId);
 
         await tx.insert(gameFile).values({
           id: fileId,

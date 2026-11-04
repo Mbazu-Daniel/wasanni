@@ -8,13 +8,12 @@ const LABELS: Record<string, string> = {
   platforms: "Platforms",
   assignments: "Assignments",
   keys: "API keys",
-  webhooks: "Webhooks",
   sessions: "Sessions",
   leaderboards: "Leaderboards",
   tournaments: "Tournaments",
   matches: "Matches",
   audit: "Audit",
-  agents: "Builder",
+  builder: "Builder",
   usage: "Usage",
   settings: "Settings",
   danger: "Danger zone",
@@ -24,53 +23,49 @@ const LABELS: Record<string, string> = {
   new: "New",
 };
 
+const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}/i;
+
 const shortId = (segment: string): string =>
   `${segment.slice(0, 4)}…${segment.slice(-4)}`;
 
 const labelFor = (segment: string): string =>
-  LABELS[segment] ?? (segment.includes("_") ? shortId(segment) : segment);
+  LABELS[segment] ?? (UUID_LIKE.test(segment) ? shortId(segment) : segment);
 
 export function Breadcrumbs() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const segments = pathname.split("/").filter(Boolean);
 
-  if (segments.length <= 3) return null;
+  const ancestors = segments.slice(2, -1);
 
-  const trail = segments.slice(2);
-
-  const crumbs = trail.map((segment, index) => {
-    const href = "/" + segments.slice(0, 3 + index).join("/");
-
-    return {
-      href,
-      label: labelFor(segment),
-      isLast: index === trail.length - 1,
-    };
-  });
+  if (ancestors.length === 0) return null;
 
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      {crumbs.map((crumb, index) => (
-        <div key={crumb.href} className="flex items-center gap-1.5">
-          {index > 0 && <IconChevronRight className="size-3 text-muted-foreground/50" />}
-          {crumb.isLast ? (
-            <span className="text-foreground">{crumb.label}</span>
-          ) : (
+    <nav
+      aria-label="Breadcrumb"
+      className="flex items-center gap-1.5 text-xs text-muted-foreground"
+    >
+      {ancestors.map((segment, index) => {
+        const href = "/" + segments.slice(0, 3 + index).join("/");
+
+        return (
+          <div key={href} className="flex items-center gap-1.5">
+            {index > 0 && <IconChevronRight className="size-3 text-muted-foreground/50" />}
             <a
-              href={crumb.href}
+              href={href}
               className="transition-colors hover:text-foreground"
               onClick={(event) => {
                 if (event.metaKey || event.ctrlKey || event.shiftKey) return;
                 event.preventDefault();
-                router.navigate({ href: crumb.href });
+                router.navigate({ href });
               }}
             >
-              {crumb.label}
+              {labelFor(segment)}
             </a>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
+      <IconChevronRight className="size-3 text-muted-foreground/50" />
     </nav>
   );
 }

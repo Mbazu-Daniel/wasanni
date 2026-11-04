@@ -3,7 +3,7 @@ import type { Db } from "@wasanni/db";
 import { platform, webhookConfig, webhookDelivery } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
-import { ConflictError, NotFoundError } from "@wasanni/kit";
+import { assertSafeOutboundUrl, ConflictError, NotFoundError } from "@wasanni/kit";
 import type {
   OrgWebhookView,
   UpdateWebhookBody,
@@ -12,7 +12,7 @@ import type {
 } from "@wasanni/contracts";
 import { assertPlatform, assertUrlFree, readWebhook, toWebhookView } from "./webhook-state.ts";
 
-export function createWebhookService(db: Db) {
+export function createWebhookService(db: Db, allowPrivateOutbound: boolean) {
   return {
     async list(scope: Scope, platformId: string): Promise<WebhookConfigView[]> {
       await assertPlatform(db, scope, platformId);
@@ -94,6 +94,7 @@ export function createWebhookService(db: Db) {
       const current = await readWebhook(db, scope, platformId, webhookId);
 
       if (body.url !== undefined && body.url !== current.url) {
+        await assertSafeOutboundUrl(body.url, allowPrivateOutbound);
         await assertUrlFree(db, platformId, body.url, webhookId);
       }
 

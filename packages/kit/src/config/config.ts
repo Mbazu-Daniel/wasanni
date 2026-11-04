@@ -226,6 +226,7 @@ export function parseEnv(raw: RawEnv): Env {
       problems,
       "WEBHOOK_SECRET_ENCRYPTION_KEY",
     ),
+    API_KEY_ENCRYPTION_KEY: readSecret(raw, problems, "API_KEY_ENCRYPTION_KEY"),
     EMAIL_FROM_ADDRESS: readString(
       raw,
       problems,

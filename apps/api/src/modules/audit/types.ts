@@ -1,28 +1,9 @@
-import type {
-  AuditAction,
-  AuditResourceType,
-  AuditSource,
-} from "@wasanni/contracts";
+import type { AuditSource } from "@wasanni/contracts";
 import type { createAuditService } from "./service.ts";
 
+export type { AuditActor, AuditEvent } from "@wasanni/db";
+
 export type AuditService = ReturnType<typeof createAuditService>;
-
-export type AuditActor =
-  | { type: "user"; userId: string }
-  | { type: "api_key"; apiKeyId: string }
-  | { type: "system" };
-
-export type AuditEvent = {
-  organizationId: string | null;
-  actor: AuditActor;
-  source: AuditSource;
-  action: AuditAction;
-  resourceType: AuditResourceType;
-  resourceId?: string | null;
-  metadata?: Record<string, unknown>;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-};
 
 export type AuditRouteDeps = {
   service: AuditService;

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import type { RoleName } from "@/lib/role-types";
 
 const ROLE_OPTIONS: { value: RoleName; label: string; ownerOnly: boolean }[] = [
@@ -48,7 +49,7 @@ export function InviteModal({
     setBusy(false);
 
     if (error) {
-      toast.error(error.message ?? "Could not send invitation");
+      toastAuthError(error, "Could not send invitation");
       return;
     }
 
@@ -67,6 +68,7 @@ export function InviteModal({
       onOpenChange={onOpenChange}
       title="Invite a member"
       description="They get an email with a link to join this organization."
+      backdrop={false}
     >
       <form onSubmit={submit} className="mt-5 space-y-3">
         <div className="space-y-1.5">

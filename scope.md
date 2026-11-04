@@ -139,9 +139,11 @@ encrypted key, a token ceiling, a default flag), projects, sessions with named
 and pinned turns, runs with the four statuses `succeeded` / `failed` /
 `refused` / `awaiting_approval`, a tool-catalogue of specs and models, and a
 30-day spend read priced from the catalog. Tools that read (api docs, the
-integration guide, games, platforms, leaderboards, matches, standings) and tools
-that write (deploy a game, create/open/register/seed/cancel a tournament, start
-and complete a match, record a score). A run that reaches a tool needing
+integration guide, games, platforms, assignments, tournaments, matches,
+leaderboards, standings) and tools that write (create and deploy a game, create
+a platform, assign a game to a platform, create/open/register/seed/cancel a
+tournament, start and complete a match, record a score, issue an api key). A
+run that reaches a tool needing
 approval parks, and the client answers over a second SSE request. Any outbound
 url a provider or a callback uses is resolved and refused if it points at
 private space unless `ALLOW_PRIVATE_OUTBOUND_URLS` says otherwise.

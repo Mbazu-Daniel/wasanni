@@ -56,7 +56,7 @@ export async function createGameSession(input: {
     body: JSON.stringify({
       gameId: input.gameId,
       externalUserId: playerIdForEmail(input.email),
-      ...(input.name === undefined ? {} : { externalUserName: input.name }),
+      ...(input.name === undefined ? {} : { externalName: input.name }),
       ...(input.mode === undefined ? {} : { mode: input.mode }),
       ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
     }),

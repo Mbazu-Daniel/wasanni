@@ -8,12 +8,16 @@ import {
   type MembershipRow,
 } from "@wasanni/db";
 import { flattenPermissions, parsePermissionGrant } from "@wasanni/contracts";
-import { hashApiKey, InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
+import { defaultKeyHasher } from "@better-auth/api-key";
+import { InternalServerError, sha256Hex, UnauthorizedError, ForbiddenError } from "@wasanni/kit";
 import type { PlatformPrincipal, UserPrincipal } from "@wasanni/kit";
 import type { Principal } from "@wasanni/kit";
+import type { ApiKeyCredential } from "@wasanni/db";
+import { platformIdFromMetadata } from "../modules/api-key/metadata.ts";
 import { permissionsForRole, requirePermission } from "../permissions.ts";
 import type {
   AuthResult,
+  MemberAuthResult,
   OrganizationAuthResult,
   PlatformAuthResult,
   PrincipalDeps,
@@ -52,8 +56,73 @@ const requestPrincipals = new WeakMap<Request, Principal>();
 export const principalOf = (request: Request): Principal | undefined =>
   requestPrincipals.get(request);
 
-export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
-  new Elysia({ name: "principal" })
+export const storePrincipal = (request: Request, principal: Principal): void => {
+  requestPrincipals.set(request, principal);
+};
+
+const keyPrincipalOf = (
+  credential: ApiKeyCredential,
+  encryptionKey: string,
+): PlatformPrincipal => ({
+  kind: "platform",
+  apiKeyId: credential.id,
+  organizationId: credential.referenceId,
+  platformId: platformIdFromMetadata(credential.metadata, encryptionKey),
+  permissions: flattenPermissions(parsePermissionGrant(credential.permissions)),
+});
+
+export const createPrincipalPlugin = ({ db, auth, encryptionKey }: PrincipalDeps) => {
+  const organizationIdOf = (params: Record<string, unknown>, macro: string): string => {
+    const organizationId = "organizationId" in params ? params.organizationId : null;
+
+    if (typeof organizationId !== "string" || organizationId === "") {
+      throw new InternalServerError(`${macro} route is missing an :organizationId param`);
+    }
+
+    return organizationId;
+  };
+
+  const sessionOf = (request: Request) => auth.api.getSession({ headers: request.headers });
+
+  const memberPrincipalOf = async (
+    organizationId: string,
+    session: Session,
+  ): Promise<UserPrincipal> => {
+    const resolved = await resolvePrincipal(db, organizationId, session);
+
+    if (resolved === null) throw new ForbiddenError("not an organization member");
+
+    return resolved;
+  };
+
+  const apiKeyPrincipalOf = async (
+    request: Request,
+    missingMessage?: string,
+  ): Promise<PlatformPrincipal> => {
+    const secret = request.headers.get("x-api-key");
+
+    if (secret === null || secret === "") throw new UnauthorizedError(missingMessage);
+
+    const credential = await readActiveApiKey(db, await defaultKeyHasher(secret));
+
+    if (credential === null) throw new UnauthorizedError("the api key is not valid");
+
+    return keyPrincipalOf(credential, encryptionKey);
+  };
+
+  const authorize = <P extends Principal>(
+    request: Request,
+    principal: P,
+    required: string | null,
+  ): { principal: P } => {
+    if (required !== null) requirePermission(principal, required);
+
+    storePrincipal(request, principal);
+
+    return { principal };
+  };
+
+  return new Elysia({ name: "principal" })
     .macro({
       auth: {
         async resolve({ request }): Promise<AuthResult> {
@@ -65,50 +134,45 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         },
       },
 
-      organizationAuth: (required: string | null) => ({
-        async resolve({ params, request }): Promise<OrganizationAuthResult> {
-          const organizationId = (params as { organizationId?: string }).organizationId;
-          if (!organizationId) {
-            throw new InternalServerError("organizationAuth route is missing an :organizationId param");
-          }
+      memberAuth: (required: string | null) => ({
+        async resolve({ params, request }): Promise<MemberAuthResult> {
+          const organizationId = organizationIdOf(params, "memberAuth");
 
-          const session = await auth.api.getSession({ headers: request.headers });
+          const session = await sessionOf(request);
           if (session === null) throw new UnauthorizedError();
 
-          const resolved = await resolvePrincipal(db, organizationId, session);
-          if (resolved === null) throw new ForbiddenError("not an organization member");
+          const principal = await memberPrincipalOf(organizationId, session);
 
-          if (required !== null) requirePermission(resolved, required);
+          return authorize(request, principal, required);
+        },
+      }),
 
-          requestPrincipals.set(request, resolved);
-          return { principal: resolved };
+      organizationAuth: (required: string | null) => ({
+        async resolve({ params, request }): Promise<OrganizationAuthResult> {
+          const organizationId = organizationIdOf(params, "organizationAuth");
+
+          const session = await sessionOf(request);
+
+          if (session !== null) {
+            const principal = await memberPrincipalOf(organizationId, session);
+
+            return authorize(request, principal, required);
+          }
+
+          const principal = await apiKeyPrincipalOf(request);
+          if (principal.organizationId !== organizationId) {
+            throw new ForbiddenError("the api key belongs to another organization");
+          }
+
+          return authorize(request, principal, required);
         },
       }),
 
       platformAuth: (required: string | null) => ({
         async resolve({ request }): Promise<PlatformAuthResult> {
-          const secret = request.headers.get("x-api-key");
-          if (secret === null || secret === "") {
-            throw new UnauthorizedError("an api key is required");
-          }
+          const principal = await apiKeyPrincipalOf(request, "an api key is required");
 
-          const credential = await readActiveApiKey(db, hashApiKey(secret));
-          if (credential === null) {
-            throw new UnauthorizedError("the api key is not valid");
-          }
-
-          const principal: PlatformPrincipal = {
-            kind: "platform",
-            platformId: credential.platformId,
-            apiKeyId: credential.id,
-            organizationId: credential.organizationId,
-            permissions: flattenPermissions(parsePermissionGrant(credential.permissions)),
-          };
-
-          if (required !== null) requirePermission(principal, required);
-
-          requestPrincipals.set(request, principal);
-          return { principal };
+          return authorize(request, principal, required);
         },
       }),
 
@@ -136,3 +200,4 @@ export const createPrincipalPlugin = ({ db, auth }: PrincipalDeps) =>
         },
       },
     });
+};

@@ -7,9 +7,11 @@ import { BadRequestError, ConflictError, InternalServerError, newId, NotFoundErr
 import type {
   CreateGameBody,
   GameView,
+  ImageUploadTicket,
   ListGamesQuery,
   UpdateGameBody,
 } from "@wasanni/contracts";
+import { assertImageKey, createImageUploadTicket } from "../image/index.ts";
 import { hasReadyGameFile } from "./game-state.ts";
 import type { GameRow } from "./types.ts";
 
@@ -19,6 +21,8 @@ const toView = (row: GameRow): GameView => ({
   name: row.name,
   slug: row.slug,
   description: row.description,
+  imageUrl: row.imageUrl,
+  hints: row.hints,
   hosting: row.hosting,
   status: row.status,
   createdAt: row.createdAt.toISOString(),
@@ -70,6 +74,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
             name: input.name,
             slug: input.slug,
             description: input.description ?? null,
+            hints: input.hints ?? [],
             hosting: input.hosting,
           })
           .returning();
@@ -89,6 +94,8 @@ export function createGameService(db: Db, storage: ObjectStorage) {
             ...(patch.name !== undefined ? { name: patch.name } : {}),
             ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
             ...(patch.description !== undefined ? { description: patch.description } : {}),
+            ...(patch.imageUrl !== undefined ? { imageUrl: patch.imageUrl } : {}),
+            ...(patch.hints !== undefined ? { hints: patch.hints } : {}),
             updatedAt: new Date(),
           })
           .where(scopeTo(scope, game, eq(game.id, gameId)))
@@ -145,6 +152,37 @@ export function createGameService(db: Db, storage: ObjectStorage) {
       await Promise.allSettled(
         files.map((file) => storage.deleteObject(file.objectKey)),
       );
+    },
+
+    async imageTicket(
+      scope: Scope,
+      gameId: string,
+      contentType: string,
+    ): Promise<ImageUploadTicket> {
+      await this.get(scope, gameId);
+      return createImageUploadTicket(
+        storage,
+        scope.organizationId,
+        "games",
+        contentType,
+      );
+    },
+
+    async attachImage(
+      scope: Scope,
+      gameId: string,
+      key: string,
+    ): Promise<GameView> {
+      assertImageKey(key, scope.organizationId, "games");
+
+      const [row] = await db
+        .update(game)
+        .set({ imageUrl: storage.publicUrl(key), updatedAt: new Date() })
+        .where(scopeTo(scope, game, eq(game.id, gameId)))
+        .returning();
+
+      if (row === undefined) throw new NotFoundError("game not found");
+      return toView(row);
     },
   };
 }

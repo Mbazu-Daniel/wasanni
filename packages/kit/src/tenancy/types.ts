@@ -13,8 +13,8 @@ export type UserPrincipal = BasePrincipal & {
 
 export type PlatformPrincipal = BasePrincipal & {
   kind: "platform";
-  platformId: string;
   apiKeyId: string;
+  platformId: string | null;
 };
 
 export type GameSessionPrincipal = {

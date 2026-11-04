@@ -12,7 +12,6 @@ export const createReplayRoutes = <T extends PrincipalApi>(
     async ({ principal, params }) =>
       service.getSessionEvents(
         organizationScope(principal),
-        principal.platformId,
         params.sessionId,
       ),
     {

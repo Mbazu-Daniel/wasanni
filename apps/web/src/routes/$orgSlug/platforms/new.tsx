@@ -27,9 +27,7 @@ function NewPlatformPage() {
   const [description, setDescription] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!touchedSlug) setSlug(slugify(name));
-  }, [name, touchedSlug]);
+  const effectiveSlug = touchedSlug ? slug : slugify(name);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -42,7 +40,7 @@ function NewPlatformPage() {
         method: "POST",
         data: JSON.stringify({
           name,
-          slug,
+          slug: effectiveSlug,
           description: description || undefined,
         }),
       });
@@ -85,7 +83,7 @@ function NewPlatformPage() {
           <Label htmlFor="slug">Slug</Label>
           <Input
             id="slug"
-            value={slug}
+            value={effectiveSlug}
             onChange={(event) => {
               setSlug(slugify(event.target.value));
               setTouchedSlug(true);
@@ -116,7 +114,7 @@ function NewPlatformPage() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" disabled={busy || !name || !slug}>
+          <Button type="submit" disabled={busy || !name || !effectiveSlug}>
             {busy ? "Creating…" : "Create platform"}
           </Button>
         </div>

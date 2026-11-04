@@ -37,6 +37,7 @@ export const tournament = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description"),
+    imageUrl: text("image_url"),
     format: text("format").notNull().$type<TournamentFormat>(),
     status: text("status")
       .notNull()

@@ -52,7 +52,7 @@ export const MODE_INSTRUCTIONS: Record<"agent" | "plan", string> = {
     "Number the steps, one bounded action per step, and never join two actions with 'and then'. " +
     "Use the fewest steps that still work, and cap every list at five items, most relevant first. " +
     "Name the file or endpoint each step touches instead of describing the step twice. " +
-    "An integration plan sequences the write tools you have beside it, and the game client records scores through POST /api/v1/sessions and the session token that call returns. " +
+    "An integration plan sequences the write tools you have beside it. A player joins play by entering: POST /api/v1/duels/enter or POST /api/v1/tournaments/:tournamentId/enter returns the session, its sessionToken, and a realtimeUrl. The game client sends scores over that realtime websocket with the sessionToken, and the platform learns a score landed or a session ended from the score.submitted and session.ended webhooks rather than polling. " +
     "A platform api key authenticates a server, never a browser: it is created by a member from the dashboard and kept on a server, and it never appears in generated client html. " +
     "State a risk or a decision only when it changes what the developer should approve. " +
     "No preamble, no summary of the plan at the end, no closing pleasantries. " +

@@ -20,17 +20,17 @@ import {
   IconChartBar,
   IconLogout,
   IconMedal,
-  IconAlertTriangle,
+  IconDeviceDesktop,
   IconPlus,
   IconRefresh,
   IconSearch,
   IconSwords,
   IconUser,
   IconUsers,
-  IconWebhook,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
 import { PAGE_SHORTCUTS } from "./keyboard-shortcuts";
@@ -55,15 +55,14 @@ const NAV: { id: string; label: string; icon: Icon; to: DashboardPath }[] = [
   { id: "platforms", label: "Platforms", icon: IconBroadcast, to: "/$orgSlug/platforms" },
   { id: "assignments", label: "Assignments", icon: IconLink, to: "/$orgSlug/assignments" },
   { id: "keys", label: "API keys", icon: IconKey, to: "/$orgSlug/keys" },
-  { id: "webhooks", label: "Webhooks", icon: IconWebhook, to: "/$orgSlug/webhooks" },
   { id: "tournaments", label: "Tournaments", icon: IconMedal, to: "/$orgSlug/tournaments" },
   { id: "matches", label: "Matches", icon: IconSwords, to: "/$orgSlug/matches" },
   { id: "audit", label: "Audit", icon: IconList, to: "/$orgSlug/audit" },
   { id: "usage", label: "Usage", icon: IconChartBar, to: "/$orgSlug/usage" },
-  { id: "members", label: "Members", icon: IconUsers, to: "/$orgSlug/settings/members" },
+  { id: "members", label: "Members", icon: IconUsers, to: "/$orgSlug/members" },
   { id: "organization", label: "Organization", icon: IconBuilding, to: "/$orgSlug/settings/organization" },
   { id: "account", label: "Account", icon: IconUser, to: "/$orgSlug/settings/account" },
-  { id: "danger", label: "Danger zone", icon: IconAlertTriangle, to: "/$orgSlug/settings/danger" },
+  { id: "sessions", label: "Sessions", icon: IconDeviceDesktop, to: "/$orgSlug/settings/sessions" },
 ];
 
 const CREATE: { id: string; label: string; to: DashboardPath }[] = [
@@ -171,7 +170,11 @@ export function CommandPalette({
         section: "Actions",
         icon: IconLogout,
         action: async () => {
-          await authClient.signOut();
+          const result = await authClient.signOut();
+          if ("error" in result && result.error) {
+            toastAuthError(result.error, "Could not sign out");
+            return;
+          }
           queryClient.clear();
           navigate({ to: "/sign-in", search: { returnTo: undefined } });
         },

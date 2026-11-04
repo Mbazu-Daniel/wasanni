@@ -14,14 +14,8 @@ export const createLeaderboardRoutes = <T extends PrincipalApi>(
 ) =>
   api.get(
     "/api/v1/games/:gameId/leaderboards",
-    async ({ principal, params, query }) => ({
-      entries: await service.list(
-        organizationScope(principal),
-        principal.platformId,
-        params.gameId,
-        query,
-      ),
-    }),
+    async ({ principal, params, query }) =>
+      service.list(organizationScope(principal), params.gameId, query),
     {
       platformAuth: PERMISSION.scoreRead,
       params: GameLeaderboardParams,

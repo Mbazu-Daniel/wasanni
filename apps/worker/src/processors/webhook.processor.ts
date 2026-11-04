@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { webhookConfig, webhookDelivery } from "@wasanni/db/schema";
 import {
+  assertSafeOutboundUrl,
   decryptSecret,
   hmacSign,
   InternalServerError,
@@ -34,6 +35,10 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
 
     if (!row.enabled) {
       return { skipped: "disabled" };
+    }
+
+    if (row.expiresAt !== null && row.expiresAt.getTime() <= Date.now()) {
+      return { skipped: "expired" };
     }
 
     const record = async (input: {
@@ -80,6 +85,22 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
     const signature = hmacSign(secret, body, timestamp);
     const startedAt = Date.now();
 
+    try {
+      await assertSafeOutboundUrl(row.url, env.ALLOW_PRIVATE_OUTBOUND_URLS);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      await db
+        .update(webhookConfig)
+        .set({ lastFailureAt: new Date() })
+        .where(eq(webhookConfig.id, row.id));
+
+      await record({ status: "failed", error: message, durationMs: Date.now() - startedAt });
+      logger.warn("webhook.blocked", { webhookId: job.webhookId, err: message });
+
+      return { skipped: "blocked" };
+    }
+
     let response: Response;
 
     try {
@@ -94,6 +115,7 @@ export function createWebhookProcessor(db: Db, env: Env, logger: Logger) {
           "x-wasanni-signature": `t=${timestamp},v1=${signature}`,
         },
         body,
+        redirect: "error",
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
     } catch (error) {

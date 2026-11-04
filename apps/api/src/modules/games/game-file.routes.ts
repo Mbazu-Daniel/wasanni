@@ -40,7 +40,7 @@ export const createGameFileRoutes = <T extends PrincipalApi>(
         return status(201, result);
       },
       {
-        organizationAuth: PERMISSION.gameFileCreate,
+        memberAuth: PERMISSION.gameFileCreate,
         params: GameIdParams,
         body: CreateGameFileBody,
         response: { 201: GameFileUpload },

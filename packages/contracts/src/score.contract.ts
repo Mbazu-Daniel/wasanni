@@ -39,6 +39,7 @@ export const ScoreView = t.Object({
   platformId: t.String(),
   gameId: t.String(),
   externalUserId: t.String(),
+  externalName: t.Union([t.String(), t.Null()]),
   mode: t.Union([t.String(), t.Null()]),
   score: t.Number(),
   status: ScoreStatus,
@@ -62,20 +63,30 @@ export type SubmitScoreBody = UnwrapSchema<typeof SubmitScoreBody>;
 export const LeaderboardEntry = t.Object({
   rank: t.Number(),
   sessionId: t.String(),
+  platformId: t.String(),
   externalUserId: t.String(),
+  externalName: t.Union([t.String(), t.Null()]),
   score: t.Number(),
   flagged: t.Boolean(),
   submittedAt: t.String({ format: "date-time" }),
 });
 export type LeaderboardEntry = UnwrapSchema<typeof LeaderboardEntry>;
 
-export const LeaderboardList = t.Object({ entries: t.Array(LeaderboardEntry) });
+export const LeaderboardList = t.Object({
+  entries: t.Array(LeaderboardEntry),
+  page: t.Object({
+    limit: t.Number(),
+    hasMore: t.Boolean(),
+    cursor: t.Union([t.String(), t.Null()]),
+  }),
+});
 export type LeaderboardList = UnwrapSchema<typeof LeaderboardList>;
 
 export const GameLeaderboardQuery = t.Object({
+  platformId: t.Optional(t.String()),
   mode: t.Optional(t.String({ maxLength: 80 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 200 })),
-  offset: t.Optional(t.Number({ minimum: 0 })),
+  cursor: t.Optional(t.String()),
   includeFlagged: t.Optional(t.Boolean()),
 });
 export type GameLeaderboardQuery = UnwrapSchema<typeof GameLeaderboardQuery>;
@@ -85,6 +96,7 @@ export type GameLeaderboardParams = UnwrapSchema<typeof GameLeaderboardParams>;
 
 export const HideScoresBody = t.Object({
   gameId: t.Optional(t.String()),
+  platformId: t.Optional(t.String()),
 });
 export type HideScoresBody = UnwrapSchema<typeof HideScoresBody>;
 

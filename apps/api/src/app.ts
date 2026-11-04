@@ -26,11 +26,13 @@ import { createApiKeyService } from "./modules/api-key/service.ts";
 import { createUsageRoutes } from "./modules/usage/usage.routes.ts";
 import { createAgentModule } from "./modules/agent/index.ts";
 import { createAgentRuntime } from "./modules/agent/mastra.ts";
+import { createAssistantModule } from "./modules/assistant/index.ts";
 import { createOrganizationModule } from "./modules/organization/index.ts";
 import { createUsageService } from "./modules/usage/usage.service.ts";
 import { createRoleRoutes } from "./modules/role/index.ts";
 import { createRoleService } from "./modules/role/service.ts";
 import { createAgentGamePort, createGamesRoutes } from "./modules/games/index.ts";
+import { createAssignmentService } from "./modules/games/assignment.service.ts";
 import { createTemplatesRoutes } from "./modules/templates/index.ts";
 import { createPlayRoutes, createPlayServices } from "./modules/play/index.ts";
 import { createScoreVerifier } from "./modules/play/score-verifier.ts";
@@ -43,6 +45,7 @@ import { createWebhookDispatcher } from "./modules/webhook/webhook-dispatcher.ts
 import { createDocsRoutes } from "./modules/docs/index.ts";
 import {
   AUTH_ROUTE_PREFIX,
+  ASSISTANT_RATE_LIMIT_PER_MINUTE,
   DOCS_PATH,
   LEADERBOARD_RATE_LIMIT_PER_MINUTE,
   METRICS_PATH,
@@ -70,8 +73,15 @@ export async function createApp(deps: AppDeps) {
   };
   const betterAuth = createBetterAuth(moduleDeps);
 
-  const principalDeps: PrincipalDeps = { db: deps.db, auth: betterAuth };
+  const principalDeps: PrincipalDeps = {
+    db: deps.db,
+    auth: betterAuth,
+    encryptionKey: deps.env.API_KEY_ENCRYPTION_KEY,
+  };
   const base = createPrincipalPlugin(principalDeps);
+
+  const apiKeys = createApiKeyService(deps.db, betterAuth, deps.env.API_KEY_ENCRYPTION_KEY);
+  const assignments = createAssignmentService(deps.db);
 
   const rateLimit = createRateLimiter(
     deps.redis ?? null,
@@ -94,6 +104,12 @@ export async function createApp(deps: AppDeps) {
         key: ({ principal }) =>
           principal?.kind === "platform" ? `rl:lb:${principal.apiKeyId}` : null,
       },
+      assistant: {
+        limit: ASSISTANT_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ request }) =>
+          `rl:assistant:${request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "shared"}`,
+      },
     },
     deps.logger,
   );
@@ -113,8 +129,8 @@ export async function createApp(deps: AppDeps) {
   const storage = deps.storage ?? createObjectStorage(readStorageConfig(deps.env));
   const events = deps.events ?? createMemorySessionEventStore();
   const enqueuer = deps.enqueuer ?? null;
-  const dispatcher = createWebhookDispatcher(deps.db, enqueuer);
-  const competition = createCompetition(deps.db, usage);
+  const dispatcher = createWebhookDispatcher(deps.db);
+  const competition = createCompetition(deps.db, usage, storage);
   const platforms = createPlatformService(deps.db);
   const play = createPlayServices({
     db: deps.db,
@@ -211,7 +227,7 @@ export async function createApp(deps: AppDeps) {
     .use(createAuthRoutes(base, betterAuth, socialProviders))
     .use(createMemberRoutes(base, { service: createMemberService(deps.db), storage }))
     .use(createPlatformRoutes(base, { service: platforms }))
-    .use(createApiKeyRoutes(base, { service: createApiKeyService(deps.db) }))
+    .use(createApiKeyRoutes(base, { service: apiKeys }))
     .use(createRoleRoutes(base, { service: createRoleService(deps.db) }))
     .use(createUsageRoutes(base, { service: usage }))
     .use(
@@ -233,6 +249,8 @@ export async function createApp(deps: AppDeps) {
           config: readStorageLimits(deps.env),
         }),
         integrator: {
+          apiKeys,
+          assignments,
           brackets: competition.brackets,
           leaderboards: play.leaderboards,
           matches: competition.matches,
@@ -244,7 +262,16 @@ export async function createApp(deps: AppDeps) {
         },
       }),
     )
-    .use(createOrganizationModule(base, deps.db))
+    .use(
+      createAssistantModule(base, {
+        api: base,
+        logger: deps.logger,
+        allowPrivateOutbound: deps.env.ALLOW_PRIVATE_OUTBOUND_URLS,
+        platformProvider,
+        rateLimit,
+      }),
+    )
+    .use(createOrganizationModule(base, deps.db, storage))
     .use(
       createGamesRoutes(base, {
         db: deps.db,
@@ -270,10 +297,11 @@ export async function createApp(deps: AppDeps) {
       createWebhooksRoutes(base, {
         db: deps.db,
         encryptionKey: deps.env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        allowPrivateOutbound: deps.env.ALLOW_PRIVATE_OUTBOUND_URLS,
         dispatcher,
       }),
     )
-    .use(competition.mount(base))
+    .use(competition.mount(base, { sessions: play.sessions, rateLimit }))
     .use(createPlayRoutes(base, { services: play, rateLimit }))
     .use(createHealthRoutes(deps))
     .use(createDocsRoutes())

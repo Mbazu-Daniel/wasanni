@@ -8,6 +8,7 @@ export type AuditSource = (typeof AUDIT_SOURCES)[number];
 
 export const AUDIT_RESOURCE_TYPES = [
   "account",
+  "agent_approval",
   "agent_provider",
   "agent_session",
   "assignment",
@@ -61,6 +62,7 @@ const CRUD: readonly AuditVerb[] = ["created", "updated", "deleted"];
 
 export const AUDIT_ACTIONS = {
   account: ["linked", "unlinked"],
+  agent_approval: ["accepted", "rejected"],
   agent_provider: ["added", "updated", "removed"],
   agent_session: ["started", "renamed", "deleted"],
   assignment: CRUD,

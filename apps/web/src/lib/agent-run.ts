@@ -4,11 +4,11 @@ import type { AgentAttachment, AgentRunMode, AgentStreamEvent } from "./agent-ty
 
 type ErrorPayload = { error?: { code?: string; message?: string } };
 
-const stream = async (
+export const streamEvents = async <T>(
   path: string,
   body: Record<string, unknown>,
   signal: AbortSignal,
-  onEvent: (event: AgentStreamEvent) => void,
+  onEvent: (event: T) => void,
 ): Promise<void> => {
   const response = await fetch(`${apiBaseURL}${path}`, {
     method: "POST",
@@ -43,9 +43,9 @@ const stream = async (
 
     for (const block of blocks) {
       if (!block.startsWith("data: ")) continue;
-      let event: AgentStreamEvent;
+      let event: T;
       try {
-        event = JSON.parse(block.slice(6)) as AgentStreamEvent;
+        event = JSON.parse(block.slice(6)) as T;
       } catch {
         throw new Error("the agent stream returned invalid data");
       }
@@ -53,6 +53,13 @@ const stream = async (
     }
   }
 };
+
+const stream = async (
+  path: string,
+  body: Record<string, unknown>,
+  signal: AbortSignal,
+  onEvent: (event: AgentStreamEvent) => void,
+): Promise<void> => streamEvents<AgentStreamEvent>(path, body, signal, onEvent);
 
 export async function runAgent(input: {
   organizationId: string;

@@ -1,22 +1,22 @@
-import type { Db } from "@wasanni/db";
+import type { AuditRecorder, Db } from "@wasanni/db";
 import type {
   Env,
   Logger,
   ObjectStorage,
   SessionEventStore,
 } from "@wasanni/kit";
-import type { AuditService } from "../../api/src/modules/audit/types.ts";
 
 export type ArchivePartitionsDeps = {
   db: Db;
   storage: ObjectStorage;
-  audit: AuditService;
+  audit: AuditRecorder;
   env: Env;
   logger: Logger;
 };
 
 export type SweepResult = {
   expiredSessions: number;
+  openedTournaments: number;
   expiredOrganizations: string[];
   purgedAuthSessions: number;
   purgedVerifications: number;
@@ -57,7 +57,7 @@ export type ArchiveWorkerDeps = {
   db: Db;
   storage: ObjectStorage;
   events: SessionEventStore;
-  audit: AuditService;
+  audit: AuditRecorder;
   env: Env;
   logger: Logger;
 };

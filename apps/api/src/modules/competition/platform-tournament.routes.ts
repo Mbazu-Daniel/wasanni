@@ -1,16 +1,14 @@
 import {
   BracketSingle,
   PERMISSION,
-  ParticipantSingle,
-  PlatformJoinBody,
   PlatformJoinParams,
+  PlatformLeaveBody,
   PlatformTournamentParams,
   PlatformTournamentQuery,
   TournamentLeaderboard,
   TournamentList,
   TournamentSingle,
 } from "@wasanni/contracts";
-import { t } from "elysia";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { CompetitionServices } from "./types.ts";
@@ -56,41 +54,14 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
         },
       },
     )
-    .post(
-      "/api/v1/tournaments/:tournamentId/players/:externalUserId/join",
-      async ({ principal, params, body, status }) => {
-        const participant = await deps.participants.register(
-          organizationScope(principal),
-          {
-            tournamentId: params.tournamentId,
-            platformId: principal.platformId,
-            externalUserId: params.externalUserId,
-            ...(body?.displayName === undefined
-              ? {}
-              : { displayName: body.displayName }),
-          },
-        );
-        return status(201, { participant });
-      },
-      {
-        platformAuth: PERMISSION.tournamentRegister,
-        params: PlatformJoinParams,
-        body: t.Optional(PlatformJoinBody),
-        response: { 201: ParticipantSingle },
-        detail: {
-          tags: ["tournaments"],
-          summary: "Join a player into a tournament (platform api key)",
-        },
-      },
-    )
     .delete(
       "/api/v1/tournaments/:tournamentId/players/:externalUserId/leave",
-      async ({ principal, params, status }) => {
+      async ({ principal, params, body, status }) => {
         await deps.participants.withdraw(
           organizationScope(principal),
           params.tournamentId,
           {
-            platformId: principal.platformId,
+            platformId: body.platformId,
             externalUserId: params.externalUserId,
           },
         );
@@ -99,6 +70,7 @@ export const createPlatformTournamentRoutes = <T extends PrincipalApi>(
       {
         platformAuth: PERMISSION.tournamentRegister,
         params: PlatformJoinParams,
+        body: PlatformLeaveBody,
         detail: {
           tags: ["tournaments"],
           summary: "Remove a player from a tournament (platform api key)",

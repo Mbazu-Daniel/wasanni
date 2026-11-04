@@ -2,7 +2,9 @@ import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { IconPhoto } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
+import { uploadImage } from "@/lib/image-upload";
 import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
+import { ImagePicker } from "@/components/primitives/image-picker";
+import { HintsEditor } from "@/components/games/hints-editor";
 
 type Game = {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  imageUrl: string | null;
+  hints: string[];
   status: "draft" | "active" | "archived";
 };
 
@@ -34,14 +40,36 @@ export function GameSettingsPanel({
   const [name, setName] = React.useState(game.name);
   const [slug, setSlug] = React.useState(game.slug);
   const [description, setDescription] = React.useState(game.description ?? "");
+  const [hints, setHints] = React.useState<string[]>(game.hints);
   const [saving, setSaving] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
+  const cleanHints = hints.map((hint) => hint.trim()).filter((hint) => hint !== "");
+
   const dirty =
     name !== game.name ||
     slug !== game.slug ||
-    description !== (game.description ?? "");
+    description !== (game.description ?? "") ||
+    cleanHints.join("\n") !== game.hints.join("\n");
+
+  async function pickImage(file: File) {
+    const image = `/api/v1/organizations/${organizationId}/games/${game.id}/image`;
+    await uploadImage<{ game: Game }>(image, image, file);
+    toast.success("Cover image updated");
+    queryClient.invalidateQueries({ queryKey: ["games", organizationId] });
+    queryClient.invalidateQueries({ queryKey: ["game", organizationId] });
+  }
+
+  async function removeImage() {
+    await apiFetch(`/api/v1/organizations/${organizationId}/games/${game.id}`, {
+      method: "PATCH",
+      data: JSON.stringify({ imageUrl: null }),
+    });
+    toast.success("Cover image removed");
+    queryClient.invalidateQueries({ queryKey: ["games", organizationId] });
+    queryClient.invalidateQueries({ queryKey: ["game", organizationId] });
+  }
 
   async function save() {
     setSaving(true);
@@ -52,6 +80,7 @@ export function GameSettingsPanel({
           name,
           slug: slugify(slug),
           description: description || null,
+          hints: cleanHints,
         }),
       });
       toast.success("Game updated");
@@ -116,6 +145,22 @@ export function GameSettingsPanel({
             onChange={(event) => setDescription(event.target.value)}
             maxLength={1000}
           />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Cover image</Label>
+          <ImagePicker
+            imageUrl={game.imageUrl}
+            onPick={pickImage}
+            onRemove={game.imageUrl === null ? undefined : removeImage}
+            fallback={<IconPhoto className="size-6 text-muted-foreground" />}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Hints</Label>
+          <p className="text-xs text-muted-foreground">
+            Short prompts players see before a session. Up to 20.
+          </p>
+          <HintsEditor value={hints} onChange={setHints} />
         </div>
         <Button size="sm" onClick={save} disabled={saving || !dirty}>
           {saving ? "Saving…" : "Save changes"}

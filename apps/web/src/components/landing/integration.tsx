@@ -63,7 +63,7 @@ await fetch(
     icon: IconTerminal2,
     code: `# open a session for a player
 curl -X POST https://api.wasanni.com/api/v1/sessions \\
-  -H "x-api-key: wsk_..." \\
+  -H "x-api-key: sk_..." \\
   -H "content-type: application/json" \\
   -d '{
     "gameId": "gam_7QH2",

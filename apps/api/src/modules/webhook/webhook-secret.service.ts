@@ -4,6 +4,7 @@ import { webhookConfig } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
+  assertSafeOutboundUrl,
   ConflictError,
   encryptSecret,
   newId,
@@ -15,7 +16,11 @@ import { WEBHOOK_SECRET_BYTES, WEBHOOK_SECRET_PREFIX } from "./constants.ts";
 import { assertPlatform, assertUrlFree, readWebhook, toWebhookView } from "./webhook-state.ts";
 import type { CreatedWebhook } from "./types.ts";
 
-export function createWebhookSecretService(db: Db, encryptionKey: string) {
+export function createWebhookSecretService(
+  db: Db,
+  encryptionKey: string,
+  allowPrivateOutbound: boolean,
+) {
   const mint = (): { secret: string; ciphertext: string; last4: string } => {
     const secret = `${WEBHOOK_SECRET_PREFIX}${randomBytesBase64Url(WEBHOOK_SECRET_BYTES)}`;
 
@@ -33,6 +38,7 @@ export function createWebhookSecretService(db: Db, encryptionKey: string) {
       body: CreateWebhookBody,
     ): Promise<CreatedWebhook> {
       await assertPlatform(db, scope, platformId);
+      await assertSafeOutboundUrl(body.url, allowPrivateOutbound);
       await assertUrlFree(db, platformId, body.url);
 
       const { secret, ciphertext, last4 } = mint();
@@ -50,6 +56,10 @@ export function createWebhookSecretService(db: Db, encryptionKey: string) {
             secretLast4: last4,
             events: body.events,
             enabled: body.enabled ?? true,
+            expiresAt:
+              body.expiresInSeconds === undefined
+                ? null
+                : new Date(Date.now() + body.expiresInSeconds * 1000),
           })
           .returning();
 

@@ -1,32 +1,50 @@
 import * as React from "react";
 
-export function useCursorPage() {
-  const [history, setHistory] = React.useState<(string | null)[]>([null]);
-  const [pageIndex, setPageIndex] = React.useState(0);
+type CursorState = {
+  key: string;
+  history: (string | null)[];
+  index: number;
+};
 
-  const reset = React.useCallback(() => {
-    setHistory([null]);
-    setPageIndex(0);
-  }, []);
+const fresh = (key: string): CursorState => ({ key, history: [null], index: 0 });
+
+export function useCursorPage(resetKey = "") {
+  const [state, setState] = React.useState<CursorState>(() => fresh(resetKey));
+
+  const current = state.key === resetKey ? state : fresh(resetKey);
 
   const next = React.useCallback(
     (nextCursor: string) => {
-      setHistory((previous) => [...previous.slice(0, pageIndex + 1), nextCursor]);
-      setPageIndex((value) => value + 1);
+      setState((previous) => {
+        const base = previous.key === resetKey ? previous : fresh(resetKey);
+
+        return {
+          key: resetKey,
+          history: [...base.history.slice(0, base.index + 1), nextCursor],
+          index: base.index + 1,
+        };
+      });
     },
-    [pageIndex],
+    [resetKey],
   );
 
   const previous = React.useCallback(() => {
-    setPageIndex((value) => Math.max(value - 1, 0));
-  }, []);
+    setState((previous) => {
+      const base = previous.key === resetKey ? previous : fresh(resetKey);
+
+      return {
+        key: resetKey,
+        history: base.history,
+        index: Math.max(base.index - 1, 0),
+      };
+    });
+  }, [resetKey]);
 
   return {
-    cursor: history[pageIndex] ?? null,
-    pageIndex,
-    hasPrevious: pageIndex > 0,
+    cursor: current.history[current.index] ?? null,
+    pageIndex: current.index,
+    hasPrevious: current.index > 0,
     next,
     previous,
-    reset,
   };
 }

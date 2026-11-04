@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@wasanni/db";
+import type { Db, DbExecutor } from "@wasanni/db";
 import { gameSessionScore } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
@@ -20,6 +20,7 @@ import type {
 import { readGameSessionRow } from "./session.service.ts";
 import { readScoreFlags } from "./score-flags.ts";
 import type {
+  GameSessionRow,
   HidePlayerScoresInput,
   ScoreRow,
   ScoreServiceDeps,
@@ -33,13 +34,14 @@ const HIDE_BATCH_SIZE = 5_000;
 const hourBucketOf = (date: Date): Date =>
   new Date(Math.floor(date.getTime() / HOUR_MS) * HOUR_MS);
 
-const toView = (row: ScoreRow): ScoreView => ({
+const toView = (row: ScoreRow, externalName: string | null): ScoreView => ({
   id: row.id,
   organizationId: row.organizationId,
   sessionId: row.sessionId,
   platformId: row.platformId,
   gameId: row.gameId,
   externalUserId: row.externalUserId,
+  externalName,
   mode: row.mode,
   score: row.score,
   status: row.status,
@@ -52,25 +54,30 @@ const toView = (row: ScoreRow): ScoreView => ({
 
 export function createScoreService(db: Db, deps: ScoreServiceDeps) {
   const mergeIntoExisting = async (
-    scope: Scope,
-    sessionId: string,
-    flags: ScoreFlag[],
-    submittedAt: Date,
+    executor: DbExecutor,
+    input: {
+      scope: Scope;
+      sessionId: string;
+      flags: ScoreFlag[];
+      submittedAt: Date;
+    },
   ): Promise<ScoreRow> => {
-    const [existing] = await db
+    const [existing] = await executor
       .select()
       .from(gameSessionScore)
-      .where(scopeTo(scope, gameSessionScore, eq(gameSessionScore.sessionId, sessionId)))
+      .where(
+        scopeTo(input.scope, gameSessionScore, eq(gameSessionScore.sessionId, input.sessionId)),
+      )
       .limit(1);
 
     if (existing === undefined) throw new NotFoundError("score not found");
 
-    const merged = [...new Set([...existing.flags, ...flags])];
+    const merged = [...new Set([...existing.flags, ...input.flags])];
 
-    const [updated] = await db
+    const [updated] = await executor
       .update(gameSessionScore)
-      .set({ flags: merged, flagged: isFlagged(merged), updatedAt: submittedAt })
-      .where(scopeTo(scope, gameSessionScore, eq(gameSessionScore.id, existing.id)))
+      .set({ flags: merged, flagged: isFlagged(merged), updatedAt: input.submittedAt })
+      .where(scopeTo(input.scope, gameSessionScore, eq(gameSessionScore.id, existing.id)))
       .returning();
 
     if (updated === undefined) throw new NotFoundError("score not found");
@@ -78,12 +85,82 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
     return updated;
   };
 
+  const commitScore = (
+    args: {
+      scope: Scope;
+      session: GameSessionRow;
+      input: ScoreSubmitInput;
+      source: ScoreSource;
+      submittedAt: Date;
+      verificationFlags: ScoreFlag[];
+      verificationStatus: ScoreVerificationStatus;
+    },
+  ): Promise<{ row: ScoreRow; inserted: boolean }> =>
+    db.transaction(async (tx) => {
+      const { session, input, source, submittedAt, verificationFlags, verificationStatus, scope } =
+        args;
+      const insertFlags = [
+        ...new Set([
+          ...readScoreFlags(session, input.body.score, source, submittedAt, false),
+          ...verificationFlags,
+        ]),
+      ];
+
+      const [fresh] = await tx
+        .insert(gameSessionScore)
+        .values({
+          id: newId(),
+          organizationId: session.organizationId,
+          sessionId: session.id,
+          platformId: session.platformId,
+          gameId: session.gameId,
+          externalUserId: session.externalUserId,
+          mode: session.mode,
+          score: input.body.score,
+          status: "accepted",
+          flagged: isFlagged(insertFlags),
+          flags: insertFlags,
+          source,
+          verificationStatus,
+          submittedAt,
+          hourBucket: hourBucketOf(session.startedAt),
+        })
+        .onConflictDoNothing({
+          target: [gameSessionScore.sessionId, gameSessionScore.hourBucket],
+        })
+        .returning();
+
+      const scoreRow =
+        fresh ??
+        (await mergeIntoExisting(tx, {
+          scope,
+          sessionId: session.id,
+          flags: [
+            ...readScoreFlags(session, input.body.score, source, submittedAt, true),
+            ...verificationFlags,
+          ],
+          submittedAt,
+        }));
+
+      await deps.dispatcher.dispatch(
+        {
+          organizationId: scoreRow.organizationId,
+          platformId: scoreRow.platformId,
+          eventType: "score.submitted",
+          payload: toView(scoreRow, session.externalName),
+        },
+        tx,
+      );
+
+      return { row: scoreRow, inserted: fresh !== undefined };
+    });
+
   const submit = async (
     scope: Scope,
     input: ScoreSubmitInput,
     source: ScoreSource,
   ): Promise<ScoreView> => {
-    const session = await readGameSessionRow(db, scope, input.platformId, input.sessionId);
+    const session = await readGameSessionRow(db, scope, input.sessionId);
     const submittedAt = new Date();
 
     if (session.status === "ended") throw new ForbiddenError("the game session has ended");
@@ -105,12 +182,10 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
             submittedAt: submittedAt.toISOString(),
           },
         })
-        .catch(() => 0);
+        .catch(() => undefined);
 
       throw new ForbiddenError("the game session has expired");
     }
-
-    const flags = readScoreFlags(session, input.body.score, source, submittedAt, false);
 
     let verificationFlags: ScoreFlag[] = [];
     let verificationStatus: ScoreVerificationStatus = "not_required";
@@ -140,45 +215,17 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       }
     }
 
-    const allFlags = [...new Set([...flags, ...verificationFlags])];
+    const { row, inserted } = await commitScore({
+      scope,
+      session,
+      input,
+      source,
+      submittedAt,
+      verificationFlags,
+      verificationStatus,
+    });
 
-    const [inserted] = await db
-      .insert(gameSessionScore)
-      .values({
-        id: newId(),
-        organizationId: session.organizationId,
-        sessionId: session.id,
-        platformId: session.platformId,
-        gameId: session.gameId,
-        externalUserId: session.externalUserId,
-        mode: session.mode,
-        score: input.body.score,
-        status: "accepted",
-        flagged: isFlagged(allFlags),
-        flags: allFlags,
-        source,
-        verificationStatus,
-        submittedAt,
-        hourBucket: hourBucketOf(session.startedAt),
-      })
-      .onConflictDoNothing({
-        target: [gameSessionScore.sessionId, gameSessionScore.hourBucket],
-      })
-      .returning();
-
-    const row =
-      inserted ??
-      (await mergeIntoExisting(
-        scope,
-        session.id,
-        [
-          ...readScoreFlags(session, input.body.score, source, submittedAt, true),
-          ...verificationFlags,
-        ],
-        submittedAt,
-      ));
-
-    if (inserted !== undefined && deps.usage !== null) {
+    if (inserted && deps.usage !== null) {
       await deps.usage.incr({
         organizationId: session.organizationId,
         platformId: session.platformId,
@@ -190,7 +237,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       await deps.sessions.endSession(scope, session, submittedAt);
     }
 
-    const view = toView(row);
+    const view = toView(row, session.externalName);
 
     const recorder = deps.matchRecorder;
     if (recorder !== undefined && session.matchId !== null) {
@@ -204,15 +251,6 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         })
         .catch(() => undefined);
     }
-
-    await deps.dispatcher
-      .dispatch({
-        organizationId: view.organizationId,
-        platformId: view.platformId,
-        eventType: "score.submitted",
-        payload: view,
-      })
-      .catch(() => 0);
 
     return view;
   };
@@ -230,13 +268,13 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       const conditions = scopeTo(
         scope,
         gameSessionScore,
-        eq(gameSessionScore.platformId, input.platformId),
         eq(gameSessionScore.externalUserId, input.externalUserId),
         eq(gameSessionScore.status, "accepted"),
         input.gameId === undefined ? undefined : eq(gameSessionScore.gameId, input.gameId),
+        input.platformId === undefined ? undefined : eq(gameSessionScore.platformId, input.platformId),
       );
 
-      let total = 0;
+      const hiddenByPlatform = new Map<string, number>();
 
       for (;;) {
         const batch = await db
@@ -259,26 +297,35 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
               ),
             ),
           )
-          .returning({ id: gameSessionScore.id });
+          .returning({ id: gameSessionScore.id, platformId: gameSessionScore.platformId });
 
-        total += updated.length;
+        for (const row of updated) {
+          hiddenByPlatform.set(
+            row.platformId,
+            (hiddenByPlatform.get(row.platformId) ?? 0) + 1,
+          );
+        }
 
         if (batch.length < HIDE_BATCH_SIZE) break;
       }
 
+      const total = [...hiddenByPlatform.values()].reduce((sum, count) => sum + count, 0);
+
       if (total > 0) {
-        await deps.dispatcher
-          .dispatch({
-            organizationId: scope.organizationId,
-            platformId: input.platformId,
-            eventType: "score.hidden",
-            payload: {
-              externalUserId: input.externalUserId,
-              gameId: input.gameId ?? null,
-              hiddenCount: total,
-            },
-          })
-          .catch(() => 0);
+        for (const [platformId, hiddenCount] of hiddenByPlatform) {
+          await deps.dispatcher
+            .dispatch({
+              organizationId: scope.organizationId,
+              platformId,
+              eventType: "score.hidden",
+              payload: {
+                externalUserId: input.externalUserId,
+                gameId: input.gameId ?? null,
+                hiddenCount,
+              },
+            })
+            .catch(() => undefined);
+        }
       }
 
       return total;

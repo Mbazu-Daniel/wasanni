@@ -16,20 +16,26 @@ export function resolveAvatarKey(
   const extension = AVATAR_EXTENSIONS[contentType];
   if (extension === undefined) throw new BadRequestError("unsupported avatar content type");
 
-  return `members/${organizationId}/${memberId}/${newId()}.${extension}`;
+  return `${organizationId}/members/${memberId}/${newId()}.${extension}`;
 }
 
-export function assertAvatarKey(
-  key: string,
-  organizationId: string,
-  memberId: string,
-): void {
+export function assertAvatarKey(key: string, organizationId: string, memberId: string): void {
   if (!AVATAR_KEY_PATTERN.test(key)) {
     throw new NotFoundError("that avatar key is not one this api issued");
   }
 
-  if (!key.startsWith(`members/${organizationId}/${memberId}/`)) {
+  if (!key.startsWith(`${organizationId}/members/`)) {
+    throw new NotFoundError("that avatar key belongs to another organization");
+  }
+
+  if (!key.startsWith(`${organizationId}/members/${memberId}/`)) {
     throw new NotFoundError("that avatar key belongs to another member");
+  }
+}
+
+export async function assertAvatarUploaded(storage: ObjectStorage, key: string): Promise<void> {
+  if ((await storage.headObject(key)) === null) {
+    throw new BadRequestError("that avatar has not been uploaded");
   }
 }
 

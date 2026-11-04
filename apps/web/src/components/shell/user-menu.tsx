@@ -11,6 +11,7 @@ import {
   IconSettings,
 } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
+import { toastAuthError } from "@/lib/auth-error";
 import { fetchOrganizations, fetchSession } from "@/lib/session";
 import { apiFetch } from "@/lib/api-client";
 import type { MemberRow } from "@/lib/member-types";
@@ -55,14 +56,18 @@ export function UserMenu() {
   const initials = displayName.slice(0, 1).toUpperCase();
 
   async function signOut() {
-    await authClient.signOut();
+    const result = await authClient.signOut();
+    if ("error" in result && result.error) {
+      toastAuthError(result.error, "Could not sign out");
+      return;
+    }
     queryClient.clear();
     navigate({ to: "/sign-in", search: { returnTo: undefined } });
   }
 
   return (
     <details ref={useMenuDisclosure()} className="group/menu relative">
-      <summary className="flex w-full cursor-pointer list-none items-center gap-2 rounded-md p-2 text-sm transition-colors hover:bg-sidebar-accent [&::-webkit-details-marker]:hidden">
+      <summary className="flex w-full cursor-pointer list-none items-center gap-2 rounded-md p-2 text-sm transition-colors group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! hover:bg-sidebar-accent [&::-webkit-details-marker]:hidden">
         <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full border border-launch-ink/16 bg-launch-ink/[0.04] text-xs font-semibold text-launch-ink">
           {displayImage ? (
             <img src={displayImage} alt="" className="size-full object-cover" />

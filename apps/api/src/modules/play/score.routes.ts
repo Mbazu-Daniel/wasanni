@@ -8,7 +8,7 @@ import {
   SubmitScoreBody,
 } from "@wasanni/contracts";
 import { t } from "elysia";
-import { organizationScope } from "@wasanni/kit";
+import { ForbiddenError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { ScoreRouteDeps } from "./types.ts";
 
@@ -20,9 +20,11 @@ export const createScoreRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/play/sessions/:sessionId/score",
       async ({ sessionPrincipal, params, body, status }) => {
+        if (params.sessionId !== sessionPrincipal.sessionId) {
+          throw new ForbiddenError("the session token does not match this session");
+        }
         const score = await service.submitFromClient(organizationScope(sessionPrincipal), {
-          platformId: sessionPrincipal.platformId,
-          sessionId: params.sessionId,
+          sessionId: sessionPrincipal.sessionId,
           body,
         });
         return status(201, { score });
@@ -43,7 +45,6 @@ export const createScoreRoutes = <T extends PrincipalApi>(
       "/api/v1/sessions/:sessionId/score",
       async ({ principal, params, body, status }) => {
         const score = await service.submitFromServer(organizationScope(principal), {
-          platformId: principal.platformId,
           sessionId: params.sessionId,
           body,
         });
@@ -64,9 +65,9 @@ export const createScoreRoutes = <T extends PrincipalApi>(
       "/api/v1/players/:externalUserId/scores/hide",
       async ({ principal, params, body, status }) => {
         const hidden = await service.hideForPlayer(organizationScope(principal), {
-          platformId: principal.platformId,
           externalUserId: params.externalUserId,
           ...(body?.gameId === undefined ? {} : { gameId: body.gameId }),
+          ...(body?.platformId === undefined ? {} : { platformId: body.platformId }),
         });
         return status(200, { hidden });
       },

@@ -21,6 +21,7 @@ export type GameRow = {
   name: string;
   slug: string;
   description: string | null;
+  imageUrl: string | null;
   hosting: "hosted" | "external";
   status: "draft" | "active" | "archived";
   createdAt: string;
@@ -96,6 +97,13 @@ function GamesPage() {
               search={{ tab: "overview" }}
               className="group flex flex-col rounded-xl border border-border bg-card/50 p-4 transition-colors hover:border-pink/30 hover:bg-card/80"
             >
+              {game.imageUrl !== null && (
+                <img
+                  src={game.imageUrl}
+                  alt=""
+                  className="-mx-4 -mt-4 mb-3 aspect-[16/7] w-auto rounded-t-xl object-cover"
+                />
+              )}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   {game.hosting === "hosted" ? (

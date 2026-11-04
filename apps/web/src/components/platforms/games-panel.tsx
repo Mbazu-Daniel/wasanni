@@ -55,6 +55,24 @@ export function PlatformGamesPanel({
   const assignedIds = new Set(assignments.map((assignment) => assignment.gameId));
   const available = games.filter((game) => !assignedIds.has(game.id));
 
+  const unassign = async (assignment: Assignment) => {
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/games/${assignment.gameId}/assignments/${assignment.id}`,
+        { method: "DELETE" },
+      );
+      toast.success("Game removed from this platform");
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, platformId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, "all"],
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not unassign");
+    }
+  };
+
   const assign = async (gameId: string) => {
     try {
       await apiFetch(
@@ -139,17 +157,13 @@ export function PlatformGamesPanel({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {game && (
-                    <Link
-                      to="/$orgSlug/games/$gameSlug"
-                      params={{ orgSlug: organizationSlug, gameSlug: game.slug }}
-                      search={{ tab: "assignments" }}
-                    >
-                      <Button variant="ghost" size="sm">
-                        Configs
-                      </Button>
-                    </Link>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void unassign(assignment)}
+                  >
+                    Unassign
+                  </Button>
                   <Badge variant={assignment.status === "active" ? "success" : "muted"}>
                     {assignment.status}
                   </Badge>

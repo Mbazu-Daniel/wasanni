@@ -37,6 +37,7 @@ const externalUserId = Type.String({
 });
 const displayName = Type.Optional(Type.String({ maxLength: 200 }));
 const gameId = key("game id");
+const platformId = key("platform id — one of your organization's platforms");
 const sessionId = key("session id");
 const tournamentId = key("tournament id");
 const matchId = key("match id");
@@ -60,11 +61,12 @@ export const tools: Tool[] = [
   define({
     name: "session_create",
     description:
-      "Opens a game session for a player and returns the session, the sessionToken the game client posts scores with, and a realtimeUrl. Needs key permission session:create.",
+      "Opens a game session for a player on one of the organization's platforms and returns the session, the sessionToken the game client posts scores with, and a realtimeUrl. Needs key permission session:create.",
     schema: Type.Object({
+      platformId,
       gameId,
       externalUserId,
-      externalUserName: displayName,
+      externalName: displayName,
       mode: Type.Optional(Type.String({ maxLength: 80 })),
       configId: Type.Optional(key("game config id")),
       tournamentId: Type.Optional(tournamentId),
@@ -117,21 +119,29 @@ export const tools: Tool[] = [
   define({
     name: "score_hide",
     description:
-      "Hides every score of one player, optionally limited to one game, and returns { hidden }. Needs key permission score:hide.",
-    schema: Type.Object({ externalUserId, gameId: Type.Optional(gameId) }),
-    request: ({ externalUserId, gameId: game }) => ({
+      "Hides every score of one player across the organization, optionally limited to one game or platform, and returns { hidden }. Needs key permission score:hide.",
+    schema: Type.Object({
+      externalUserId,
+      gameId: Type.Optional(gameId),
+      platformId: Type.Optional(platformId),
+    }),
+    request: ({ externalUserId, gameId: game, platformId: platform }) => ({
       method: "POST",
       path: `/api/v1/players/${encodeURIComponent(externalUserId)}/scores/hide`,
-      body: game === undefined ? {} : { gameId: game },
+      body: {
+        ...(game === undefined ? {} : { gameId: game }),
+        ...(platform === undefined ? {} : { platformId: platform }),
+      },
     }),
   }),
   define({
     name: "leaderboard",
     readOnly: true,
     description:
-      "The best accepted score per player for one game as { entries }, ranked. Needs key permission score:read.",
+      "The best accepted score per player for one game as { entries }, ranked. Without platformId the board spans every platform of the organization and each entry names its platformId. Needs key permission score:read.",
     schema: Type.Object({
       gameId,
+      platformId: Type.Optional(platformId),
       mode: Type.Optional(Type.String({ maxLength: 80 })),
       limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200 })),
       offset: Type.Optional(Type.Integer({ minimum: 0 })),
@@ -156,24 +166,38 @@ export const tools: Tool[] = [
     }),
   }),
   define({
-    name: "tournament_join",
+    name: "duel_enter",
     description:
-      "Joins a player into an open tournament, or revives one they left. Refused with 409 when the tournament is full or not open. Needs key permission tournament:register.",
-    schema: Type.Object({ tournamentId, externalUserId, displayName }),
-    request: ({ tournamentId: value, externalUserId, displayName: name }) => ({
+      "Puts a player into matchmaking for a game and pairs them with another player waiting in a duel of the same game on the same platform. Returns { matchId, opponent, session, sessionToken, realtimeUrl }; a lone player comes back with opponent null and stays queued until someone else enters, and entering again re-reads their current pairing without creating a second queue entry. Scores go over the realtime socket with the sessionToken. Needs key permission session:create.",
+    schema: Type.Object({
+      platformId,
+      gameId,
+      externalUserId,
+      externalName: displayName,
+      configId: Type.Optional(key("game config id")),
+    }),
+    request: (args) => ({ method: "POST", path: "/api/v1/duels/enter", body: args }),
+  }),
+  define({
+    name: "tournament_enter",
+    description:
+      "Registers a player in an open tournament and opens their play session in one call, returning { session, sessionToken, realtimeUrl }. Refused with 409 when the tournament is full or not open. Needs key permission tournament:register.",
+    schema: Type.Object({ tournamentId, platformId, externalUserId, displayName }),
+    request: ({ tournamentId: value, platformId: platform, externalUserId, displayName: name }) => ({
       method: "POST",
-      path: `${tournamentPath(value)}/players/${encodeURIComponent(externalUserId)}/join`,
-      body: { displayName: name },
+      path: `${tournamentPath(value)}/enter`,
+      body: { platformId: platform, externalUserId, ...(name === undefined ? {} : { displayName: name }) },
     }),
   }),
   define({
     name: "tournament_leave",
     description:
       "Removes a player from a tournament. Refused once the tournament is completed. Needs key permission tournament:register.",
-    schema: Type.Object({ tournamentId, externalUserId }),
-    request: ({ tournamentId: value, externalUserId }) => ({
+    schema: Type.Object({ tournamentId, platformId, externalUserId }),
+    request: ({ tournamentId: value, platformId: platform, externalUserId }) => ({
       method: "DELETE",
       path: `${tournamentPath(value)}/players/${encodeURIComponent(externalUserId)}/leave`,
+      body: { platformId: platform },
     }),
   }),
   define({
@@ -202,17 +226,18 @@ export const tools: Tool[] = [
     name: "match_win",
     description:
       "Completes a match by naming its winning player and advances a bracket automatically. An already-completed match comes back unchanged. Needs key permission match:complete.",
-    schema: Type.Object({ matchId, externalUserId }),
-    request: ({ matchId: value, externalUserId }) => ({
+    schema: Type.Object({ matchId, platformId, externalUserId }),
+    request: ({ matchId: value, platformId: platform, externalUserId }) => ({
       method: "POST",
       path: `/api/v1/matches/${encodeURIComponent(value)}/players/${encodeURIComponent(externalUserId)}/win`,
+      body: { platformId: platform },
     }),
   }),
   define({
     name: "usage",
     readOnly: true,
     description:
-      "The counters one of your platforms produced as { period, counters }. Accepts { platformId, period: 'YYYY-MM' } and defaults to the current month. The api refuses a platformId that is not the one the key belongs to. Needs key permission audit:read.",
+      "The counters one of your platforms produced as { period, counters }. Accepts { platformId, period: 'YYYY-MM' } and defaults to the current month. The api refuses a platformId outside your organization. Needs key permission audit:read.",
     schema: Type.Object({
       platformId: key("platform id"),
       period: Type.Optional(Type.String({ pattern: "^\\d{4}-\\d{2}$" })),

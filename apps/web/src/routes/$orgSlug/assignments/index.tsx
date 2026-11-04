@@ -1,17 +1,21 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   IconLink,
   IconDeviceGamepad2,
   IconBroadcast,
-  IconSettings,
-  IconSearch,
+  IconPlus,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 import { PageHeader } from "@/components/primitives/page-header";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { StatusPill } from "@/components/primitives/status-pill";
@@ -38,13 +42,20 @@ export const Route = createFileRoute("/$orgSlug/assignments/")({
 
 function AssignmentsMatrixPage() {
   const { org } = Route.useRouteContext();
+  const queryClient = useQueryClient();
   const organizationId = org?.id ?? "";
-  const orgSlug = org?.slug ?? "";
 
-  const [query, setQuery] = React.useState("");
+  const [gameFilter, setGameFilter] = React.useState("");
+  const [platformFilter, setPlatformFilter] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<
     "all" | "active" | "disabled"
   >("all");
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignGameId, setAssignGameId] = React.useState("");
+  const [assignPlatformId, setAssignPlatformId] = React.useState("");
+  const [assigning, setAssigning] = React.useState(false);
+  const [unassigning, setUnassigning] = React.useState<AssignmentRow | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["assignments", organizationId, "all"],
@@ -54,20 +65,28 @@ function AssignmentsMatrixPage() {
       ).then((response) => response.assignments),
   });
 
+  const { data: games = [] } = useQuery({
+    queryKey: ["games", organizationId],
+    queryFn: () =>
+      apiFetch<{ games: { id: string; name: string; slug: string }[] }>(
+        `/api/v1/organizations/${organizationId}/games`,
+      ).then((response) => response.games),
+  });
+
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms", organizationId],
+    queryFn: () =>
+      apiFetch<{
+        platforms: { id: string; name: string; slug: string }[];
+      }>(`/api/v1/organizations/${organizationId}/platforms`).then(
+        (response) => response.platforms,
+      ),
+  });
+
   const filtered = assignments.filter((row) => {
     if (statusFilter !== "all" && row.status !== statusFilter) return false;
-
-    if (query.trim()) {
-      const needle = query.toLowerCase();
-
-      return (
-        row.gameName.toLowerCase().includes(needle) ||
-        row.gameSlug.toLowerCase().includes(needle) ||
-        row.platformName.toLowerCase().includes(needle) ||
-        row.platformSlug.toLowerCase().includes(needle)
-      );
-    }
-
+    if (gameFilter !== "" && row.gameId !== gameFilter) return false;
+    if (platformFilter !== "" && row.platformId !== platformFilter) return false;
     return true;
   });
 
@@ -78,10 +97,58 @@ function AssignmentsMatrixPage() {
     platforms: new Set(assignments.map((row) => row.platformId)).size,
   };
 
+  async function assign() {
+    if (assignGameId === "" || assignPlatformId === "") return;
+
+    setAssigning(true);
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/games/${assignGameId}/assignments`,
+        { method: "POST", data: JSON.stringify({ platformId: assignPlatformId }) },
+      );
+      toast.success("Game assigned");
+      setAssignOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, "all"],
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not assign");
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function unassign() {
+    if (unassigning === null) return;
+
+    setBusy(true);
+    try {
+      await apiFetch(
+        `/api/v1/organizations/${organizationId}/games/${unassigning.gameId}/assignments/${unassigning.id}`,
+        { method: "DELETE" },
+      );
+      toast.success("Game unassigned");
+      setUnassigning(null);
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", organizationId, "all"],
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not unassign");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Assignments"
+        actions={
+          <Button size="sm" className="gap-1.5" onClick={() => setAssignOpen(true)}>
+            <IconPlus className="size-3.5" />
+            Assign
+          </Button>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -92,15 +159,29 @@ function AssignmentsMatrixPage() {
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1">
-          <IconSearch className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by game or platform"
-            className="pl-8"
-          />
-        </div>
+        <SearchableSelect
+          value={gameFilter}
+          onValueChange={setGameFilter}
+          placeholder="All games"
+          options={[
+            { value: "", label: "All games" },
+            ...games.map((game) => ({ value: game.id, label: game.name })),
+          ]}
+          className="w-48"
+        />
+        <SearchableSelect
+          value={platformFilter}
+          onValueChange={setPlatformFilter}
+          placeholder="All platforms"
+          options={[
+            { value: "", label: "All platforms" },
+            ...platforms.map((platform) => ({
+              value: platform.id,
+              label: platform.name,
+            })),
+          ]}
+          className="w-48"
+        />
         <div className="flex rounded-lg border border-border p-0.5 text-xs">
           {(["all", "active", "disabled"] as const).map((option) => (
             <button
@@ -129,14 +210,16 @@ function AssignmentsMatrixPage() {
           <EmptyState
             icon={<IconLink className="size-5" />}
             title="No assignments yet"
-            description="Assign a game to a platform from the game's Assignments tab. Every assignment you create appears here."
+            description="Assign a game to a platform so it can open sessions and receive scores."
             primary={
-              <Link to="/$orgSlug/games" params={{ orgSlug }}>
-                <Button variant="outline" className="gap-1.5">
-                  <IconDeviceGamepad2 className="size-3.5" />
-                  Go to games
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setAssignOpen(true)}
+              >
+                <IconPlus className="size-3.5" />
+                Assign a game
+              </Button>
             }
           />
         ) : filtered.length === 0 ? (
@@ -162,7 +245,7 @@ function AssignmentsMatrixPage() {
                   <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     Assigned
                   </th>
-                  <th className="w-32 px-4 py-2.5" />
+                  <th className="w-28 px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
@@ -184,22 +267,17 @@ function AssignmentsMatrixPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 align-middle">
-                      <Link
-                        to="/$orgSlug/platforms/$platformSlug"
-                        params={{ orgSlug, platformSlug: row.platformSlug }}
-                        search={{ tab: "games" }}
-                        className="group flex items-center gap-2"
-                      >
-                        <IconBroadcast className="size-3.5 text-muted-foreground group-hover:text-blue" />
+                      <div className="flex items-center gap-2">
+                        <IconBroadcast className="size-3.5 text-muted-foreground" />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium group-hover:text-blue">
+                          <p className="truncate text-sm font-medium">
                             {row.platformName}
                           </p>
                           <p className="font-mono text-[11px] text-muted-foreground">
                             {row.platformSlug}
                           </p>
                         </div>
-                      </Link>
+                      </div>
                     </td>
                     <td className="px-4 py-3 align-middle">
                       <StatusPill status={row.status} />
@@ -208,19 +286,14 @@ function AssignmentsMatrixPage() {
                       {formatDateTime(row.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-right align-middle">
-                      <Link
-                        to="/$orgSlug/games/$gameSlug/assignments/$platformSlug"
-                        params={{
-                          orgSlug,
-                          gameSlug: row.gameSlug,
-                          platformSlug: row.platformSlug,
-                        }}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-rose-300"
+                        onClick={() => setUnassigning(row)}
                       >
-                        <Button variant="ghost" size="sm" className="gap-1.5">
-                          <IconSettings className="size-3.5" />
-                          Configs
-                        </Button>
-                      </Link>
+                        Unassign
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -229,6 +302,71 @@ function AssignmentsMatrixPage() {
           </div>
         )}
       </div>
+
+      <Dialog
+        open={assignOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignGameId("");
+            setAssignPlatformId("");
+          }
+          setAssignOpen(open);
+        }}
+        title="Assign a game to a platform"
+      >
+        <div className="mt-5 space-y-3">
+          <div className="space-y-1.5">
+            <Label>Game</Label>
+            <Select
+              value={assignGameId}
+              onValueChange={setAssignGameId}
+              options={games.map((game) => ({
+                value: game.id,
+                label: `${game.name} (${game.slug})`,
+              }))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Platform</Label>
+            <Select
+              value={assignPlatformId}
+              onValueChange={setAssignPlatformId}
+              options={platforms.map((platform) => ({
+                value: platform.id,
+                label: `${platform.name} (${platform.slug})`,
+              }))}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setAssignOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={assign}
+              disabled={assigning || assignGameId === "" || assignPlatformId === ""}
+            >
+              {assigning ? "Assigning…" : "Assign"}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <ConfirmDialog
+        open={unassigning !== null}
+        onOpenChange={(open) => !open && setUnassigning(null)}
+        title={`Unassign ${unassigning?.gameName ?? "this game"}?`}
+        description="The platform stops opening sessions for this game. The game is not deleted."
+        confirmLabel="Unassign"
+        destructive
+        busy={busy}
+        onConfirm={unassign}
+      />
     </div>
   );
 }
