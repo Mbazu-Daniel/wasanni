@@ -307,7 +307,7 @@ export const createGameTools = (input: WriteContext & {
     create_game: createTool({
       id: "create_game",
       description:
-        "Create a game in this organization with a name, a slug, and hosting external for a game you serve yourself or hosted for one this platform serves. This binds the chat to the new game automatically, so deploy_game can publish its html next.",
+        "Create a game in this organization with a name, a slug, and hosting external for a game you serve yourself or hosted for one this platform serves. Call list_games first in this turn; if the named game is listed, reuse its id and never call this. This binds the chat to the new game automatically, so deploy_game can publish its html next.",
       inputSchema: toStandardSchema<CreateGameBody>(CreateGameBody),
       requireApproval: true,
       execute: (body) =>
@@ -404,7 +404,7 @@ export const createIntegratorTools = (
     create_tournament: createTool({
       id: "create_tournament",
       description:
-        "Create a tournament in draft for a game of this organization, with format leaderboard or bracket and a slug unique in the organization. Resolve the gameId with list_games first. It stays in draft until open_tournament, so players cannot register yet.",
+        "Create a tournament in draft for a game of this organization, with format leaderboard or bracket and a slug unique in the organization. Resolve the gameId with list_games first, then call list_tournaments for that game; if a tournament is already open for it, ask whether to use its id or create another instead of calling this. It stays in draft until open_tournament, so players cannot register yet.",
       inputSchema: toStandardSchema<CreateTournamentBody>(CreateTournamentBody),
       requireApproval: true,
       execute: (body) =>
@@ -540,7 +540,7 @@ export const createIntegratorTools = (
     create_platform: createTool({
       id: "create_platform",
       description:
-        "Create a platform in this organization with a name and a slug of 2-60 [a-z0-9-] characters. A platform is one place the organization's games are used; sessions and leaderboards name one of its ids, and a game takes sessions only on platforms it is assigned to.",
+        "Create a platform in this organization with a name and a slug of 2-60 [a-z0-9-] characters. Call list_platforms first in this turn; if the named platform is listed, reuse its id and never call this. A platform is one place the organization's games are used; sessions and leaderboards name one of its ids, and a game takes sessions only on platforms it is assigned to.",
       inputSchema: toStandardSchema<CreatePlatformBody>(CreatePlatformBody),
       requireApproval: true,
       execute: (body) =>

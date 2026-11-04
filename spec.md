@@ -743,7 +743,7 @@ need only an overlap window.
 | Pool sizes bounded per process | `DB_POOL_MAX`, `DB_POOL_MAX_WORKER`, `DB_POOL_MAX_REALTIME` |
 | Redis must be `maxmemory-policy noeviction`, and file-descriptor limits adequate | `preflight()` in `@wasanni/kit`, called by all three apps; warns outside production, refuses to boot inside it |
 | Migrations are reviewed SQL | `bun run db:generate` writes SQL from the Drizzle schema; a human reads it and commits it; CI applies it against a real Postgres |
-| `nofile` limit | set in the systemd unit (the one that matters), `/etc/security/limits.conf`, the shell; `docker-compose.prod.yml` carries `ulimits.nofile` for every service |
+| `nofile` limit | set in the systemd unit (the one that matters), `/etc/security/limits.conf`, the shell; prod runs the `Dockerfile` image directly, so no compose file carries limits |
 | Prometheus scrape | `/metrics` needs no token; restrict it at the ingress |
 
 ## 21. Verification
