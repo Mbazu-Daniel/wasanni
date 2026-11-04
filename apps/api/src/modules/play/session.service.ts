@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import {
   game as gameTable,
+  gameFile,
   gameSession,
   joinCode,
   match,
@@ -35,6 +36,7 @@ import {
   readGameState,
 } from "../games/game-state.ts";
 import type { GameSessionRow, SessionCreateInput, SessionServiceDeps } from "./types.ts";
+import { gamePlayUrl, type PlayUrlFile } from "./play-url.ts";
 
 const JOIN_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -351,8 +353,32 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       if (code === null) throw new InternalServerError("a join code could not be issued");
 
-      const apiBase = deps.apiBaseUrl.replace(/\/+$/, "");
-      const playUrl = `${apiBase}/s/${namedPlatform.slug}/${namedGame.slug}/?sessionId=${row.id}&code=${code}`;
+      let file: PlayUrlFile = null;
+      if (row.gameFileId !== null) {
+        const [build] = await db
+          .select({
+            kind: gameFile.kind,
+            objectKey: gameFile.objectKey,
+            entryPoint: gameFile.entryPoint,
+            servedPrefix: gameFile.servedPrefix,
+          })
+          .from(gameFile)
+          .where(scopeTo(scope, gameFile, eq(gameFile.id, row.gameFileId)))
+          .limit(1);
+        if (build !== undefined) file = build;
+      }
+
+      const playUrl = gamePlayUrl({
+        storage: deps.storage,
+        apiBaseUrl: deps.apiBaseUrl,
+        platformSlug: namedPlatform.slug,
+        gameSlug: namedGame.slug,
+        file,
+        tournamentId: row.tournamentId,
+        matchId: row.matchId,
+        externalUserId: row.externalUserId,
+        code,
+      });
       const realtimeBase = deps.realtimeBaseUrl.replace(/\/+$/, "");
       const realtimeUrl = `${realtimeBase}${REALTIME_PATH}/${row.id}?token=${encodeURIComponent(sessionToken)}`;
 

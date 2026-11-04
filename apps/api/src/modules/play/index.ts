@@ -13,12 +13,14 @@ import type { PlayDeps, PlayRouteDeps, PlayServices } from "./types.ts";
 
 export const createPlayServices = (deps: PlayDeps): PlayServices => {
   const joins = createJoinService(deps.db, {
+    storage: deps.storage,
     apiBaseUrl: deps.apiBaseUrl,
     realtimeBaseUrl: deps.realtimeBaseUrl,
   });
   const sessions = createSessionService(deps.db, {
     dispatcher: deps.dispatcher,
     enqueuer: deps.enqueuer,
+    storage: deps.storage,
     apiBaseUrl: deps.apiBaseUrl,
     realtimeBaseUrl: deps.realtimeBaseUrl,
     verifier: deps.verifier,

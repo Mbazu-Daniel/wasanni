@@ -1,10 +1,12 @@
 import { and, eq, gt } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { game, gameSession, joinCode, platform } from "@wasanni/db/schema";
-import { NotFoundError, sha256Hex } from "@wasanni/kit";
+import { game, gameFile, gameSession, joinCode, platform } from "@wasanni/db/schema";
+import { NotFoundError, sha256Hex, type ObjectStorage } from "@wasanni/kit";
 import { REALTIME_PATH, type JoinResolveView } from "@wasanni/contracts";
+import { gamePlayUrl, type PlayUrlFile } from "./play-url.ts";
 
 export type JoinServiceDeps = {
+  storage: ObjectStorage;
   apiBaseUrl: string;
   realtimeBaseUrl: string;
 };
@@ -21,6 +23,7 @@ export function createJoinService(db: Db, deps: JoinServiceDeps) {
           sessionId: gameSession.id,
           platformSlug: platform.slug,
           gameSlug: game.slug,
+          gameFileId: gameSession.gameFileId,
           tournamentId: gameSession.tournamentId,
           matchId: gameSession.matchId,
           externalUserId: gameSession.externalUserId,
@@ -42,11 +45,35 @@ export function createJoinService(db: Db, deps: JoinServiceDeps) {
 
       if (found === undefined) throw new NotFoundError("join code not found");
 
-      const apiBase = deps.apiBaseUrl.replace(/\/+$/, "");
+      let file: PlayUrlFile = null;
+      if (found.gameFileId !== null) {
+        const [build] = await db
+          .select({
+            kind: gameFile.kind,
+            objectKey: gameFile.objectKey,
+            entryPoint: gameFile.entryPoint,
+            servedPrefix: gameFile.servedPrefix,
+          })
+          .from(gameFile)
+          .where(eq(gameFile.id, found.gameFileId))
+          .limit(1);
+        if (build !== undefined) file = build;
+      }
+
       const realtimeBase = deps.realtimeBaseUrl.replace(/\/+$/, "");
 
       return {
-        playUrl: `${apiBase}/s/${found.platformSlug}/${found.gameSlug}/?sessionId=${found.sessionId}&code=${code}`,
+        playUrl: gamePlayUrl({
+          storage: deps.storage,
+          apiBaseUrl: deps.apiBaseUrl,
+          platformSlug: found.platformSlug,
+          gameSlug: found.gameSlug,
+          file,
+          tournamentId: found.tournamentId,
+          matchId: found.matchId,
+          externalUserId: found.externalUserId,
+          code,
+        }),
         realtimeUrl: `${realtimeBase}${REALTIME_PATH}/${found.sessionId}?token=${code}`,
         sessionId: found.sessionId,
         platformSlug: found.platformSlug,

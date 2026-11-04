@@ -76,15 +76,24 @@ that platform with no cache lifetime, or by a timestamped
 
 ## Join codes
 
-Every session, tournament enter, and duel enter answers `joinCode`, a 10-character alphanumeric
-code, and `playUrl`. Give the player the code, not the token: the game
-resolves it with `GET /api/v1/join/{code}` — no key, rate-limited per caller —
-and gets back the `playUrl` to load, the `realtimeUrl` socket to play on, and
-the `platformSlug` and `gameSlug` it resolved to. The code is the session
+Every session, tournament enter, and duel enter answers `joinCode`, a
+10-character alphanumeric code, and `playUrl`. The play url is the game's
+public build with the tournament context on it:
+`{gameUrl}?tournamentId={id}&externalUserId={player}&code={joinCode}`. Give
+the player that url, or just the code: the game resolves it with
+`GET /api/v1/join/{code}` — no key, rate-limited per caller — and gets back
+the `playUrl` to load, the `realtimeUrl` socket to play on, and the platform,
+game, tournament, match, and player it resolved to. The code is the session
 credential: the client opens the socket with `?token=<code>` and sends
 `{"type":"score","score":n}` over it, or posts with
-`Authorization: Bearer <code>`. A code stops working when its session ends or
-expires, and wrong guesses answer 404.
+`Authorization: Bearer <code>`, and every score lands in that session in that
+tournament. The game itself stays simple: it reads the code from the url,
+joins, and plays. A code stops working when its session ends or expires, and
+wrong guesses answer 404.
+
+The platform server mints the url with its own key: enter the tournament or
+open a session with `tournamentId` and the player's `externalUserId`, and hand
+the player the resulting `playUrl`. The key never reaches the browser.
 
 ## What a platform used
 
