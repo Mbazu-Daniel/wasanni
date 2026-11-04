@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     command:
       - postgres
       - -c
@@ -8,34 +8,34 @@ services:
       - -c
       - shared_buffers=256MB
     environment:
-      POSTGRES_USER: wasanni
-      POSTGRES_PASSWORD: wasanni
-      POSTGRES_DB: wasanni
+      POSTGRES_USER: ${POSTGRES_USER:-wasanni}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wasanni}
+      POSTGRES_DB: ${POSTGRES_DB:-wasanni}
     ports: ["5440:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes: ["pgdata:/var/lib/postgresql"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wasanni -d wasanni"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wasanni} -d ${POSTGRES_DB:-wasanni}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  pgbouncer:
-    image: edoburu/pgbouncer:latest
+  pgdog:
+    image: ghcr.io/pgdogdev/pgdog:main
+    command: ["/usr/local/bin/pgdog", "run", "-p", "50"]
     environment:
-      DB_USER: wasanni
-      DB_PASSWORD: wasanni
-      DB_HOST: postgres
-      DB_NAME: wasanni
-      POOL_MODE: transaction
-      LISTEN_PORT: "6432"
-      MAX_CLIENT_CONN: 10000
-      DEFAULT_POOL_SIZE: 50
-      RESERVE_POOL_SIZE: 10
-      AUTH_TYPE: scram-sha-256
+      PGDOG_DATABASE_URL_1: postgres://${POSTGRES_USER:-wasanni}:${POSTGRES_PASSWORD:-wasanni}@postgres:5432/${POSTGRES_DB:-wasanni}
+    volumes:
+      - ./deploy/pgdog.toml:/pgdog/pgdog.toml:ro
+      - ./deploy/users.toml:/pgdog/users.toml:ro
     ports: ["6432:6432"]
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "(echo > /dev/tcp/127.0.0.1/6432) >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   redis:
     image: redis:7-alpine
