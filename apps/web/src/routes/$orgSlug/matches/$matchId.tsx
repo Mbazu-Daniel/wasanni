@@ -324,7 +324,7 @@ function ScoreRow({
     >
       <td className="px-4 py-3 align-middle">
         {participant.placement === null ? (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">Unplaced</span>
         ) : participant.placement === 1 ? (
           <span className="grid size-7 place-items-center rounded-full bg-pink/15 font-mono text-xs font-bold text-pink">
             1

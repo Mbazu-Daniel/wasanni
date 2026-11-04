@@ -9,7 +9,7 @@ vocabulary: [`GLOSSARY.md`](GLOSSARY.md). Binding rules for agents:
 ## Requirements
 
 - Bun ≥ 1.1
-- Docker (for Postgres, PgBouncer and Redis)
+- Docker (for Postgres, PgDog, Redis and LocalStack)
 
 ## First run
 
@@ -21,11 +21,16 @@ bun run db:migrate
 bun run dev
 ```
 
-`docker-compose.yml` runs Postgres on 5432, PgBouncer in transaction mode on
-6432 and Redis on 6379. `DATABASE_URL` decides which one the api talks to, and
-`createDb` turns prepared statements off when it points at the pooler. Deploying,
-file descriptor limits and why Redis must keep `noeviction`:
-[`deploy/README.md`](deploy/README.md).
+`docker-compose.yml` runs Postgres on 5440, PgDog on 6432, Redis on 6390 with
+`noeviction`, and LocalStack on 4566. `.env.example` points `DATABASE_URL` at
+Postgres and carries the pooled PgDog URL commented beside it; `createDb` turns
+prepared statements off when the URL names a pooler port. `deploy/pgdog.toml`
+holds the pooler port and `default_pool_size`, and `deploy/users.toml` is the
+credentials file PgDog mounts, empty here so no database role is committed. The
+api image is built by `Dockerfile` and published to ghcr.io by
+`.github/workflows/api-ci.yml` on `main` pushes, while
+`deploy/wasanni-api.service` runs the api from source with raised file descriptor
+limits.
 
 Then:
 

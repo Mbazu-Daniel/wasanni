@@ -158,7 +158,7 @@ export function ConfigsPanel({
           <h2 className="text-sm font-semibold">Configs</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {configs.length === 0
-              ? "No configs yet — sessions fall back to an empty config, which accepts every score without flags."
+              ? "No configs yet: sessions fall back to an empty config, which accepts every score without flags."
               : "Exactly one config can be the default. Sessions pick the default when no config is specified."}
           </p>
         </div>

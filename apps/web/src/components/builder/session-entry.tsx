@@ -1,7 +1,6 @@
 import * as React from "react";
 import { IconPencil, IconPin, IconTrash } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { formatUsd } from "@/lib/format";
 import type { AgentProjectView, AgentSessionView } from "@/lib/agent-types";
 
 export function SessionEntry({
@@ -83,7 +82,7 @@ export function SessionEntry({
               : "mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-launch-ink/55"
           }
         >
-          {session.runs} {session.runs === 1 ? "run" : "runs"} · {formatUsd(session.costMicros)}
+          {session.runs} {session.runs === 1 ? "run" : "runs"}
         </p>
       </button>
       <div className="flex shrink-0 items-start gap-0.5">

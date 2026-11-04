@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { StreamErrorRetryProcessor, TokenLimiterProcessor } from "@mastra/core/processors";
+import { StreamErrorRetryProcessor } from "@mastra/core/processors";
 import { RequestContext } from "@mastra/core/request-context";
 import { createTool } from "@mastra/core/tools";
 import type { MastraModelOutput } from "@mastra/core/stream";
@@ -7,7 +7,6 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { AgentPendingApproval, RunAgentBody } from "@wasanni/contracts";
 import { assertSafeOutboundUrl } from "@wasanni/kit";
 import {
-  DEFAULT_REQUEST_TOKEN_LIMIT,
   MAX_AGENT_STEPS,
   RUN_TIMEOUT_MS,
 } from "./constants.ts";
@@ -20,11 +19,7 @@ export type AgentTool = ReturnType<typeof createTool>;
 
 export type AgentRunOutcome = {
   readonly parked: boolean;
-  readonly promptTokens: number;
-  readonly completionTokens: number;
-  readonly cacheReadTokens: number;
   readonly contentFilter: boolean;
-  readonly trimmedMessages: number;
 };
 
 type AgentSetup = {
@@ -49,14 +44,12 @@ const modelOf = (endpoint: ProviderEndpoint, baseUrl: string) =>
 
 const prepare = async (
   input: AgentSetup,
-): Promise<{ agent: Agent; context: RequestContext; trimmedMessages: () => number }> => {
+): Promise<{ agent: Agent; context: RequestContext }> => {
   const baseUrl = (
     await assertSafeOutboundUrl(input.endpoint.baseUrl, input.endpoint.allowPrivateOutbound)
   )
     .toString()
     .replace(/\/+$/, "");
-
-  let trimmed = 0;
 
   const agent = new Agent({
     id: "wasanni-builder",
@@ -65,17 +58,7 @@ const prepare = async (
     model: modelOf(input.endpoint, baseUrl),
     tools: input.tools,
     memory: input.runtime.memory,
-    inputProcessors: [
-      historyCompat,
-      new TokenLimiterProcessor({
-        limit: input.endpoint.maxRequestTokens ?? DEFAULT_REQUEST_TOKEN_LIMIT,
-        strategy: "truncate",
-        trimMode: "memory-only",
-        onMemoryTrim: async (removed) => {
-          trimmed += removed.length;
-        },
-      }),
-    ],
+    inputProcessors: [historyCompat],
     errorProcessors: [new StreamErrorRetryProcessor({ maxRetries: 0 })],
     maxProcessorRetries: 0,
     mastra: input.runtime.mastra,
@@ -84,13 +67,11 @@ const prepare = async (
   return {
     agent,
     context: new RequestContext([["requestId", input.requestId]]),
-    trimmedMessages: () => trimmed,
   };
 };
 
 const consume = async function* (
   stream: MastraModelOutput,
-  trimmedMessages: () => number,
   agentRunId: string,
 ): AsyncGenerator<RunEvent, AgentRunOutcome, void> {
   let step = 0;
@@ -154,15 +135,9 @@ const consume = async function* (
     }
   }
 
-  const usage = await stream.usage;
-
   return {
     parked,
-    promptTokens: usage.inputTokens ?? 0,
-    completionTokens: usage.outputTokens ?? 0,
-    cacheReadTokens: usage.cachedInputTokens ?? 0,
     contentFilter,
-    trimmedMessages: trimmedMessages(),
   };
 };
 
@@ -177,7 +152,7 @@ export const runAgent = async function* (
     readonly signal?: AbortSignal;
   },
 ): AsyncGenerator<RunEvent, AgentRunOutcome, void> {
-  const { agent, context, trimmedMessages } = await prepare(input);
+  const { agent, context } = await prepare(input);
 
   const attachments = input.attachments ?? [];
 
@@ -206,7 +181,7 @@ export const runAgent = async function* (
     abortSignal: withTimeout(input.signal),
   });
 
-  return yield* consume(stream, trimmedMessages, input.agentRunId);
+  return yield* consume(stream, input.agentRunId);
 };
 
 export const resumeAgentRun = async function* (
@@ -217,7 +192,7 @@ export const resumeAgentRun = async function* (
     readonly signal?: AbortSignal;
   },
 ): AsyncGenerator<RunEvent, AgentRunOutcome, void> {
-  const { agent, context, trimmedMessages } = await prepare(input);
+  const { agent, context } = await prepare(input);
 
   const stream = input.approved
     ? await agent.approveToolCall({
@@ -236,7 +211,7 @@ export const resumeAgentRun = async function* (
         abortSignal: withTimeout(input.signal),
       });
 
-  return yield* consume(stream, trimmedMessages, input.agentRunId);
+  return yield* consume(stream, input.agentRunId);
 };
 
 export const pendingApprovals = async (

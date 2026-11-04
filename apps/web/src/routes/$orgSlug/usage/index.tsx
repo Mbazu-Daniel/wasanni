@@ -5,7 +5,6 @@ import { apiFetch } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select } from "@/components/ui/select";
 import { Chart } from "@/components/usage/daily-chart";
-import { AgentSpend } from "@/components/usage/agent-spend";
 import type { DailyMetric } from "@/lib/usage-types";
 import type { UsageDailyView } from "@/lib/usage-types";
 import type { PlatformView } from "@/lib/platform-types";
@@ -107,10 +106,10 @@ function UsagePage() {
 
   const rows = daily?.rows ?? [];
   const total = rows.reduce((sum, row) => sum + row.value, 0);
-  const peak = rows.reduce(
-    (best, row) => (row.value > best.value ? row : best),
-    { date: "—", value: 0 },
-  );
+  const peak =
+    rows.length === 0
+      ? null
+      : rows.reduce((best, row) => (row.value > best.value ? row : best));
   const activeDays = rows.filter((row) => row.value > 0).length;
 
   return (
@@ -128,10 +127,12 @@ function UsagePage() {
           <p className="mt-2 max-w-xl text-sm text-paper/70">{source.hint}</p>
 
           <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-paper/15 pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/60">
-            <span>
-              Peak <span className="text-paper">{peak.value.toLocaleString()}</span>{" "}
-              on {peak.date}
-            </span>
+            {peak !== null && (
+              <span>
+                Peak <span className="text-paper">{peak.value.toLocaleString()}</span> on{" "}
+                {peak.date}
+              </span>
+            )}
             <span>
               Active days{" "}
               <span className="text-paper">
@@ -243,7 +244,6 @@ function UsagePage() {
         </div>
       )}
 
-      <AgentSpend organizationId={organizationId} days={days} />
     </div>
   );
 }

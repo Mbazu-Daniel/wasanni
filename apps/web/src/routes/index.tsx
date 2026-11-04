@@ -6,7 +6,7 @@ import { Landing } from "@/components/landing/landing";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Wasanni — Build it. Play it. Bring a crowd." },
+      { title: "Wasanni: Build it. Play it. Bring a crowd." },
       { name: "theme-color", content: "#06141b" },
       {
         name: "description",

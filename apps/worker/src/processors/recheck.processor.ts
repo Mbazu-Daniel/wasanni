@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { gameConfig, gameSession, gameSessionScore } from "@wasanni/db/schema";
-import { readRuleFlags, SCORE_RULE_FLAGS } from "@wasanni/kit";
+import { isFlagged, readRuleFlags, SCORE_CONFIG_FLAGS } from "@wasanni/kit";
 import type { ScoreRecheckJob } from "@wasanni/jobs";
 
 const MAX_ROWS = 5000;
@@ -47,9 +47,9 @@ export function createRecheckProcessor(db: Db) {
         (row.submittedAt.getTime() - row.startedAt.getTime()) / 1000,
       );
 
-      const ruleFlags = readRuleFlags(config.config, row.score, durationSeconds);
-      const factFlags = row.flags.filter((flag) => !SCORE_RULE_FLAGS.includes(flag));
-      const merged = [...new Set([...factFlags, ...ruleFlags])];
+      const configFlags = readRuleFlags(config.config, row.score, durationSeconds);
+      const keptFlags = row.flags.filter((flag) => !SCORE_CONFIG_FLAGS.includes(flag));
+      const merged = [...new Set([...keptFlags, ...configFlags])];
 
       const unchanged =
         merged.length === row.flags.length &&
@@ -61,7 +61,7 @@ export function createRecheckProcessor(db: Db) {
         .update(gameSessionScore)
         .set({
           flags: merged,
-          flagged: ruleFlags.length > 0,
+          flagged: isFlagged(merged),
           updatedAt: new Date(),
         })
         .where(eq(gameSessionScore.id, row.scoreId));

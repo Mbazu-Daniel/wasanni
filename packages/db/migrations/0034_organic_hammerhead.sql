@@ -1,0 +1,1 @@
+ALTER TABLE "game_session_score" ADD COLUMN "verification_reason" text;

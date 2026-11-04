@@ -87,7 +87,7 @@ function SignInPage() {
         <em>back.</em>
       </h1>
       <p className="mt-3 text-sm leading-6 text-ink/70">
-        Pick up where you left off — your organizations, builds and boards are
+        Pick up where you left off: your organizations, builds and boards are
         waiting.
       </p>
 

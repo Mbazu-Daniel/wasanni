@@ -11,7 +11,11 @@ import type {
   ListGamesQuery,
   UpdateGameBody,
 } from "@wasanni/contracts";
-import { assertImageKey, createImageUploadTicket } from "../image/index.ts";
+import {
+  assertImageKey,
+  assertImageUploaded,
+  createImageUploadTicket,
+} from "../image/index.ts";
 import { hasReadyGameFile } from "./game-state.ts";
 import type { GameRow } from "./types.ts";
 
@@ -162,8 +166,7 @@ export function createGameService(db: Db, storage: ObjectStorage) {
       await this.get(scope, gameId);
       return createImageUploadTicket(
         storage,
-        scope.organizationId,
-        "games",
+        `${scope.organizationId}/games/`,
         contentType,
       );
     },
@@ -173,7 +176,8 @@ export function createGameService(db: Db, storage: ObjectStorage) {
       gameId: string,
       key: string,
     ): Promise<GameView> {
-      assertImageKey(key, scope.organizationId, "games");
+      assertImageKey(key, `${scope.organizationId}/games/`);
+      await assertImageUploaded(storage, key);
 
       const [row] = await db
         .update(game)

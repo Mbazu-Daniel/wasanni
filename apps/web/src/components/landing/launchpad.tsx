@@ -7,6 +7,7 @@ import {
   IconPlayerPlay,
   IconTrophy,
 } from "@tabler/icons-react";
+import { Integration } from "./integration";
 
 const capabilities = [
   {
@@ -18,7 +19,7 @@ const capabilities = [
   {
     number: "02",
     title: "Make it a game",
-    body: "Open sessions, keep player identity in your system, and send scores through an API built for browser games.",
+    body: "Open sessions against your own user IDs, send scores through an API built for browser games, and get back the verdict each one earned.",
     icon: IconBolt,
   },
   {
@@ -28,6 +29,27 @@ const capabilities = [
     icon: IconTrophy,
   },
 ];
+
+const deployCode = `const api = "https://api.wasanni.com/api/v1";
+
+// 1. ask for an upload target for the build
+const { file, upload } = await fetch(\`\${api}/organizations/\${org}/games/\${game}/files/upload\`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    filename: "drift-kings.zip",
+    version: "1.4.2",
+    contentType: "application/zip",
+    sizeBytes: zip.length,
+  }),
+}).then((r) => r.json());
+
+// 2. the bytes, then confirm, then publish
+await fetch(upload.url, { method: "PUT", body: zip });
+await fetch(\`\${api}/games/\${game}/files/\${file.id}/complete\`, { method: "POST" });
+await fetch(\`\${api}/games/\${game}/publish\`, { method: "POST" });
+
+→ wasanni.com/play/{gameId}/{fileId}/index.html`;
 
 const audience = [
   {
@@ -56,6 +78,7 @@ export function Launchpad() {
           <nav className="launch-links" aria-label="Main navigation">
             <a href="#how-it-works">How it works</a>
             <a href="#platform">Platform</a>
+            <a href="#integration">Integrate</a>
             <a href="#competition">Competition</a>
             <Link to="/docs">Docs</Link>
           </nav>
@@ -93,7 +116,7 @@ export function Launchpad() {
               <div className="launch-game-window">
                 <div className="launch-game-topbar">
                   <span className="launch-window-dots"><i /><i /><i /></span>
-                  <span className="launch-game-url">wasanni.com/play/drift-kings</span>
+                  <span className="launch-game-url">wasanni.com/play/0194…c22/0194…f31/index.html</span>
                   <span className="launch-live-pill">LIVE</span>
                 </div>
                 <div className="launch-game-screen">
@@ -153,20 +176,23 @@ export function Launchpad() {
               <p>Deploy a versioned bundle, get a URL, and call the platform from the game you already made. The key stays on your server. The player stays yours.</p>
               <Link to="/sign-up" className="launch-outline-button">Create a workspace <IconArrowUpRight className="size-4" /></Link>
             </div>
-            <div className="launch-terminal" aria-label="Example Wasanni deployment workflow">
-              <div className="launch-terminal-head"><span><i /><i /><i /></span><b>deploy-game.ts</b><span className="launch-terminal-tag">WASANNI API</span></div>
-              <pre><code><span className="code-muted">const</span> <span className="code-lime">game</span> = <span className="code-purple">await</span> wasanni.games.deploy({`{`}
-  <span className="code-key">build</span>: <span className="code-coral">"dist/drift-kings.zip"</span>,
-  <span className="code-key">version</span>: <span className="code-coral">"1.4.2"</span>,
-  <span className="code-key">entryPoint</span>: <span className="code-coral">"index.html"</span>
-{`}`});
-
-<span className="code-muted">console</span>.log(game.playUrl);
-<span className="code-result">→ https://wasanni.com/play/drift-kings</span></code></pre>
+            <div className="launch-terminal" aria-label="Wasanni deploy calls">
+              <div className="launch-terminal-head"><span><i /><i /><i /></span><b>deploy.mjs</b><span className="launch-terminal-tag">WASANNI API</span></div>
+              <pre><code>{deployCode.split("\n").map((line, index) => (
+                <span
+                  key={index}
+                  className={line.startsWith("//") ? "code-muted" : line.startsWith("→") ? "code-result" : undefined}
+                >
+                  {line}
+                  {"\n"}
+                </span>
+              ))}</code></pre>
               <div className="launch-terminal-foot"><span className="launch-status-dot" /> DEPLOYED IN YOUR WORKSPACE <span>●</span> PLAY URL READY</div>
             </div>
           </div>
         </section>
+
+        <Integration />
 
         <section id="competition" className="launch-section launch-competition">
           <div className="launch-shell launch-competition-grid">

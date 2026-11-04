@@ -84,7 +84,7 @@ function SignUpPage() {
         <em>building.</em>
       </h1>
       <p className="mt-3 text-sm leading-6 text-ink/70">
-        One account for every game you host — builds, sessions, leaderboards,
+        One account for every game you host: builds, sessions, leaderboards,
         tournaments. We use the name part of your email until you pick a
         display name.
       </p>

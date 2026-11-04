@@ -11,7 +11,8 @@ import {
   ASSISTANT_SYSTEM_PROMPT,
   ASSISTANT_TIMEOUT_MS,
 } from "./constants.ts";
-import type { AssistantDeps, AssistantEvent } from "./types.ts";
+import { createSpacingState, spaceSentences } from "./spacing.ts";
+import type { AssistantDeps, AssistantEvent, AssistantProvider } from "./types.ts";
 
 export function createAssistantService(deps: AssistantDeps) {
   const { api, allowPrivateOutbound, logger, platformProvider } = deps;
@@ -25,7 +26,7 @@ export function createAssistantService(deps: AssistantDeps) {
     body: AssistantRunBody,
     requestId: string,
     signal: AbortSignal,
-    provider: { apiKey: string; baseUrl: string; model: string },
+    provider: AssistantProvider,
   ): AsyncGenerator<AssistantEvent, void, void> {
     const startedAt = performance.now();
     const runId = newId();
@@ -42,7 +43,7 @@ export function createAssistantService(deps: AssistantDeps) {
       name: "wasanni-assistant",
       instructions: ASSISTANT_SYSTEM_PROMPT,
       model: createOpenAICompatible({
-        name: "fireworks-ai",
+        name: new URL(baseUrl).hostname,
         apiKey: provider.apiKey,
         baseURL: baseUrl,
       }).chatModel(provider.model),
@@ -62,12 +63,21 @@ export function createAssistantService(deps: AssistantDeps) {
     });
 
     let step = 0;
+    const spacing = createSpacingState();
+    const stepTexts = new Map<number, string>();
+
+    const answerOf = (): { text: string; step: number } | null => {
+      const filled = [...stepTexts.entries()].filter(([, text]) => text.trim() !== "");
+      const last = filled.at(-1);
+
+      return last === undefined ? null : { text: last[1], step: last[0] };
+    };
 
     try {
       for await (const chunk of stream.fullStream) {
         if (chunk.type === "step-start") step += 1;
         else if (chunk.type === "text-delta")
-          yield { kind: "delta", text: chunk.payload.text, step };
+          stepTexts.set(step, `${stepTexts.get(step) ?? ""}${chunk.payload.text}`);
         else if (chunk.type === "reasoning-delta")
           yield { kind: "thinking", text: chunk.payload.text, step };
         else if (chunk.type === "tool-call")
@@ -83,6 +93,16 @@ export function createAssistantService(deps: AssistantDeps) {
           throw chunk.payload.error instanceof Error
             ? chunk.payload.error
             : new Error("the assistant run failed");
+      }
+
+      const answer = answerOf();
+
+      if (answer !== null) {
+        yield {
+          kind: "delta",
+          text: spaceSentences(answer.text, spacing),
+          step: answer.step,
+        };
       }
 
       yield {

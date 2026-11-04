@@ -90,6 +90,7 @@ export type TournamentQuery = UnwrapSchema<typeof TournamentQuery>;
 
 export const PlatformTournamentQuery = t.Object({
   gameId: t.Optional(t.String()),
+  status: t.Optional(TournamentStatus),
 });
 export type PlatformTournamentQuery = UnwrapSchema<typeof PlatformTournamentQuery>;
 

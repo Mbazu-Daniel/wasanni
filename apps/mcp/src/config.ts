@@ -9,7 +9,7 @@ export const readConfig = (env: Record<string, string | undefined>): McpConfig =
 
   if (apiKey === "") {
     throw new Error(
-      "WASANNI_API_KEY is required. Create a key in the dashboard, on your organization's API keys page, and paste the secret it returns.",
+      "WASANNI_API_KEY is required. Create a platform key in the dashboard, on the platform's page, and paste the secret it returns.",
     );
   }
 

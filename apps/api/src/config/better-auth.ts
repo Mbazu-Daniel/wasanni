@@ -38,7 +38,11 @@ function resolveSender(deps: ModuleDeps): SendEmail {
 export function createBetterAuth(deps: ModuleDeps) {
   const { db, env } = deps;
 
-  if (env.NODE_ENV === "production" && deps.sendEmail === undefined) {
+  const transportConfigured =
+    deps.sendEmail !== undefined ||
+    (deps.enqueuer !== null && env.ZEPTOMAIL_API_KEY !== undefined);
+
+  if (env.NODE_ENV === "production" && !transportConfigured) {
     throw new InternalServerError("better-auth refuses to boot in production without an email transport");
   }
 

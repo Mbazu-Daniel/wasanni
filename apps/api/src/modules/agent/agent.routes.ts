@@ -13,8 +13,6 @@ import {
   AgentSessionParams,
   AgentSessionView,
   AgentSpecList,
-  AgentSpendQuery,
-  AgentSpendView,
   ApproveAgentRunBody,
   CreateAgentProjectBody,
   CreateAgentProviderBody,
@@ -30,7 +28,7 @@ import {
 import { HttpError, organizationScope } from "@wasanni/kit";
 import { requestContextOf } from "../../plugins/request-context.ts";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import { RECENT_RUNS_LIMIT, SPEND_WINDOW_DAYS } from "./constants.ts";
+import { RECENT_RUNS_LIMIT } from "./constants.ts";
 import { classifyProviderError } from "./provider-error.ts";
 import type { AgentService, RunEvent } from "./types.ts";
 
@@ -358,21 +356,6 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         params: OrganizationIdAgentParams,
         response: { 200: AgentRunList },
         detail: { tags: ["agents"], summary: "List the recent agent runs" },
-      },
-    )
-    .get(
-      "/api/v1/organizations/:organizationId/agents/spend",
-      async ({ principal, query }) =>
-        service.spend(
-          organizationScope(principal),
-          query.days ?? SPEND_WINDOW_DAYS,
-        ),
-      {
-        memberAuth: PERMISSION.agentRead,
-        params: OrganizationIdAgentParams,
-        query: AgentSpendQuery,
-        response: { 200: AgentSpendView },
-        detail: { tags: ["agents"], summary: "Read the agent spend of an organization" },
       },
     )
     .post(

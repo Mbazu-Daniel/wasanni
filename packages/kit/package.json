@@ -8,9 +8,7 @@
   },
   "dependencies": {
     "@wasanni/contracts": "workspace:*",
+    "aws4fetch": "1.0.20",
     "ioredis": "6.0.0"
-  },
-  "devDependencies": {
-    "aws4fetch": "1.0.20"
   }
 }

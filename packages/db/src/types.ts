@@ -13,6 +13,7 @@ export type DbExecutor = Parameters<Parameters<Db["transaction"]>[0]>[0];
 export type ApiKeyCredential = {
   id: string;
   referenceId: string;
+  configId: string;
   permissions: string | null;
   metadata: string | null;
 };

@@ -179,7 +179,7 @@ function NewGamePage() {
             <div className="space-y-1.5">
               <Label>Hints (optional)</Label>
               <p className="text-xs text-muted-foreground">
-                Short tips players see before and between rounds — controls,
+                Short tips players see before and between rounds: controls,
                 tricks, what to watch out for.
               </p>
               <HintsEditor value={hints} onChange={setHints} />
@@ -252,7 +252,7 @@ function NewGamePage() {
             <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
               <dt className="shrink-0 text-muted-foreground">{row.label}</dt>
               <dd className="truncate text-right font-medium">
-                {row.value === "" ? "—" : row.value}
+                {row.value === "" ? "Not set" : row.value}
               </dd>
             </div>
           ))}

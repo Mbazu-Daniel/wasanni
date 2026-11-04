@@ -14,6 +14,7 @@ export type UserPrincipal = BasePrincipal & {
 export type PlatformPrincipal = BasePrincipal & {
   kind: "platform";
   apiKeyId: string;
+  scope: "organization" | "platform";
   platformId: string | null;
 };
 

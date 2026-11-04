@@ -8,7 +8,6 @@ export type ProviderEndpoint = {
   readonly model: string;
   readonly apiKey: string;
   readonly allowPrivateOutbound: boolean;
-  readonly maxRequestTokens?: number | null;
 };
 
 export async function resolveBaseUrl(

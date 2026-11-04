@@ -11,12 +11,7 @@ import {
   decryptSecret,
   readGameConfig,
 } from "@wasanni/kit";
-import type {
-  ScoreFlag,
-  ScoreSource,
-  ScoreVerificationStatus,
-  ScoreView,
-} from "@wasanni/contracts";
+import type { ScoreFlag, ScoreSource, ScoreView } from "@wasanni/contracts";
 import { readGameSessionRow } from "./session.service.ts";
 import { readScoreFlags } from "./score-flags.ts";
 import type {
@@ -25,6 +20,8 @@ import type {
   ScoreRow,
   ScoreServiceDeps,
   ScoreSubmitInput,
+  ScoreVerificationOutcome,
+  ScoreVerificationVerdict,
 } from "./types.ts";
 
 const HOUR_MS = 3_600_000;
@@ -33,6 +30,26 @@ const HIDE_BATCH_SIZE = 5_000;
 
 const hourBucketOf = (date: Date): Date =>
   new Date(Math.floor(date.getTime() / HOUR_MS) * HOUR_MS);
+
+const outcomeOf = (verdict: ScoreVerificationVerdict | null): ScoreVerificationOutcome => {
+  if (verdict === null) return { status: "not_required", flags: [], reason: null, verified: false };
+
+  if (verdict.kind === "failed") {
+    return {
+      status: "failed",
+      flags: ["verification_failed", ...verdict.flags ?? []],
+      reason: verdict.reason,
+      verified: true,
+    };
+  }
+
+  return {
+    status: verdict.kind === "passed" ? "passed" : "unavailable",
+    flags: verdict.flags,
+    reason: verdict.kind === "passed" ? null : verdict.reason,
+    verified: true,
+  };
+};
 
 const toView = (row: ScoreRow, externalName: string | null): ScoreView => ({
   id: row.id,
@@ -49,6 +66,7 @@ const toView = (row: ScoreRow, externalName: string | null): ScoreView => ({
   flags: row.flags,
   source: row.source,
   verificationStatus: row.verificationStatus,
+  verificationReason: row.verificationReason,
   submittedAt: row.submittedAt.toISOString(),
 });
 
@@ -59,6 +77,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       scope: Scope;
       sessionId: string;
       flags: ScoreFlag[];
+      verification: ScoreVerificationOutcome;
       submittedAt: Date;
     },
   ): Promise<ScoreRow> => {
@@ -76,7 +95,14 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
 
     const [updated] = await executor
       .update(gameSessionScore)
-      .set({ flags: merged, flagged: isFlagged(merged), updatedAt: input.submittedAt })
+      .set({
+        flags: merged,
+        flagged: isFlagged(merged),
+        verificationReason: input.verification.verified
+          ? input.verification.reason
+          : existing.verificationReason,
+        updatedAt: input.submittedAt,
+      })
       .where(scopeTo(input.scope, gameSessionScore, eq(gameSessionScore.id, existing.id)))
       .returning();
 
@@ -92,17 +118,15 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       input: ScoreSubmitInput;
       source: ScoreSource;
       submittedAt: Date;
-      verificationFlags: ScoreFlag[];
-      verificationStatus: ScoreVerificationStatus;
+      verification: ScoreVerificationOutcome;
     },
   ): Promise<{ row: ScoreRow; inserted: boolean }> =>
     db.transaction(async (tx) => {
-      const { session, input, source, submittedAt, verificationFlags, verificationStatus, scope } =
-        args;
+      const { session, input, source, submittedAt, verification, scope } = args;
       const insertFlags = [
         ...new Set([
           ...readScoreFlags(session, input.body.score, source, submittedAt, false),
-          ...verificationFlags,
+          ...verification.flags,
         ]),
       ];
 
@@ -121,7 +145,8 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
           flagged: isFlagged(insertFlags),
           flags: insertFlags,
           source,
-          verificationStatus,
+          verificationStatus: verification.status,
+          verificationReason: verification.reason,
           submittedAt,
           hourBucket: hourBucketOf(session.startedAt),
         })
@@ -135,9 +160,10 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
         (await mergeIntoExisting(tx, {
           scope,
           sessionId: session.id,
+          verification,
           flags: [
             ...readScoreFlags(session, input.body.score, source, submittedAt, true),
-            ...verificationFlags,
+            ...verification.flags,
           ],
           submittedAt,
         }));
@@ -161,6 +187,11 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
     source: ScoreSource,
   ): Promise<ScoreView> => {
     const session = await readGameSessionRow(db, scope, input.sessionId);
+
+    if (input.platformId !== undefined && session.platformId !== input.platformId) {
+      throw new NotFoundError("game session not found");
+    }
+
     const submittedAt = new Date();
 
     if (session.status === "ended") throw new ForbiddenError("the game session has ended");
@@ -187,33 +218,22 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       throw new ForbiddenError("the game session has expired");
     }
 
-    let verificationFlags: ScoreFlag[] = [];
-    let verificationStatus: ScoreVerificationStatus = "not_required";
-
-    if (source === "client" && session.scoreVerificationMode !== "none" && deps.verifier !== null) {
-      const verdict = await deps.verifier.verify({
-        sessionId: session.id,
-        organizationId: session.organizationId,
-        externalUserId: session.externalUserId,
-        score: input.body.score,
-        mode: session.scoreVerificationMode,
-        submittedAt,
-        config: session.configSnapshot,
-        callbackSecret: session.scoreVerificationCallbackSecretCiphertext === null
-          ? readGameConfig(session.configSnapshot).callback?.secret ?? null
-          : decryptSecret(session.scoreVerificationCallbackSecretCiphertext, deps.encryptionKey),
-      });
-
-      if (verdict.kind === "failed") {
-        verificationFlags = ["verification_failed"];
-        verificationStatus = "failed";
-      }
-
-      if (verdict.kind !== "failed") {
-        verificationFlags = verdict.flags;
-        verificationStatus = verdict.kind === "passed" ? "passed" : "unavailable";
-      }
-    }
+    const verdict =
+      source === "client" && session.scoreVerificationMode !== "none" && deps.verifier !== null
+        ? await deps.verifier.verify({
+            sessionId: session.id,
+            organizationId: session.organizationId,
+            externalUserId: session.externalUserId,
+            score: input.body.score,
+            mode: session.scoreVerificationMode,
+            screenshot: input.body.screenshot,
+            submittedAt,
+            config: session.configSnapshot,
+            callbackSecret: session.scoreVerificationCallbackSecretCiphertext === null
+              ? readGameConfig(session.configSnapshot).callback?.secret ?? null
+              : decryptSecret(session.scoreVerificationCallbackSecretCiphertext, deps.encryptionKey),
+          })
+        : null;
 
     const { row, inserted } = await commitScore({
       scope,
@@ -221,8 +241,7 @@ export function createScoreService(db: Db, deps: ScoreServiceDeps) {
       input,
       source,
       submittedAt,
-      verificationFlags,
-      verificationStatus,
+      verification: outcomeOf(verdict),
     });
 
     if (inserted && deps.usage !== null) {

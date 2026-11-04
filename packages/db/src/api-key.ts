@@ -10,6 +10,7 @@ export async function readActiveApiKey(
     .select({
       id: apikey.id,
       referenceId: apikey.referenceId,
+      configId: apikey.configId,
       permissions: apikey.permissions,
       metadata: apikey.metadata,
     })

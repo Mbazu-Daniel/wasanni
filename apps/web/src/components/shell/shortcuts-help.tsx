@@ -24,7 +24,7 @@ const ACTION_SHORTCUTS: [keys: string, label: string][] = [
   ["⌘ B", "Toggle sidebar"],
   ["/", "Open search"],
   ["?", "Show this help"],
-  ["N", "New — context aware"],
+  ["N", "New: context aware"],
   [",", "Account settings"],
   ["Esc", "Close any dialog"],
 ];

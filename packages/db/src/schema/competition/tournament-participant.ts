@@ -44,6 +44,7 @@ export const tournamentParticipant = pgTable(
       t.externalUserId,
     ),
     index("tournament_participant_tournament_ix").on(t.tournamentId),
+    index("tournament_participant_tournament_status_ix").on(t.tournamentId, t.status),
     index("tournament_participant_organization_ix").on(t.organizationId),
   ],
 );

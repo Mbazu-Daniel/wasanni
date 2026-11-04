@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client";
 import { toastAuthError } from "@/lib/auth-error";
 import { apiFetch } from "@/lib/api-client";
 import type { MemberRow } from "@/lib/member-types";
-import { AVATAR_TYPES, uploadMemberAvatar } from "@/lib/avatar-upload";
+import { IMAGE_TYPES, uploadImage } from "@/lib/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +96,11 @@ function AccountSettingsPage() {
 
     setBusy("avatar");
     try {
-      await uploadMemberAvatar(organizationId, file);
+      await uploadImage(
+        `/api/v1/organizations/${organizationId}/members/me/avatar`,
+        `/api/v1/organizations/${organizationId}/members/me/avatar`,
+        file,
+      );
       toast.success("Avatar updated");
       queryClient.invalidateQueries({ queryKey: ["member", organizationId] });
       queryClient.invalidateQueries({ queryKey: ["members", organizationId] });
@@ -165,7 +169,7 @@ function AccountSettingsPage() {
             <input
               ref={avatarInput}
               type="file"
-              accept={AVATAR_TYPES.join(",")}
+              accept={IMAGE_TYPES.join(",")}
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0];

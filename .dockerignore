@@ -1,0 +1,26 @@
+.git
+.github
+.agents
+.cursor
+.turbo
+.impeccable
+.playwright-cli
+.resilience-audit
+**/node_modules
+**/dist
+**/*.log
+.env
+.env.*
+!.env.example
+apps/web/*
+!apps/web/package.json
+/tests
+/deploy
+/scripts
+/audits
+/*.md
+/Wasanni_ full design document.html
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+/docker-compose.yml
+/docker-compose.prod.yml

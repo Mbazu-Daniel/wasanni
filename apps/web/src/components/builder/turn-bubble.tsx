@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { IconCheck, IconRefresh } from "@tabler/icons-react";
 import { ChatMarkdown } from "@/components/primitives/chat-markdown";
 import { cn } from "@/lib/utils";
-import { formatDuration, formatTokens, formatUsd } from "@/lib/format";
+import { formatDuration } from "@/lib/format";
 import type { ArtifactFile } from "@/lib/agent-artifacts";
 import type { AgentTurnView } from "@/lib/agent-types";
 
@@ -12,7 +12,6 @@ export function TurnBubble({
   showing,
   hasArtifact,
   onShow,
-  trimmedMessages,
   onOpenFile,
   onRegenerate,
 }: {
@@ -20,7 +19,6 @@ export function TurnBubble({
   showing: boolean;
   hasArtifact: boolean;
   onShow: () => void;
-  trimmedMessages: number;
   onOpenFile: (file: ArtifactFile) => void;
   onRegenerate?: () => void;
 }) {
@@ -50,17 +48,7 @@ export function TurnBubble({
         <ChatMarkdown text={turn.text} onOpenFile={onOpenFile} />
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1">
-        <p className={action}>
-          {turn.costMicros > 0 ? formatUsd(turn.costMicros) : "unpriced"}
-        </p>
-        <p className={action}>
-          {`${formatTokens(turn.promptTokens + turn.completionTokens)} · ${formatDuration(turn.durationMs)}`}
-        </p>
-        {trimmedMessages > 0 && (
-          <p className={action}>
-            {`dropped the oldest ${trimmedMessages} ${trimmedMessages === 1 ? "message" : "messages"} to fit the provider`}
-          </p>
-        )}
+        <p className={action}>{formatDuration(turn.durationMs)}</p>
         <button
           type="button"
           onClick={() => void copy()}

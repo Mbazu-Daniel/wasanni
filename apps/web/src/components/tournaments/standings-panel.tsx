@@ -105,7 +105,7 @@ export function TournamentStandingsPanel({
                 </td>
                 <td className="px-4 py-3 align-middle">
                   {row.seed === null ? (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-muted-foreground">Unseeded</span>
                   ) : (
                     <span className="font-mono text-xs text-muted-foreground">
                       {row.seed}
@@ -114,7 +114,7 @@ export function TournamentStandingsPanel({
                 </td>
                 <td className="px-4 py-3 text-right align-middle">
                   <span className="font-mono text-sm font-semibold tabular-nums">
-                    {row.score ?? "—"}
+                    {row.score ?? "Pending"}
                   </span>
                 </td>
                 <td className="px-4 py-3 align-middle">
@@ -133,7 +133,7 @@ export function TournamentStandingsPanel({
                       )}
                     </div>
                   ) : (
-                    <span className="text-[11px] text-muted-foreground">—</span>
+                    <span className="text-[11px] text-muted-foreground">None</span>
                   )}
                 </td>
                 <td className="px-4 py-3 align-middle">

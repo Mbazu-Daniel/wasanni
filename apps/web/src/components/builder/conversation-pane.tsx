@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { IconRobot } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ChatMarkdown } from "@/components/primitives/chat-markdown";
 import { extractArtifacts, type ArtifactFile } from "@/lib/agent-artifacts";
 import type { AgentPendingApproval, AgentTurnView } from "@/lib/agent-types";
@@ -17,6 +18,9 @@ export function ConversationPane({
   sessionId,
   sessionGameName,
   hasProviders,
+  providers,
+  chosenProviderId,
+  onProviderChange,
   turns,
   turnsPending,
   live,
@@ -27,10 +31,8 @@ export function ConversationPane({
   approval,
   approvalGameName,
   onDecide,
-  trimmedMessages,
   shownTurnId,
   lastAssistantId,
-  lastAssistantRunId,
   canRegenerate,
   onRegenerate,
   onShowTurn,
@@ -41,6 +43,9 @@ export function ConversationPane({
   sessionId: string | null;
   sessionGameName: string | null;
   hasProviders: boolean;
+  providers: { id: string; name: string; model: string }[];
+  chosenProviderId: string;
+  onProviderChange: (providerId: string) => void;
   turns: AgentTurnView[];
   turnsPending: boolean;
   live: LiveReply | null;
@@ -51,10 +56,8 @@ export function ConversationPane({
   approval: AgentPendingApproval | null;
   approvalGameName: string | null;
   onDecide: (approved: boolean) => void;
-  trimmedMessages: number;
   shownTurnId: string | null;
   lastAssistantId: string | null;
-  lastAssistantRunId: string | null;
   canRegenerate: boolean;
   onRegenerate: () => void;
   onShowTurn: (turn: AgentTurnView) => void;
@@ -67,11 +70,25 @@ export function ConversationPane({
         <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-pink">
           <IconRobot size={14} /> {sessionId === null ? "New chat" : "Conversation"}
         </p>
-        {sessionId !== null && sessionGameName !== null && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-launch-ink/55">
-            game · {sessionGameName}
-          </p>
-        )}
+        <div className="flex min-w-0 items-center gap-2">
+          {sessionId !== null && sessionGameName !== null && (
+            <p className="truncate font-mono text-[10px] uppercase tracking-[0.12em] text-launch-ink/55">
+              game · {sessionGameName}
+            </p>
+          )}
+          {providers.length > 0 && (
+            <SearchableSelect
+              compact
+              className="w-44 shrink-0"
+              value={chosenProviderId}
+              onValueChange={onProviderChange}
+              options={providers.map((provider) => ({
+                value: provider.id,
+                label: `${provider.name} · ${provider.model}`,
+              }))}
+            />
+          )}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-5 py-4">
@@ -115,7 +132,6 @@ export function ConversationPane({
                 <TurnBubble
                   key={turn.id}
                   turn={turn}
-                  trimmedMessages={turn.runId === lastAssistantRunId ? trimmedMessages : 0}
                   showing={shownTurnId === turn.id}
                   hasArtifact={extractArtifacts(turn.text).files.length > 0}
                   onShow={() => onShowTurn(turn)}

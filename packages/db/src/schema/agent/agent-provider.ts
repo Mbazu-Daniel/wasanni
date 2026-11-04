@@ -1,7 +1,6 @@
 import {
   boolean,
   index,
-  integer,
   pgTable,
   text,
   timestamp,
@@ -24,7 +23,6 @@ export const agentProvider = pgTable(
     baseUrl: text("base_url").notNull(),
     model: text("model").notNull(),
     apiKeyCiphertext: text("api_key_ciphertext"),
-    maxRequestTokens: integer("max_request_tokens"),
     isDefault: boolean("is_default").notNull().default(false),
     createdByMemberId: uuid("created_by_member_id").references(
       () => member.id,

@@ -67,13 +67,14 @@ export function TournamentMatchesPanel({
       header: "Scores",
       sortValue: (row) => row.participants[0]?.score ?? -1,
       render: (row) => {
-        if (row.participants.length < 2) {
-          return <span className="text-xs text-muted-foreground">—</span>;
+        const [home, away] = row.participants;
+        if (!home || !away || home.score === null || away.score === null) {
+          return <span className="text-xs text-muted-foreground">Pending</span>;
         }
 
         return (
           <span className="font-mono text-xs tabular-nums">
-            {row.participants[0]?.score ?? "—"} — {row.participants[1]?.score ?? "—"}
+            {home.score}: {away.score}
           </span>
         );
       },

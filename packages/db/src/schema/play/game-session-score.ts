@@ -46,6 +46,7 @@ export const gameSessionScore = pgTable(
     })
       .notNull()
       .default("not_required"),
+    verificationReason: text("verification_reason"),
     archiveKey: text("archive_key"),
     archiveOffset: bigint("archive_offset", { mode: "number" }),
     archiveLength: bigint("archive_length", { mode: "number" }),
@@ -59,6 +60,7 @@ export const gameSessionScore = pgTable(
     primaryKey({ columns: [t.id, t.hourBucket] }),
     uniqueIndex("game_session_score_session_ux").on(t.sessionId, t.hourBucket),
     index("game_session_score_game_platform_score_ix").on(t.gameId, t.platformId, t.score),
+    index("game_session_score_board_ix").on(t.organizationId, t.gameId, t.status, t.score),
     index("game_session_score_organization_ix").on(t.organizationId),
   ],
 );

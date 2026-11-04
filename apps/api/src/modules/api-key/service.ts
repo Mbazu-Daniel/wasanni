@@ -4,6 +4,8 @@ import { apikey } from "@wasanni/db/schema";
 import type { Scope } from "@wasanni/kit";
 import { BadRequestError, NotFoundError } from "@wasanni/kit";
 import {
+  PLATFORM_KEY_PERMISSIONS,
+  PLATFORM_ONLY_RESOURCES,
   listUnknownPermissions,
   type ApiKeyView,
   type CreatedApiKey,
@@ -57,6 +59,32 @@ export function createApiKeyService(db: Db, auth: BetterAuth, encryptionKey: str
       }
       if (keyScope === "organization" && platformId !== null) {
         throw new BadRequestError("an organization api key cannot name a platform");
+      }
+
+      if (keyScope === "organization") {
+        const blocked = PLATFORM_ONLY_RESOURCES.filter(
+          (resource) => (input.permissions[resource] ?? []).length > 0,
+        );
+        if (blocked.length > 0) {
+          throw new BadRequestError(
+            `an organization api key cannot grant ${blocked.join(", ")}: use a platform api key`,
+          );
+        }
+      }
+
+      if (keyScope === "platform") {
+        const outside = Object.entries(input.permissions).flatMap(([resource, actions]) => {
+          if (!Array.isArray(actions)) return [];
+          const allowed = PLATFORM_KEY_PERMISSIONS[resource] ?? [];
+          return actions
+            .filter((action) => !allowed.includes(action))
+            .map((action) => `${resource}:${action}`);
+        });
+        if (outside.length > 0) {
+          throw new BadRequestError(
+            `a platform api key cannot grant ${outside.join(", ")}: use an organization api key`,
+          );
+        }
       }
 
       const created = await auth.api.createApiKey({

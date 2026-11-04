@@ -36,7 +36,7 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
         response: { 200: AssignmentList },
         detail: {
           tags: ["games"],
-          summary: "List the games assigned to a platform of your organization (platform api key)",
+          summary: "List the games assigned to a platform of your organization",
         },
       },
     )
@@ -64,7 +64,7 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
         response: { 200: GameConfigList },
         detail: {
           tags: ["games"],
-          summary: "List the configs of a game across your organization (platform api key)",
+          summary: "List the configs of a game across your organization",
         },
       },
     )
@@ -88,7 +88,7 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
         response: { 200: GameFileList },
         detail: {
           tags: ["games"],
-          summary: "List the files of a game in your organization (platform api key)",
+          summary: "List the files of a game in your organization",
         },
       },
     )
@@ -118,7 +118,7 @@ export const createPlatformGameRoutes = <T extends PrincipalApi>(
         response: { 200: DownloadUrlSingle },
         detail: {
           tags: ["games"],
-          summary: "Ask for a download url of a game file (platform api key)",
+          summary: "Ask for a download url of a game file",
         },
       },
     );

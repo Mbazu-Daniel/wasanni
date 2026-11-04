@@ -1,11 +1,12 @@
 import * as React from "react";
-import { IconChevronDown, IconChevronRight, IconPencil, IconTrash } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronRight, IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 
 export function ProjectHeader({
   name,
   collapsed,
   count,
   onToggle,
+  onNewSession,
   onRename,
   onDelete,
 }: {
@@ -13,6 +14,7 @@ export function ProjectHeader({
   collapsed: boolean;
   count: number;
   onToggle: () => void;
+  onNewSession: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
@@ -70,6 +72,14 @@ export function ProjectHeader({
         <p className="font-mono text-[10px] text-launch-ink/40">{count}</p>
       </button>
       <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          aria-label={`New session in ${name}`}
+          onClick={onNewSession}
+          className="rounded p-1 text-launch-ink/55 hover:bg-launch-ink/10 hover:text-launch-ink"
+        >
+          <IconPlus size={12} />
+        </button>
         <button
           type="button"
           aria-label={`Rename ${name}`}

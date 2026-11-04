@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { IconPaperclip, IconPlayerStop, IconSend, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import type { AgentAttachment, AgentProviderView } from "@/lib/agent-types";
 import { AGENT_MODES } from "./constants.ts";
@@ -23,8 +22,6 @@ export function Composer({
   onRunPlan,
   lastSentMode,
   providers,
-  chosenProviderId,
-  onProviderChange,
   approvalPending,
 }: {
   orgSlug: string;
@@ -42,8 +39,6 @@ export function Composer({
   onRunPlan: () => void;
   lastSentMode: AgentMode | null;
   providers: AgentProviderView[];
-  chosenProviderId: string;
-  onProviderChange: (providerId: string) => void;
   approvalPending: boolean;
 }) {
   return (
@@ -188,8 +183,8 @@ export function Composer({
           </div>
         </div>
 
-        <div className="mt-1.5 flex items-center justify-between gap-3">
-          {providers.length === 0 ? (
+        {providers.length === 0 && (
+          <div className="mt-1.5 flex items-center justify-between gap-3">
             <Link
               to="/$orgSlug/providers"
               params={{ orgSlug }}
@@ -197,22 +192,11 @@ export function Composer({
             >
               add a provider
             </Link>
-          ) : (
-            <SearchableSelect
-              compact
-              className="w-60 shrink-0"
-              value={chosenProviderId}
-              onValueChange={onProviderChange}
-              options={providers.map((provider) => ({
-                value: provider.id,
-                label: `${provider.name} · ${provider.model}`,
-              }))}
-            />
-          )}
-          <p className="text-[10px] text-muted-foreground">
-            Runs on the model and key you picked. It can be wrong — check what it builds.
-          </p>
-        </div>
+            <p className="text-[10px] text-muted-foreground">
+              Runs on the model and key you picked. It can be wrong: check what it builds.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

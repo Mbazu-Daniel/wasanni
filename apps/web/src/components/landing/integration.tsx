@@ -5,6 +5,7 @@ import {
   IconCopy,
   IconTerminal2,
   IconBrandJavascript,
+  IconShieldCheck,
 } from "@tabler/icons-react";
 import { Reveal } from "@/components/motion-kit";
 
@@ -13,75 +14,65 @@ const tabs = [
     id: "deploy-curl",
     label: "Deploy · cURL",
     icon: IconTerminal2,
-    code: `# 1. ask for an upload target
-curl -X POST https://api.wasanni.com/api/v1/organizations/org_5C4/games/gam_7QH2/files/upload \\
+    code: `# 1. ask the dashboard for an upload target
+curl -X POST https://api.wasanni.com/api/v1/organizations/$ORG_ID/games/$GAME_ID/files/upload \\
   -b "$DASHBOARD_SESSION" \\
   -H "content-type: application/json" \\
   -d '{
     "filename": "drift-kings.zip",
     "version": "1.4.2",
+    "contentType": "application/zip",
+    "sizeBytes": 41843332,
     "kind": "bundle",
     "entryPoint": "index.html",
     "crossOriginIsolation": true
   }'
 
-# 2. put the zip straight to the bucket, then confirm and publish
+# 2. PUT the zip to target.upload.url, with target.upload.headers
 curl -T dist/drift-kings.zip "$UPLOAD_URL"
-curl -X POST .../games/gam_7QH2/files/gfl_2M9/complete
-curl -X POST .../games/gam_7QH2/publish`,
-  },
-  {
-    id: "deploy-js",
-    label: "Deploy · Node",
-    icon: IconBrandJavascript,
-    code: `const target = await fetch(
-  "https://api.wasanni.com/api/v1/organizations/org_5C4/games/gam_7QH2/files/upload",
-  {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      filename: "drift-kings.zip",
-      version: "1.4.2",
-      kind: "bundle",
-      entryPoint: "index.html",
-      crossOriginIsolation: true,
-    }),
-  },
-).then((r) => r.json());
 
-await fetch(target.upload.url, { method: "PUT", body: zip });
-await fetch(
-  "https://api.wasanni.com/api/v1/organizations/org_5C4/games/gam_7QH2/files/gfl_2M9/complete",
-  { method: "POST" },
-);
+# 3. confirm the file, publish the game
+curl -X POST .../games/$GAME_ID/files/$FILE_ID/complete -b "$DASHBOARD_SESSION"
+curl -X POST .../games/$GAME_ID/publish -b "$DASHBOARD_SESSION"
 
-// https://wasanni.com/play/gam_7QH2/gfl_2M9/index.html`,
+# the build is live at https://wasanni.com/play/$GAME_ID/$FILE_ID/index.html`,
   },
   {
-    id: "play-curl",
-    label: "Play · cURL",
-    icon: IconTerminal2,
-    code: `# open a session for a player
-curl -X POST https://api.wasanni.com/api/v1/sessions \\
-  -H "x-api-key: sk_..." \\
+    id: "verify-curl",
+    label: "Verify · cURL",
+    icon: IconShieldCheck,
+    code: `# put a referee on the ranked mode of a game
+curl -X POST https://api.wasanni.com/api/v1/organizations/$ORG_ID/games/$GAME_ID/assignments/$ASSIGNMENT_ID/configs \\
+  -H "x-api-key: sk_org_..." \\
   -H "content-type: application/json" \\
   -d '{
-    "gameId": "gam_7QH2",
-    "externalUserId": "u_552",
-    "mode": "ranked",
-    "tournamentId": "trn_spring"
+    "name": "ranked",
+    "isDefault": true,
+    "config": { "scoreVerification": { "mode": "vision" } }
   }'
 
-# the client gets sessionToken + realtimeUrl; the key never ships
-curl -X POST https://api.wasanni.com/api/v1/sessions/7QH2M9XK4C/score \\
-  -H "authorization: Bearer $SESSION_TOKEN" \\
-  -d '{"value": 18420, "events": 12}'`,
+# mode "callback" instead hands the call to your own server:
+#   "scoreVerification": {
+#     "mode": "callback",
+#     "callback": { "url": "https://api.yourgame.com/wasanni/verify", "secret": "..." }
+#   }
+
+# what that endpoint receives, signed with your secret
+# POST  x-wasanni-verify-timestamp: 1762158000
+#       x-wasanni-verify-signature: t=1762158000,v1=<hmac_sha256>
+#       {"event":"score.verify","sessionId":"...","externalUserId":"u_552",
+#        "score":18420,"submittedAt":"2026-11-03T09:14:22.000Z"}
+
+# the two answers it can give
+{ "valid": true }
+{ "valid": false, "reason": "round 12 never happened in the replay" }`,
   },
   {
     id: "play-js",
     label: "Play · Node",
     icon: IconBrandJavascript,
-    code: `const { session, sessionToken, realtimeUrl } = await fetch(
+    code: `// your server, holding the platform key
+const { session, sessionToken, realtimeUrl } = await fetch(
   "https://api.wasanni.com/api/v1/sessions",
   {
     method: "POST",
@@ -90,15 +81,40 @@ curl -X POST https://api.wasanni.com/api/v1/sessions/7QH2M9XK4C/score \\
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      gameId: "gam_7QH2",
+      gameId: "0194f2a7-8c3e-7a1b-9d2c-4f6b8e0a1c22",
+      platformId: "0194f2a7-8c3e-7a1b-9d2c-4f6b8e0a1c23",
       externalUserId: "u_552",
       mode: "ranked",
-      tournamentId: "trn_spring",
+      tournamentId: "0194f2a7-8c3e-7a1b-9d2c-4f6b8e0a1c24",
     }),
   },
 ).then((r) => r.json());
 
-// hand sessionToken to the client, connect realtimeUrl, post the score.`,
+// sessionToken is short-lived and player-scoped. The key never ships.`,
+  },
+  {
+    id: "score-curl",
+    label: "Score · cURL",
+    icon: IconTerminal2,
+    code: `# the game client posts its own score through the play door
+curl -X POST https://api.wasanni.com/api/v1/play/sessions/$SESSION_ID/score \\
+  -H "authorization: Bearer $SESSION_TOKEN" \\
+  -H "content-type: application/json" \\
+  -d '{
+    "score": 18420,
+    "endSession": true,
+    "screenshot": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+  }'
+
+# 201, and the verdict travels with the score
+# {"score":{
+#    "status":"accepted","flagged":false,
+#    "flags":["client_source","vision_verified"],
+#    "verificationStatus":"passed","verificationReason":null}}
+
+# your server reads the board; a flagged run stays out until asked for
+curl "https://api.wasanni.com/api/v1/games/$GAME_ID/leaderboards?platformId=$PLATFORM_ID" \\
+  -H "x-api-key: sk_org_..."`,
   },
 ];
 
@@ -115,6 +131,11 @@ const steps = [
   },
   {
     no: "3",
+    title: "Put on a referee",
+    body: "Per mode: trust the number, call back your own verifier, or read the score off the attached frame. The verdict is stored with the score.",
+  },
+  {
+    no: "4",
     title: "Run the competition",
     body: "Register players by your own user IDs. Sessions, scores, leaderboards, brackets, and replays fill themselves in.",
   },
@@ -122,10 +143,13 @@ const steps = [
 
 const specs = [
   ["Builds", "A zip bundle or a single file, up to 5 GB, versioned by you"],
-  ["Engines", "Godot, Unity WebGL, HTML5 — anything that runs in a browser tab"],
+  ["Engines", "Godot, Unity WebGL, HTML5: anything that runs in a browser tab"],
   ["Play URL", "/play/:gameId/:fileId/*, served with the headers threaded builds need"],
   ["Auth", "One API key per platform on your server; short-lived session tokens on the client"],
   ["Players", "Your user IDs. We never own the account."],
+  ["Verification", "None, your HMAC-signed callback, or a frame read against the submitted number"],
+  ["Referee", "A verdict you can read: every score carries its status and the reason it earned"],
+  ["Honesty", "A slow referee costs you no rank. The player is not punished for the referee"],
   ["Data", "Every score keeps the flags computed against it; nothing is deleted to hide it"],
 ];
 
@@ -142,7 +166,7 @@ export function Integration() {
   };
 
   return (
-    <section id="integration" className="scroll-mt-20 border-b border-mist/15">
+    <section id="integration" className="launch-integration scroll-mt-20">
       <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
         <Reveal className="max-w-2xl">
           <h2 className="font-poster text-4xl font-black uppercase leading-[0.95] tracking-[-0.02em] text-chalk sm:text-5xl">
@@ -151,12 +175,13 @@ export function Integration() {
           <p className="mt-4 text-lg leading-relaxed text-chalk/85">
             Your team owns the game and the player account. Wasanni handles the
             hosted build, short-lived play sessions, realtime connection, and
-            competition state through plain HTTPS. If you can send a POST, you
-            can put a game online.
+            competition state through plain HTTPS. Every score comes back with
+            the verdict computed against it, so a board you can defend is one
+            POST away. If you can send a POST, you can put a game online.
           </p>
         </Reveal>
 
-        <div className="mt-12 grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-2xl border border-mist/15 bg-mist/12 md:grid-cols-3">
+        <div className="mt-12 grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-2xl border border-mist/15 bg-mist/12 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step) => (
             <div key={step.no} className="bg-abyss p-7">
               <span className="grid size-10 place-items-center rounded-xl border border-signal/25 bg-signal/12 font-poster text-xl font-black text-signal">

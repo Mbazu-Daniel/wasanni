@@ -6,7 +6,7 @@ x-ulimits: &ulimits
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     restart: always
     command:
       - postgres
@@ -18,7 +18,7 @@ services:
       POSTGRES_USER: wasanni
       POSTGRES_PASSWORD: wasanni
       POSTGRES_DB: wasanni
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+    volumes: ["pgdata:/var/lib/postgresql"]
     ulimits: *ulimits
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wasanni -d wasanni"]
@@ -26,20 +26,13 @@ services:
       timeout: 3s
       retries: 10
 
-  pgbouncer:
-    image: edoburu/pgbouncer:latest
+  pgdog:
+    image: ghcr.io/pgdogdev/pgdog:main
     restart: always
-    environment:
-      DB_USER: wasanni
-      DB_PASSWORD: wasanni
-      DB_HOST: postgres
-      DB_NAME: wasanni
-      POOL_MODE: transaction
-      LISTEN_PORT: "6432"
-      AUTH_TYPE: scram-sha-256
-      MAX_CLIENT_CONN: 10000
-      DEFAULT_POOL_SIZE: 50
-      RESERVE_POOL_SIZE: 10
+    command: ["/usr/local/bin/pgdog", "run", "-p", "50"]
+    volumes:
+      - ./deploy/pgdog.toml:/pgdog/pgdog.toml:ro
+      - ./deploy/users.toml:/pgdog/users.toml:ro
     ulimits: *ulimits
     depends_on:
       postgres:
@@ -68,13 +61,14 @@ services:
     build: .
     restart: always
     ulimits: *ulimits
+    command: ["sh", "-c", "bun run packages/db/src/cli-migrate.ts && exec bun run apps/api/src/index.ts"]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
       REDIS_URL: redis://redis:6379
     ports: ["3000:3000"]
     depends_on:
-      pgbouncer:
+      pgdog:
         condition: service_started
       redis:
         condition: service_healthy
@@ -86,10 +80,10 @@ services:
     ulimits: *ulimits
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
       REDIS_URL: redis://redis:6379
     depends_on:
-      pgbouncer:
+      pgdog:
         condition: service_started
       redis:
         condition: service_healthy
@@ -101,13 +95,13 @@ services:
     ulimits: *ulimits
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgbouncer:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
       REDIS_URL: redis://redis:6379
       REALTIME_PORT: 3001
       REALTIME_PUBLIC_URL: ws://localhost:3001
     ports: ["3001:3001"]
     depends_on:
-      pgbouncer:
+      pgdog:
         condition: service_started
       redis:
         condition: service_healthy

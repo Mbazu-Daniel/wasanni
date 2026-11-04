@@ -137,7 +137,7 @@ export const createUsageRoutes = <T extends PrincipalApi>(
         response: { 200: PlatformUsageView },
         detail: {
           tags: ["usage"],
-          summary: "Read the usage of the calling platform (platform api key)",
+          summary: "Read the usage of the calling platform",
         },
       },
     )

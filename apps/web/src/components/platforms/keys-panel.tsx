@@ -12,7 +12,7 @@ import { DataTable, type DataTableColumn } from "@/components/primitives/data-ta
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 import { SecretReveal } from "@/components/primitives/secret-reveal";
-import { ROLE_PERMISSIONS } from "@wasanni/contracts";
+import { PLATFORM_KEY_PERMISSIONS } from "@wasanni/contracts";
 import {
   DEFAULT_EXPIRY_VALUE,
   EXPIRY_PRESETS,
@@ -74,7 +74,7 @@ export function PlatformKeysPanel({
             name,
             scope: "platform",
             platformId,
-            permissions: ROLE_PERMISSIONS.owner,
+            permissions: PLATFORM_KEY_PERMISSIONS,
             expiresInSeconds: secondsForPresetValue(expiry) ?? undefined,
           }),
         },

@@ -239,6 +239,27 @@
       "when": 1793617237655,
       "tag": "0033_ambitious_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793700298966,
+      "tag": "0034_organic_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793723251850,
+      "tag": "0035_magenta_mongu",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793727819082,
+      "tag": "0036_brave_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }

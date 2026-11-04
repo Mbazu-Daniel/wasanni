@@ -24,6 +24,7 @@ export function SessionSidebar({
   onTogglePin,
   onMoveSession,
   onDeleteSession,
+  onNewSessionInProject,
   onRenameProject,
   onDeleteProject,
 }: {
@@ -43,6 +44,7 @@ export function SessionSidebar({
   onTogglePin: (session: AgentSessionView) => void;
   onMoveSession: (session: AgentSessionView, projectId: string | null) => void;
   onDeleteSession: (session: AgentSessionView) => void;
+  onNewSessionInProject: (project: AgentProjectView) => void;
   onRenameProject: (project: AgentProjectView, name: string) => void;
   onDeleteProject: (project: AgentProjectView) => void;
 }) {
@@ -148,6 +150,7 @@ export function SessionSidebar({
                         [project.id]: !collapsed,
                       }))
                     }
+                    onNewSession={() => onNewSessionInProject(project)}
                     onRename={(name) => onRenameProject(project, name)}
                     onDelete={() => onDeleteProject(project)}
                   />

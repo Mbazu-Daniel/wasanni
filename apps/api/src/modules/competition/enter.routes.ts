@@ -7,6 +7,7 @@ import {
   TournamentEnterView,
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
+import { callingPlatform } from "../../plugins/principal.ts";
 import type { PrincipalApi, RateLimitHook } from "../../plugins/types.ts";
 import type { EnterService } from "./enter.service.ts";
 
@@ -22,7 +23,13 @@ export const createEnterRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/duels/enter",
       async ({ principal, body, status }) =>
-        status(201, await enters.enterDuel(organizationScope(principal), body)),
+        status(
+          201,
+          await enters.enterDuel(organizationScope(principal), {
+            ...body,
+            platformId: callingPlatform(principal, body.platformId),
+          }),
+        ),
       {
         platformAuth: PERMISSION.sessionCreate,
         body: DuelEnterBody,
@@ -30,7 +37,7 @@ export const createEnterRoutes = <T extends PrincipalApi>(
         ...limited,
         detail: {
           tags: ["tournaments"],
-          summary: "Enter the duel pool for a game (platform api key)",
+          summary: "Enter the duel pool for a game",
         },
       },
     )
@@ -42,7 +49,10 @@ export const createEnterRoutes = <T extends PrincipalApi>(
           await enters.enterTournament(
             organizationScope(principal),
             params.tournamentId,
-            body,
+            {
+              ...body,
+              platformId: callingPlatform(principal, body.platformId),
+            },
           ),
         ),
       {
@@ -54,7 +64,7 @@ export const createEnterRoutes = <T extends PrincipalApi>(
         detail: {
           tags: ["tournaments"],
           summary:
-            "Register and open a play session in one call (platform api key)",
+            "Register and open a play session in one call",
         },
       },
     );

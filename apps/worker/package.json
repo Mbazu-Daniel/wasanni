@@ -12,6 +12,7 @@
     "@wasanni/jobs": "workspace:*",
     "@wasanni/kit": "workspace:*",
     "bullmq": "6.4.0",
+    "drizzle-orm": "0.45.4",
     "fflate": "0.8.3"
   }
 }
