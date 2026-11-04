@@ -20,6 +20,8 @@ export const GameFileView = t.Object({
   id: t.String(),
   organizationId: t.String(),
   gameId: t.String(),
+  platformId: t.Union([t.String(), t.Null()]),
+  platformSlug: t.Union([t.String(), t.Null()]),
   version: t.String(),
   sizeBytes: t.Number(),
   contentType: t.String(),
@@ -55,6 +57,7 @@ export type UploadTarget = UnwrapSchema<typeof UploadTarget>;
 
 export const CreateGameFileBody = t.Object({
   filename: t.String({ minLength: 1, maxLength: 200 }),
+  platformId: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
   version: t.String({ minLength: 1, maxLength: 40 }),
   contentType: t.String({ minLength: 1, maxLength: 120 }),
   sizeBytes: t.Number({ minimum: 1, maximum: 5_368_709_120 }),

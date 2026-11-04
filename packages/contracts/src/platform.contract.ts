@@ -34,7 +34,6 @@ export type CreatePlatformBody = UnwrapSchema<typeof CreatePlatformBody>;
 export const UpdatePlatformBody = t.Object(
   {
     name: t.Optional(t.String({ minLength: 1, maxLength: 120 })),
-    slug: t.Optional(PlatformSlug),
     description: t.Optional(t.Union([t.String({ maxLength: 500 }), t.Null()])),
   },
   { minProperties: 1 },

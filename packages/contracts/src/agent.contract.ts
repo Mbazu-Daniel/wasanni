@@ -162,6 +162,7 @@ export const UpdateAgentSessionBody = t.Object({
   title: t.Optional(t.String({ minLength: 1, maxLength: 120 })),
   pinned: t.Optional(t.Boolean()),
   projectId: t.Optional(t.Nullable(t.String())),
+  gameId: t.Optional(t.Nullable(t.String())),
 });
 export type UpdateAgentSessionBody = UnwrapSchema<typeof UpdateAgentSessionBody>;
 
