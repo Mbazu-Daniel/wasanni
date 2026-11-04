@@ -11,7 +11,8 @@ import type { ObjectStorage } from "@wasanni/kit";
 import type { Db } from "@wasanni/db";
 import type { PrincipalApi } from "../../plugins/types.ts";
 import type { ExportService } from "./types.ts";
-import { createOrganizationLogoUploadTicket, setOrganizationLogo } from "./logo.service.ts";
+import { organizationLogoPrefix, setOrganizationLogo } from "./logo.service.ts";
+import { createImageUploadTicket } from "../image/index.ts";
 
 export const createOrganizationRoutes = <T extends PrincipalApi>(
   api: T,
@@ -39,9 +40,9 @@ export const createOrganizationRoutes = <T extends PrincipalApi>(
     .post(
       "/api/v1/organizations/:organizationId/logo",
       async ({ principal, body }) => {
-        const ticket = await createOrganizationLogoUploadTicket(
+        const ticket = await createImageUploadTicket(
           storage,
-          principal.organizationId,
+          organizationLogoPrefix(principal.organizationId),
           body.contentType,
         );
 

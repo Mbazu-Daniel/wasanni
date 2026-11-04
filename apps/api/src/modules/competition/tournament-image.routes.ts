@@ -14,7 +14,11 @@ import {
 } from "@wasanni/contracts";
 import { organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import { assertImageKey, createImageUploadTicket } from "../image/index.ts";
+import {
+  assertImageKey,
+  assertImageUploaded,
+  createImageUploadTicket,
+} from "../image/index.ts";
 import { toTournamentView } from "./views.ts";
 import type { TournamentRow } from "./types.ts";
 
@@ -49,8 +53,7 @@ export const createTournamentImageRoutes = <T extends PrincipalApi>(
         return status(201, {
           upload: await createImageUploadTicket(
             storage,
-            scope.organizationId,
-            "tournaments",
+            `${scope.organizationId}/tournaments/`,
             body.contentType,
           ),
         });
@@ -70,7 +73,8 @@ export const createTournamentImageRoutes = <T extends PrincipalApi>(
       "/api/v1/organizations/:organizationId/tournaments/:tournamentId/image",
       async ({ principal, params, body }) => {
         const scope = organizationScope(principal);
-        assertImageKey(body.key, scope.organizationId, "tournaments");
+        assertImageKey(body.key, `${scope.organizationId}/tournaments/`);
+        await assertImageUploaded(storage, body.key);
 
         const [row] = await db
           .update(tournament)

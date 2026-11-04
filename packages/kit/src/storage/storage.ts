@@ -19,7 +19,10 @@ function resolvePublicBaseUrl(
   customDomain: string | undefined,
 ): string | undefined {
   if (customDomain !== undefined && customDomain !== "") return `https://${customDomain}`;
-  if (publicId !== undefined && publicId !== "") return `https://${publicId}.r2.dev`;
+  if (publicId !== undefined && publicId !== "") {
+    const host = publicId.startsWith("pub-") ? publicId : `pub-${publicId}`;
+    return `https://${host}.r2.dev`;
+  }
   return undefined;
 }
 

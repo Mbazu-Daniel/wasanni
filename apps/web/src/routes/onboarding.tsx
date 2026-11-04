@@ -5,7 +5,6 @@ import {
   IconArrowUpRight,
   IconBuilding,
   IconLogout,
-  IconPhoto,
   IconTag,
   IconUser,
 } from "@tabler/icons-react";
@@ -16,7 +15,7 @@ import { api, apiFetch } from "@/lib/api-client";
 import { fetchOrganizations, pickOrganization, requireSession } from "@/lib/session";
 import { slugify } from "@/lib/utils";
 import type { MemberRow } from "@/lib/member-types";
-import { AVATAR_TYPES, uploadMemberAvatar } from "@/lib/avatar-upload";
+import { IMAGE_TYPES, uploadImage } from "@/lib/image-upload";
 import { AuthField, AuthFrame } from "@/components/auth/auth-frame";
 
 export const Route = createFileRoute("/onboarding")({
@@ -59,15 +58,6 @@ function initials(value: string): string {
   ).toUpperCase();
 }
 
-function isUsableUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 function StepTabs({ step }: { step: 1 | 2 }) {
   const tabs: { step: 1 | 2; number: string; label: string }[] = [
     { step: 1, number: "01", label: "Organization" },
@@ -105,7 +95,6 @@ function OnboardingPage() {
   const [step, setStep] = React.useState<1 | 2>(1);
   const [name, setName] = React.useState("");
   const [slug, setSlug] = React.useState("");
-  const [logo, setLogo] = React.useState("");
   const [touchedSlug, setTouchedSlug] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [org, setOrg] = React.useState<CreatedOrg | null>(null);
@@ -135,7 +124,6 @@ function OnboardingPage() {
     const { data, error } = await authClient.organization.create({
       name,
       slug: effectiveSlug,
-      logo: logo.trim() || null,
     });
     setBusy(false);
 
@@ -162,8 +150,12 @@ function OnboardingPage() {
 
     setAvatarBusy(true);
     try {
-      const saved = await uploadMemberAvatar(org.id, file);
-      setAvatarEdit(saved.avatar);
+      const { member } = await uploadImage<{ member: MemberRow }>(
+        `/api/v1/organizations/${org.id}/members/me/avatar`,
+        `/api/v1/organizations/${org.id}/members/me/avatar`,
+        file,
+      );
+      setAvatarEdit(member.avatar);
       toast.success("Avatar saved.");
     } catch (error) {
       toast.error(
@@ -207,8 +199,6 @@ function OnboardingPage() {
     navigate({ to: "/" });
   }
 
-  const logoTrimmed = logo.trim();
-
   const previewPanel = (
     <aside className="auth-panel relative hidden h-full flex-col justify-center gap-6 overflow-hidden px-8 py-10 lg:flex">
       <span
@@ -226,18 +216,7 @@ function OnboardingPage() {
         <div className="relative w-full max-w-[300px] -rotate-2 rounded-xl border-2 border-(--launch-ink) bg-(--launch-paper-bright) p-4 shadow-[6px_6px_0_var(--launch-coral)]">
           <div className="flex items-center gap-3">
             <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-(--launch-ink) bg-(--launch-lime) font-poster text-lg font-black text-(--launch-ink)">
-              {logoTrimmed.length > 0 && isUsableUrl(logoTrimmed) ? (
-                <img
-                  src={logoTrimmed}
-                  alt=""
-                  className="size-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : (
-                initials(name || "W")
-              )}
+              {initials(name || "W")}
             </span>
             <div className="min-w-0">
               <p className="truncate font-poster text-base font-black text-(--launch-ink)">
@@ -335,34 +314,11 @@ function OnboardingPage() {
               required
               pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
             />
-            <AuthField
-              id="org-logo"
-              label="Logo URL — optional"
-              icon={IconPhoto}
-              type="url"
-              value={logo}
-              onChange={(e) => setLogo(e.target.value)}
-              placeholder="https://…/logo.png"
-              valid={logoTrimmed.length > 0 && isUsableUrl(logoTrimmed)}
-            />
             <button type="submit" className="launch-primary-button w-full" disabled={busy || !name || !effectiveSlug}>
               {busy ? "Creating…" : "Continue to profile"}
               {!busy && <IconArrowUpRight className="size-5" />}
             </button>
           </form>
-
-          <ol className="mt-8 space-y-2">
-            {["Add a platform and give it an API key.", "Create a game and assign it to that platform.", "Open your first session from your own server."].map(
-              (line, index) => (
-                <li key={line} className="flex gap-2.5 text-sm text-ink/70">
-                  <span className="font-mono text-xs font-bold text-pink">
-                    0{index + 1}
-                  </span>
-                  {line}
-                </li>
-              ),
-            )}
-          </ol>
         </>
       )}
 
@@ -374,7 +330,7 @@ function OnboardingPage() {
             <em>profile.</em>
           </h1>
           <p className="mt-3 text-sm leading-6 text-ink/70">
-            This is how teammates see you inside {org.name} — on the member
+            This is how teammates see you inside {org.name}: on the member
             list and in the org switcher. It lives on your membership, not your
             login.
           </p>
@@ -392,7 +348,7 @@ function OnboardingPage() {
                 <input
                   ref={fileInput}
                   type="file"
-                  accept={AVATAR_TYPES.join(",")}
+                  accept={IMAGE_TYPES.join(",")}
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];

@@ -12,7 +12,11 @@ import {
 } from "@wasanni/contracts";
 import { NotFoundError, organizationScope } from "@wasanni/kit";
 import type { PrincipalApi } from "../../plugins/types.ts";
-import { assertAvatarKey, assertAvatarUploaded, createAvatarUploadTicket } from "./avatar.ts";
+import {
+  assertImageKey,
+  assertImageUploaded,
+  createImageUploadTicket,
+} from "../image/index.ts";
 import type { MemberDeps } from "./types.ts";
 
 export const createMemberRoutes = <T extends PrincipalApi>(
@@ -101,10 +105,9 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      const ticket = await createAvatarUploadTicket(
+      const ticket = await createImageUploadTicket(
         storage,
-        principal.organizationId,
-        principal.memberId,
+        `${principal.organizationId}/members/${principal.memberId}/`,
         body.contentType,
       );
 
@@ -122,8 +125,11 @@ export const createMemberRoutes = <T extends PrincipalApi>(
       principal,
       body,
     }) => {
-      assertAvatarKey(body.key, principal.organizationId, principal.memberId);
-      await assertAvatarUploaded(storage, body.key);
+      assertImageKey(
+        body.key,
+        `${principal.organizationId}/members/${principal.memberId}/`,
+      );
+      await assertImageUploaded(storage, body.key);
 
       const member = await service.setAvatar(
         organizationScope(principal),
