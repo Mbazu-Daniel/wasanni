@@ -20,6 +20,7 @@ export type SweepResult = {
   expiredOrganizations: string[];
   purgedAuthSessions: number;
   purgedVerifications: number;
+  purgedJoinCodes: number;
 };
 
 export type Block = {

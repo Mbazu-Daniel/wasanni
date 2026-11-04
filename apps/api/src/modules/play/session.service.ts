@@ -1,13 +1,17 @@
+import { randomInt } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import {
+  game as gameTable,
   gameSession,
+  joinCode,
   match,
   matchParticipant,
+  platform,
   tournament,
   tournamentParticipant,
 } from "@wasanni/db/schema";
-import { scopeTo } from "@wasanni/db";
+import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
   BadRequestError,
@@ -31,6 +35,8 @@ import {
   readGameState,
 } from "../games/game-state.ts";
 import type { GameSessionRow, SessionCreateInput, SessionServiceDeps } from "./types.ts";
+
+const JOIN_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 const toView = (row: GameSessionRow): GameSessionView => ({
   id: row.id,
@@ -303,6 +309,50 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       const session = toView(row);
 
+      const [namedPlatform] = await db
+        .select({ slug: platform.slug })
+        .from(platform)
+        .where(scopeTo(scope, platform, eq(platform.id, row.platformId)))
+        .limit(1);
+
+      const [namedGame] = await db
+        .select({ slug: gameTable.slug })
+        .from(gameTable)
+        .where(scopeTo(scope, gameTable, eq(gameTable.id, row.gameId)))
+        .limit(1);
+
+      if (namedPlatform === undefined || namedGame === undefined) {
+        throw new InternalServerError("game session names its platform and game");
+      }
+
+      let code: string | null = null;
+
+      for (let attempt = 0; attempt < 5 && code === null; attempt += 1) {
+        let candidate = "";
+        for (let i = 0; i < 10; i += 1) {
+          candidate += JOIN_CODE_ALPHABET[randomInt(0, JOIN_CODE_ALPHABET.length)];
+        }
+
+        try {
+          await db.insert(joinCode).values({
+            id: newId(),
+            organizationId: scope.organizationId,
+            sessionId: row.id,
+            gameId: row.gameId,
+            platformId: row.platformId,
+            codeHash: sha256Hex(candidate),
+            expiresAt: row.expiresAt,
+          });
+          code = candidate;
+        } catch (error) {
+          if (!isUniqueViolation(error)) throw error;
+        }
+      }
+
+      if (code === null) throw new InternalServerError("a join code could not be issued");
+
+      const apiBase = deps.apiBaseUrl.replace(/\/+$/, "");
+      const playUrl = `${apiBase}/s/${namedPlatform.slug}/${namedGame.slug}/?sessionId=${row.id}&code=${code}`;
       const realtimeBase = deps.realtimeBaseUrl.replace(/\/+$/, "");
       const realtimeUrl = `${realtimeBase}${REALTIME_PATH}/${row.id}?token=${encodeURIComponent(sessionToken)}`;
 
@@ -310,6 +360,8 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
         session,
         sessionToken,
         realtimeUrl,
+        joinCode: code,
+        playUrl,
       };
     },
 

@@ -17,6 +17,7 @@ import type { RateLimitHook } from "../../plugins/types.ts";
 import type { WebhookDispatcher } from "../webhook/types.ts";
 import type { MatchRecorder } from "../competition/types.ts";
 import type { UsageService } from "../usage/types.ts";
+import type { JoinService } from "./join.service.ts";
 import type { createLeaderboardService } from "./leaderboard.service.ts";
 import type { createReplayService } from "./replay.service.ts";
 import type { createScoreService } from "./score.service.ts";
@@ -80,6 +81,7 @@ export type ReplayView = {
 export type SessionServiceDeps = {
   dispatcher: WebhookDispatcher;
   enqueuer: Enqueuer | null;
+  apiBaseUrl: string;
   realtimeBaseUrl: string;
   verifier: ScoreVerifier | null;
   usage: UsageService | null;
@@ -107,6 +109,7 @@ export type PlayServices = {
   sessions: SessionService;
   scores: ScoreService;
   leaderboards: LeaderboardService;
+  joins: JoinService;
   replay: ReplayService;
 };
 
@@ -116,6 +119,7 @@ export type PlayDeps = {
   events: SessionEventStore;
   dispatcher: WebhookDispatcher;
   enqueuer: Enqueuer | null;
+  apiBaseUrl: string;
   realtimeBaseUrl: string;
   matchRecorder?: MatchRecorder;
   verifier: ScoreVerifier | null;

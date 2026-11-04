@@ -119,6 +119,8 @@ export function createEnterService(db: Db, deps: EnterDeps) {
       session: created.session,
       sessionToken: created.sessionToken,
       realtimeUrl: created.realtimeUrl,
+      joinCode: created.joinCode,
+      playUrl: created.playUrl,
     };
   };
 
@@ -281,6 +283,8 @@ export function createEnterService(db: Db, deps: EnterDeps) {
         session: created.session,
         sessionToken: created.sessionToken,
         realtimeUrl: created.realtimeUrl,
+        joinCode: created.joinCode,
+        playUrl: created.playUrl,
       };
     }
 
@@ -317,6 +321,8 @@ export function createEnterService(db: Db, deps: EnterDeps) {
       session: created.session,
       sessionToken: created.sessionToken,
       realtimeUrl: created.realtimeUrl,
+      joinCode: created.joinCode,
+      playUrl: created.playUrl,
       matchId: seated.matchRow.id,
       opponent: rival?.externalUserId ?? null,
     };

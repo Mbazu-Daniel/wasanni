@@ -50,6 +50,7 @@ import {
   ASSISTANT_RATE_LIMIT_PER_MINUTE,
   ASSISTANT_TOTAL_RATE_LIMIT_PER_MINUTE,
   DOCS_PATH,
+  JOIN_RESOLVE_RATE_LIMIT_PER_MINUTE,
   LEADERBOARD_RATE_LIMIT_PER_MINUTE,
   METRICS_PATH,
 } from "./constants.ts";
@@ -107,6 +108,11 @@ export async function createApp(deps: AppDeps) {
         key: ({ principal }) =>
           principal?.kind === "platform" ? `rl:lb:${principal.apiKeyId}` : null,
       },
+      joinResolve: {
+        limit: JOIN_RESOLVE_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ request }) => `rl:join:${assistantBucketOf(request.headers)}`,
+      },
       assistant: {
         limit: ASSISTANT_RATE_LIMIT_PER_MINUTE,
         windowMs: 60_000,
@@ -162,6 +168,7 @@ export async function createApp(deps: AppDeps) {
     events,
     dispatcher,
     enqueuer,
+    apiBaseUrl: deps.env.BETTER_AUTH_URL,
     realtimeBaseUrl: deps.env.REALTIME_PUBLIC_URL,
     matchRecorder: competition.matches,
     verifier,
