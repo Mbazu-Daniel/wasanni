@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/primitives/page-header";
 import { ProviderModal } from "@/components/agents/provider-modal";
 import { apiFetch } from "@/lib/api-client";
-import { usdPerMillion } from "@/lib/format";
 import type {
   AgentProviderView,
   AgentSpecView,
@@ -57,11 +56,6 @@ function ProviderCard({
           }
         >
           {provider.hasKey ? "key stored" : "no key"}
-        </span>
-        <span className="font-mono text-[10px] text-launch-ink/55">
-          {provider.pricing === null
-            ? "unpriced"
-            : `in ${usdPerMillion(provider.pricing.inputMicrosPerMillion)} · out ${usdPerMillion(provider.pricing.outputMicrosPerMillion)} /M`}
         </span>
       </div>
 

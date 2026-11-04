@@ -35,7 +35,6 @@ export function ProviderModal({
   const [model, setModel] = React.useState("");
   const [apiKey, setApiKey] = React.useState("");
   const [isDefault, setIsDefault] = React.useState(false);
-  const [maxRequestTokens, setMaxRequestTokens] = React.useState("");
   const [models, setModels] = React.useState<ModelOption[]>([]);
   const [busy, setBusy] = React.useState(false);
 
@@ -53,7 +52,6 @@ export function ProviderModal({
     setModel(provider?.model ?? listed[0]?.id ?? "");
     setApiKey("");
     setIsDefault(provider?.isDefault ?? false);
-    setMaxRequestTokens(provider?.maxRequestTokens?.toString() ?? "");
     setModels(listed);
   }, [open, provider, specs]);
 
@@ -95,8 +93,6 @@ export function ProviderModal({
   const submit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
 
-    const budget = maxRequestTokens === "" ? undefined : Number(maxRequestTokens);
-
     const payload = {
       ...(provider === null
         ? {
@@ -111,7 +107,6 @@ export function ProviderModal({
             ...(apiKey === "" ? {} : { apiKey }),
             isDefault,
           }),
-      ...(budget === undefined ? {} : { maxRequestTokens: budget }),
       ...(chosen?.baseUrl === "" ? { baseUrl } : {}),
     };
 
@@ -142,7 +137,7 @@ export function ProviderModal({
       open={open}
       onOpenChange={onOpenChange}
       title={provider === null ? "Add a model provider" : `Edit ${provider.name}`}
-      description="Wasanni calls this endpoint with your key and meters every answer against your usage."
+      description=""
       backdrop={false}
     >
       <form onSubmit={submit} className="mt-5 space-y-3">
@@ -182,7 +177,7 @@ export function ProviderModal({
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder={provider?.hasKey ?? false ? "stored — leave blank to keep" : "optional for local endpoints"}
+              placeholder={provider?.hasKey ?? false ? "stored: leave blank to keep" : "optional for local endpoints"}
             />
           </div>
         </div>
@@ -222,23 +217,6 @@ export function ProviderModal({
               Load models
             </Button>
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="provider-budget">Token budget per request</Label>
-          <Input
-            id="provider-budget"
-            type="number"
-            min={1000}
-            step={1000}
-            value={maxRequestTokens}
-            onChange={(event) => setMaxRequestTokens(event.target.value)}
-            placeholder="32000"
-          />
-          <p className="text-xs text-muted-foreground">
-            Groq's free tier answers 8000 tokens a minute. Set the number your key allows and
-            Wasanni drops the oldest turns of a chat until the request fits.
-          </p>
         </div>
 
         <div className="flex items-center justify-between rounded-lg border border-launch-ink/15 px-3 py-2.5">

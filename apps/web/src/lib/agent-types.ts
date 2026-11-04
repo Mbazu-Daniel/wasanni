@@ -6,7 +6,6 @@ export type {
   AgentRunMode,
   AgentRunView,
   AgentSessionView,
-  AgentSpendView,
   AgentSpecModel,
   AgentSpecView,
   AgentTurnView,
@@ -28,11 +27,7 @@ export type AgentStreamEvent =
       runId: string;
       sessionId: string;
       model: string;
-      costMicros: number;
-      promptTokens: number;
-      completionTokens: number;
       durationMs: number;
-      trimmedMessages: number;
     }
   | {
       kind: "error";

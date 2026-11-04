@@ -44,7 +44,6 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
   const [paneChoice, setPaneChoice] = React.useState<"code" | "preview" | null>(null);
   const [artifactFile, setArtifactFile] = React.useState<string | null>(null);
   const [confirming, setConfirming] = React.useState<AgentSessionView | null>(null);
-  const [trimmedMessages, setTrimmedMessages] = React.useState(0);
   const [pending, setPending] = React.useState<AgentPendingApproval | null>(null);
   const [failure, setFailure] = React.useState<AgentFailure | null>(null);
 
@@ -132,7 +131,6 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
     setLive({ prompt: leg.prompt, answer: "", thinking: "" });
     setThinkingOpen(true);
     setPinned(null);
-    setTrimmedMessages(0);
     setPending(null);
     setFailure(null);
 
@@ -171,7 +169,6 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
 
       if (event.kind === "done") {
         setSessionId(event.sessionId);
-        setTrimmedMessages(event.trimmedMessages);
         return;
       }
 
@@ -304,9 +301,23 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
     setSessionId(null);
     setPinned(null);
     setDraft("");
-    setTrimmedMessages(0);
     setPending(null);
     setLastSent(null);
+  };
+
+  const startInProject = async (project: AgentProjectView): Promise<void> => {
+    start();
+
+    try {
+      const created = await apiFetch<AgentSessionView>(
+        `/api/v1/organizations/${organizationId}/agents/sessions`,
+        { method: "POST", data: { projectId: project.id } },
+      );
+      setSessionId(created.id);
+      refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not start the session");
+    }
   };
 
   const regenerate = (): void => {
@@ -472,6 +483,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           onTogglePin={(session) => void togglePin(session)}
           onMoveSession={(session, projectId) => void moveSession(session, projectId)}
           onDeleteSession={setConfirming}
+          onNewSessionInProject={(project) => void startInProject(project)}
           onRenameProject={(project, name) => void renameProject(project, name)}
           onDeleteProject={(project) => void dropProject(project)}
         />
@@ -485,6 +497,9 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           sessionId={sessionId}
           sessionGameName={sessionGame?.name ?? null}
           hasProviders={providers.length > 0}
+          providers={providers}
+          chosenProviderId={chosen?.id ?? ""}
+          onProviderChange={setProviderId}
           turns={turns}
           turnsPending={turnsPending}
           live={live}
@@ -495,10 +510,8 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           approval={approval}
           approvalGameName={sessionGame?.name ?? null}
           onDecide={(approved) => void decide(approved)}
-          trimmedMessages={trimmedMessages}
           shownTurnId={shownTurn?.id ?? null}
           lastAssistantId={lastAssistant?.id ?? null}
-          lastAssistantRunId={lastAssistant?.runId ?? null}
           canRegenerate={lastSent !== null}
           onRegenerate={regenerate}
           onShowTurn={(turn) => setPinned(turn.id)}
@@ -524,8 +537,6 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           onRunPlan={runPlan}
           lastSentMode={lastSent?.mode ?? null}
           providers={providers}
-          chosenProviderId={chosen?.id ?? ""}
-          onProviderChange={setProviderId}
           approvalPending={approval !== null}
         />
       </ResizablePanel>
