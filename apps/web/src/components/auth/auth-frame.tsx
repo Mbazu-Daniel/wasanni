@@ -62,7 +62,7 @@ function BrandPanel() {
             </span>
           ))}
           <p className="pl-1 text-sm leading-5 text-(--launch-paper)/75">
-            Builds, sessions, brackets and teammates — one workspace.
+            Builds, sessions, brackets and teammates: one workspace.
           </p>
         </div>
       </div>

@@ -276,7 +276,7 @@ export function UploadWizard({
             />
             <p className="text-xs text-muted-foreground">
               Use the version string from your build. Wasanni does not compare
-              versions — the newest ready file wins.
+              versions: the newest ready file wins.
             </p>
           </div>
 

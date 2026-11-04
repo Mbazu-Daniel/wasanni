@@ -72,7 +72,7 @@ export function TournamentParticipantsPanel({
       sortValue: (row) => row.seed ?? 999,
       render: (row) =>
         row.seed === null ? (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">Unseeded</span>
         ) : (
           <span className="grid size-7 place-items-center rounded-full bg-ink/[0.06] font-mono text-xs font-semibold">
             {row.seed}
@@ -140,7 +140,7 @@ export function TournamentParticipantsPanel({
           <p className="mt-0.5 text-xs text-muted-foreground">
             {tournament.platform
               ? `Players from ${tournament.platform.name}.`
-              : "No platform — participants cannot be registered."}
+              : "No platform: participants cannot be registered."}
           </p>
         </div>
         {canRegister && (

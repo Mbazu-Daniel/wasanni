@@ -358,10 +358,10 @@ function AuditPage() {
                                 label="Timestamp"
                                 value={formatDateTime(row.createdAt)}
                               />
-                              <Detail label="IP address" value={row.ipAddress ?? "—"} />
+                              <Detail label="IP address" value={row.ipAddress ?? "Not recorded"} />
                               <Detail
                                 label="User agent"
-                                value={row.userAgent ?? "—"}
+                                value={row.userAgent ?? "Not recorded"}
                                 small
                               />
                             </div>

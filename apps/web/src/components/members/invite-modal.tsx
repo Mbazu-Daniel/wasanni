@@ -10,8 +10,8 @@ import { toastAuthError } from "@/lib/auth-error";
 import type { RoleName } from "@/lib/role-types";
 
 const ROLE_OPTIONS: { value: RoleName; label: string; ownerOnly: boolean }[] = [
-  { value: "member", label: "Member — build and read", ownerOnly: false },
-  { value: "admin", label: "Admin — manage the organization", ownerOnly: true },
+  { value: "member", label: "Member: build and read", ownerOnly: false },
+  { value: "admin", label: "Admin: manage the organization", ownerOnly: true },
 ];
 
 export function InviteModal({

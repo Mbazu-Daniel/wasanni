@@ -92,10 +92,7 @@ function NewPlatformPage() {
             required
             pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
           />
-          <p className="text-xs text-muted-foreground">
-            Used in URLs. Lowercase letters, numbers, and dashes.
-          </p>
-        </div>
+       </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="description">Description (optional)</Label>

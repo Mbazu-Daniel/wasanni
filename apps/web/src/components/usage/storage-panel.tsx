@@ -14,11 +14,12 @@ export function StorageBreakdown({
   return (
     <div>
       <h2 className="text-sm font-semibold">Storage</h2>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        {storage === undefined ? "—" : formatBytes(total)} used across{" "}
-        {storage?.games.length ?? 0} games and {storage?.templates.length ?? 0}{" "}
-        templates.
-      </p>
+      {storage !== undefined && (
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {formatBytes(total)} used across {storage.games.length} games and{" "}
+          {storage.templates.length} templates.
+        </p>
+      )}
 
       <div className="mt-3 space-y-2">
         {storage === undefined || total === 0 ? (

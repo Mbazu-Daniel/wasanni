@@ -422,7 +422,7 @@ function NewTournamentPage() {
             <div key={row.label} className="flex items-baseline justify-between gap-3 text-sm">
               <dt className="shrink-0 text-muted-foreground">{row.label}</dt>
               <dd className="truncate text-right font-medium">
-                {row.value === "" ? "—" : row.value}
+                {row.value === "" ? "Not set" : row.value}
               </dd>
             </div>
           ))}

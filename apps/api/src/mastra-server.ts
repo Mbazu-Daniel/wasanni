@@ -60,5 +60,5 @@ const fetchAll: (request: Request) => Response | Promise<Response> =
 Bun.serve({ port, hostname, fetch: fetchAll });
 
 console.log(
-  `mastra studio server on http://${hostname}:${port} — the studio UI and the API live here`,
+  `mastra studio server on http://${hostname}:${port}: the studio UI and the API live here`,
 );

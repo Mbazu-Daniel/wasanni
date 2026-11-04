@@ -34,7 +34,11 @@ export function TournamentBracketPanel({
         <div>
           <h2 className="text-sm font-semibold">Bracket</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {data ? `${data.bracketSize} participants · ${data.totalRounds} rounds` : "—"}
+            {data
+              ? `${data.bracketSize} participants · ${data.totalRounds} rounds`
+              : isLoading
+                ? ""
+                : "No bracket generated"}
             {data?.currentRound ? ` · round ${data.currentRound}` : ""}
           </p>
         </div>
