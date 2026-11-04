@@ -191,6 +191,7 @@ export function createGameBundleProcessor(
         organizationId: row.organizationId,
         gameId: row.gameId,
         fileId: row.id,
+        platformId: row.platformId,
         promote: {
           status: "ready",
           servedPrefix: prefix,

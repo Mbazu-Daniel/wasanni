@@ -1,12 +1,12 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { gameFile } from "@wasanni/db/schema";
-import { scopeTo, markFileCurrent, demoteCurrentGameFile } from "@wasanni/db";
+import { game, gameFile, gamePlatformAssignment, platform } from "@wasanni/db/schema";
+import { isUniqueViolation, scopeTo, markFileCurrent, demoteCurrentGameFile } from "@wasanni/db";
 import type { Scope } from "@wasanni/kit";
 import {
   BadRequestError,
-  buildObjectKey,
   ConflictError,
+  ForbiddenError,
   confirmPendingUpload,
   InternalServerError,
   newId,
@@ -23,6 +23,17 @@ import type { GameFileRow, GameFileUploadInput } from "./types.ts";
 const isZip = (contentType: string): boolean =>
   contentType === "application/zip" || contentType === "application/x-zip-compressed";
 
+const gameSlugOf = async (db: Db, scope: Scope, gameId: string): Promise<string> => {
+  const [owner] = await db
+    .select({ slug: game.slug })
+    .from(game)
+    .where(scopeTo(scope, game, eq(game.id, gameId)))
+    .limit(1);
+
+  if (owner === undefined) throw new NotFoundError("game not found");
+  return owner.slug;
+};
+
 const nextVersion = (latest: string | undefined): string => {
   const match = /^(.+)-(\d+)$/.exec(latest ?? "");
 
@@ -31,10 +42,12 @@ const nextVersion = (latest: string | undefined): string => {
     : `${match[1]}-${Number(match[2]) + 1}`;
 };
 
-const toView = (row: GameFileRow): GameFileView => ({
+const toView = (row: GameFileRow & { platformSlug: string | null }): GameFileView => ({
   id: row.id,
   organizationId: row.organizationId,
   gameId: row.gameId,
+  platformId: row.platformId,
+  platformSlug: row.platformSlug,
   version: row.version,
   sizeBytes: row.sizeBytes,
   contentType: row.contentType,
@@ -57,14 +70,56 @@ export function createGameFileService(
   config: StorageLimits,
   enqueuer: Enqueuer | null,
 ) {
+  const resolveBuildPlatform = async (
+    scope: Scope,
+    gameId: string,
+    platformId: string | undefined,
+  ): Promise<{ id: string; slug: string }> => {
+    if (platformId !== undefined) {
+      const [assignment] = await db
+        .select({ id: platform.id, slug: platform.slug })
+        .from(gamePlatformAssignment)
+        .innerJoin(platform, eq(platform.id, gamePlatformAssignment.platformId))
+        .where(
+          scopeTo(
+            scope,
+            gamePlatformAssignment,
+            eq(gamePlatformAssignment.gameId, gameId),
+            eq(gamePlatformAssignment.platformId, platformId),
+          ),
+        )
+        .limit(1);
+
+      if (assignment === undefined) {
+        throw new ForbiddenError("this game is not assigned to the platform");
+      }
+      return assignment;
+    }
+
+    const rows = await db
+      .select({ id: platform.id, slug: platform.slug })
+      .from(gamePlatformAssignment)
+      .innerJoin(platform, eq(platform.id, gamePlatformAssignment.platformId))
+      .where(scopeTo(scope, gamePlatformAssignment, eq(gamePlatformAssignment.gameId, gameId)));
+
+    if (rows.length === 0) {
+      throw new BadRequestError("assign the game to a platform before uploading a build");
+    }
+    if (rows.length > 1) {
+      throw new BadRequestError("this game is on several platforms, name the platform for this build");
+    }
+    return rows[0] as { id: string; slug: string };
+  };
+
   const getFile = async (
     scope: Scope,
     gameId: string,
     fileId: string,
-  ): Promise<GameFileRow> => {
+  ): Promise<GameFileRow & { platformSlug: string | null }> => {
     const [row] = await db
-      .select()
+      .select({ ...getTableColumns(gameFile), platformSlug: platform.slug })
       .from(gameFile)
+      .leftJoin(platform, eq(platform.id, gameFile.platformId))
       .where(scopeTo(scope, gameFile, eq(gameFile.id, fileId), eq(gameFile.gameId, gameId)))
       .limit(1);
 
@@ -83,8 +138,9 @@ export function createGameFileService(
   return {
     async list(scope: Scope, gameId: string): Promise<GameFileView[]> {
       const rows = await db
-        .select()
+        .select({ ...getTableColumns(gameFile), platformSlug: platform.slug })
         .from(gameFile)
+        .leftJoin(platform, eq(platform.id, gameFile.platformId))
         .where(scopeTo(scope, gameFile, eq(gameFile.gameId, gameId)))
         .orderBy(desc(gameFile.createdAt));
 
@@ -125,42 +181,53 @@ export function createGameFileService(
       }
 
       const fileId = newId();
+      const slug = await gameSlugOf(db, scope, input.gameId);
+      const buildPlatform = await resolveBuildPlatform(scope, input.gameId, input.body.platformId);
+      const stamp = Date.now();
+      const ext = input.body.filename.includes(".")
+        ? (input.body.filename.split(".").pop() as string).toLowerCase()
+        : "html";
+      const key = kind === "bundle"
+        ? `${buildPlatform.slug}/${slug}/${stamp}.zip`
+        : `${buildPlatform.slug}/${slug}/${stamp}.${ext}`;
 
       const upload = await storage.createUploadTarget({
-        key: buildObjectKey({
-          location: "game-bundles",
-          organizationId: scope.organizationId,
-          segments: [input.gameId, fileId],
-          filename: input.body.filename,
-        }),
+        key,
         contentType: input.body.contentType,
         sizeBytes: input.body.sizeBytes,
         expiresInSeconds: config.uploadUrlTtlSeconds,
       });
 
-      const [row] = await db
-        .insert(gameFile)
-        .values({
-          id: fileId,
-          organizationId: scope.organizationId,
-          gameId: input.gameId,
-          version: input.body.version,
-          objectKey: upload.key,
-          sizeBytes: input.body.sizeBytes,
-          contentType: input.body.contentType,
-          status: "pending_upload",
-          kind,
-          entryPoint: input.body.entryPoint ?? "index.html",
-          crossOriginIsolation: input.body.crossOriginIsolation ?? false,
-          spaFallback: input.body.spaFallback ?? false,
-          uploadedByMemberId: input.memberId,
-          uploadExpiresAt: new Date(upload.expiresAt),
-        })
-        .returning();
+      let row: GameFileRow | undefined;
+      try {
+        [row] = await db
+          .insert(gameFile)
+          .values({
+            id: fileId,
+            organizationId: scope.organizationId,
+            gameId: input.gameId,
+            platformId: buildPlatform.id,
+            version: input.body.version,
+            objectKey: upload.key,
+            sizeBytes: input.body.sizeBytes,
+            contentType: input.body.contentType,
+            status: "pending_upload",
+            kind,
+            entryPoint: input.body.entryPoint ?? "index.html",
+            crossOriginIsolation: input.body.crossOriginIsolation ?? false,
+            spaFallback: input.body.spaFallback ?? false,
+            uploadedByMemberId: input.memberId,
+            uploadExpiresAt: new Date(upload.expiresAt),
+          })
+          .returning();
+      } catch (error) {
+        if (isUniqueViolation(error)) throw new ConflictError("this build timestamp is taken, retry the upload");
+        throw error;
+      }
 
       if (row === undefined) throw new InternalServerError("game file insert returned no row");
 
-      return { file: toView(row), upload };
+      return { file: toView({ ...row, platformSlug: buildPlatform.slug }), upload };
     },
 
     async completeUpload(
@@ -209,6 +276,7 @@ export function createGameFileService(
           organizationId: scope.organizationId,
           gameId: row.gameId,
           fileId: row.id,
+          platformId: row.platformId,
           promote: { status: "ready", etag, readyAt: new Date() },
         }),
       );
@@ -220,14 +288,14 @@ export function createGameFileService(
         .limit(1);
 
       if (updated === undefined) throw new NotFoundError("game file not found");
-      return toView(updated);
+      return toView({ ...updated, platformSlug: row.platformSlug });
     },
 
     async putPublishedBundle(
       scope: Scope,
       gameId: string,
-      input: { memberId: string; html: string },
-    ): Promise<GameFileView> {
+      input: { memberId: string; html: string; platformId?: string },
+    ): Promise<{ file: GameFileView; url: string }> {
       const owner = await readGameState(db, scope, gameId);
 
       if (owner === null) throw new NotFoundError("game not found");
@@ -249,37 +317,41 @@ export function createGameFileService(
         .limit(1);
 
       const fileId = newId();
+      const slug = await gameSlugOf(db, scope, gameId);
+      const buildPlatform = await resolveBuildPlatform(scope, gameId, input.platformId);
       const stored = await storage.putObject({
-        key: buildObjectKey({
-          location: "game-bundles",
-          organizationId: scope.organizationId,
-          segments: [gameId, fileId],
-          filename: "index.html",
-        }),
+        key: `${buildPlatform.slug}/${slug}/${Date.now()}.html`,
         body,
         contentType: "text/html",
       });
 
-      await db.transaction(async (tx) => {
-        await demoteCurrentGameFile(tx, scope.organizationId, gameId);
+      try {
+        await db.transaction(async (tx) => {
+          await demoteCurrentGameFile(tx, scope.organizationId, gameId, buildPlatform.id);
 
-        await tx.insert(gameFile).values({
-          id: fileId,
-          organizationId: scope.organizationId,
-          gameId,
-          version: nextVersion(latest?.version),
-          objectKey: stored.key,
-          sizeBytes: stored.sizeBytes,
-          contentType: "text/html",
-          etag: stored.etag,
-          status: "ready",
-          kind: "single",
-          entryPoint: "index.html",
-          isCurrent: true,
-          readyAt: new Date(),
-          uploadedByMemberId: input.memberId,
+          await tx.insert(gameFile).values({
+            id: fileId,
+            organizationId: scope.organizationId,
+            gameId,
+            platformId: buildPlatform.id,
+            version: nextVersion(latest?.version),
+            objectKey: stored.key,
+            sizeBytes: stored.sizeBytes,
+            contentType: "text/html",
+            etag: stored.etag,
+            status: "ready",
+            kind: "single",
+            entryPoint: "index.html",
+            isCurrent: true,
+            readyAt: new Date(),
+            uploadedByMemberId: input.memberId,
+          });
         });
-      });
+      } catch (error) {
+        await storage.deleteObject(stored.key).catch(() => undefined);
+        if (isUniqueViolation(error)) throw new ConflictError("this build timestamp is taken, retry the deploy");
+        throw error;
+      }
 
       const [row] = await db
         .select()
@@ -288,7 +360,7 @@ export function createGameFileService(
         .limit(1);
 
       if (row === undefined) throw new InternalServerError("game file insert returned no row");
-      return toView(row);
+      return { file: toView({ ...row, platformSlug: buildPlatform.slug }), url: storage.publicUrl(stored.key) };
     },
 
     async createDownloadUrl(

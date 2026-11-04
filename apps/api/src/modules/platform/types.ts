@@ -5,7 +5,6 @@ export type PlatformRow = (typeof platform.$inferSelect);
 
 export type PlatformPatch = {
   name?: string;
-  slug?: string;
   description?: string | null;
 };
 

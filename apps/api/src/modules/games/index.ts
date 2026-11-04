@@ -73,11 +73,11 @@ export const createAgentGamePort = (deps: Pick<GamesDeps, "db" | "storage" | "co
 
       return { ...row, currentVersion: current?.version ?? null };
     },
-    async deploy(scope, memberId, gameId, html) {
-      const file = await files.putPublishedBundle(scope, gameId, { memberId, html });
+    async deploy(scope, memberId, gameId, html, platformId?) {
+      const published = await files.putPublishedBundle(scope, gameId, { memberId, html, platformId });
       await games.publish(scope, gameId);
 
-      return file.version;
+      return { version: published.file.version, url: published.url };
     },
   };
 };
