@@ -201,6 +201,8 @@ export const TournamentEnterView = t.Object({
   session: GameSessionView,
   sessionToken: t.String(),
   realtimeUrl: t.String(),
+  joinCode: t.String(),
+  playUrl: t.String(),
   matchId: t.Optional(t.String()),
   opponent: t.Optional(t.Nullable(t.String())),
 });
@@ -212,6 +214,8 @@ export const DuelEnterView = t.Object({
   session: GameSessionView,
   sessionToken: t.String(),
   realtimeUrl: t.String(),
+  joinCode: t.String(),
+  playUrl: t.String(),
 });
 export type DuelEnterView = UnwrapSchema<typeof DuelEnterView>;
 

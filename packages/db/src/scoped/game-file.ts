@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import type { Scope } from "@wasanni/kit";
 import { gameFile } from "../schema/index.ts";
 import type { DbExecutor } from "../types.ts";
@@ -10,6 +10,7 @@ export const demoteCurrentGameFile = async (
   executor: DbExecutor,
   organizationId: string,
   gameId: string,
+  platformId: string | null,
 ): Promise<void> => {
   await executor
     .update(gameFile)
@@ -20,6 +21,7 @@ export const demoteCurrentGameFile = async (
         gameFile,
         eq(gameFile.gameId, gameId),
         eq(gameFile.isCurrent, true),
+        platformId === null ? isNull(gameFile.platformId) : eq(gameFile.platformId, platformId),
       ),
     );
 };
@@ -30,10 +32,11 @@ export const markFileCurrent = async (
     organizationId: string;
     gameId: string;
     fileId: string;
+    platformId: string | null;
     promote: Partial<typeof gameFile.$inferInsert>;
   },
 ): Promise<void> => {
-  await demoteCurrentGameFile(executor, input.organizationId, input.gameId);
+  await demoteCurrentGameFile(executor, input.organizationId, input.gameId, input.platformId);
 
   await executor
     .update(gameFile)

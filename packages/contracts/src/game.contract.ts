@@ -54,7 +54,6 @@ export type CreateGameBody = UnwrapSchema<typeof CreateGameBody>;
 export const UpdateGameBody = t.Object(
   {
     name: t.Optional(t.String({ minLength: 1, maxLength: 120 })),
-    slug: t.Optional(GameSlug),
     description: t.Optional(t.Union([t.String({ maxLength: 1000 }), t.Null()])),
     imageUrl: t.Optional(t.Null()),
     hints: t.Optional(GameHints),

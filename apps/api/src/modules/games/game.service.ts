@@ -96,7 +96,6 @@ export function createGameService(db: Db, storage: ObjectStorage) {
           .update(game)
           .set({
             ...(patch.name !== undefined ? { name: patch.name } : {}),
-            ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
             ...(patch.description !== undefined ? { description: patch.description } : {}),
             ...(patch.imageUrl !== undefined ? { imageUrl: patch.imageUrl } : {}),
             ...(patch.hints !== undefined ? { hints: patch.hints } : {}),

@@ -58,7 +58,10 @@ const integrationGuideInput = t.Object({ slug: t.Optional(t.String({ maxLength: 
 
 const emptyInput = t.Object({});
 
-const deployGameInput = t.Object({ html: t.String({ maxLength: 2_000_000 }) });
+const deployGameInput = t.Object({
+  html: t.String({ maxLength: 2_000_000 }),
+  platformId: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
+});
 
 const tournamentIdInput = t.Object({ tournamentId: t.String({ minLength: 1, maxLength: 64 }) });
 
@@ -251,12 +254,17 @@ export const createGuideTool = () => ({
   }),
 });
 
+export type GameBinding = {
+  current: string | null;
+  bind(gameId: string | null): Promise<void>;
+};
+
 export const createGameTools = (input: WriteContext & {
   games: AgentGamePort;
-  gameId: string | null;
+  binding: GameBinding;
   log: Logger;
 }) => {
-  const { games, scope, actor, agentRunId, audit, log, gameId } = input;
+  const { games, scope, actor, agentRunId, audit, log, binding } = input;
   const ctx = { scope, actor, agentRunId, audit };
 
   return {
@@ -270,12 +278,14 @@ export const createGameTools = (input: WriteContext & {
     deploy_game: createTool({
       id: "deploy_game",
       description:
-        "Publish a complete self-contained HTML document as the current version of the game bound to this chat and make it live. The bound game is implicit, so the only argument is the whole file, never a fragment; it replaces the current version. Requires the chat to be bound to a hosted game.",
+        "Publish a complete self-contained HTML document as the current build of the game bound to this chat for one of its platforms and make it live. The bound game is implicit; pass the whole file, never a fragment. Pass the platformId when the game is on several platforms; when the developer names the platform, resolve its id with list_platforms first. With one assignment the platform is used directly. Requires the chat to be bound to a hosted game assigned to a platform.",
       inputSchema: toStandardSchema<Static<typeof deployGameInput>>(deployGameInput),
       requireApproval: true,
-      execute: async ({ html }) => {
-        if (gameId === null) {
-          return "this chat is not bound to a game; ask the user to pick one in the chat header";
+      execute: async ({ html, platformId }) => {
+        const bound = binding.current;
+
+        if (bound === null) {
+          return "this chat is not bound to a game; bind one with bind_game or ask the user to pick one in the chat header";
         }
 
         if (html === "") {
@@ -287,9 +297,9 @@ export const createGameTools = (input: WriteContext & {
           log,
           { tool: "deploy_game", action: "game.updated", resourceType: "game" },
           async () => {
-            const version = await games.deploy(scope, actor.memberId, gameId, html);
+            const deployed = await games.deploy(scope, actor.memberId, bound, html, platformId);
 
-            return { id: gameId, text: `deployed version ${version}` };
+            return { id: bound, text: `deployed version ${deployed.version}; play it at ${deployed.url}` };
           },
         );
       },
@@ -297,7 +307,7 @@ export const createGameTools = (input: WriteContext & {
     create_game: createTool({
       id: "create_game",
       description:
-        "Create a game in this organization with a name, a slug, and hosting external for a game you serve yourself or hosted for one this platform serves. Create it here first, then bind the chat to it before deploy_game can publish its html.",
+        "Create a game in this organization with a name, a slug, and hosting external for a game you serve yourself or hosted for one this platform serves. This binds the chat to the new game automatically, so deploy_game can publish its html next.",
       inputSchema: toStandardSchema<CreateGameBody>(CreateGameBody),
       requireApproval: true,
       execute: (body) =>
@@ -307,13 +317,33 @@ export const createGameTools = (input: WriteContext & {
           { tool: "create_game", action: "game.created", resourceType: "game" },
           async () => {
             const game = await games.create(scope, body);
+            await binding.bind(game.id);
 
             return {
               id: game.id,
-              text: `created game ${game.id} (${game.name}, ${game.hosting}, ${game.status})`,
+              text: `created game ${game.id} (${game.name}, ${game.hosting}, ${game.status}) and bound this chat to it`,
             };
           },
         ),
+    }),
+    bind_game: createTool({
+      id: "bind_game",
+      description:
+        "Bind this chat to one of the organization's games so deploy_game publishes to it. Resolve the gameId with list_games first; never guess one. Replaces whatever the chat is bound to.",
+      inputSchema: toStandardSchema<Static<typeof gameIdInput>>(gameIdInput),
+      requireApproval: true,
+      execute: ({ gameId }) =>
+        guarded(log, "bind_game", async () => {
+          const context = await games.context(scope, gameId);
+
+          if (context === null) {
+            return `no game with id ${gameId} in this organization; resolve one with list_games`;
+          }
+
+          await binding.bind(gameId);
+
+          return `bound this chat to "${context.name}" (${context.slug}); deploy_game publishes to it`;
+        }),
     }),
   };
 };
@@ -597,7 +627,7 @@ export const createAgentTools = (input: {
   scope: Scope;
   actor: AgentActor;
   agentRunId: string;
-  gameId: string | null;
+  binding: GameBinding;
   log: Logger;
   audit: AuditService;
 }) => ({

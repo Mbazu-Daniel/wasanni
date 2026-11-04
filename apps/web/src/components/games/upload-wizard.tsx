@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import {
   IconCheck,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import { FileDrop, type PickedFile } from "@/components/primitives/file-drop";
 
@@ -42,7 +43,12 @@ type CreatedFile = {
   status: "pending_upload" | "extracting" | "ready" | "failed";
   version: string;
   kind: "single" | "bundle";
+  platformSlug: string | null;
 };
+
+type Assignment = { id: string; platformId: string };
+
+type Platform = { id: string; slug: string };
 
 const ACCEPT = ["zip", "html", "htm", "wasm", "js"];
 
@@ -72,6 +78,7 @@ export function UploadWizard({
   const queryClient = useQueryClient();
   const [phase, setPhase] = React.useState<Phase>("select");
   const [picked, setPicked] = React.useState<PickedFile | null>(null);
+  const [platformId, setPlatformId] = React.useState("");
   const [version, setVersion] = React.useState("1.0.0");
   const [entryPoint, setEntryPoint] = React.useState("index.html");
   const [crossOriginIsolation, setCrossOriginIsolation] = React.useState(false);
@@ -86,10 +93,35 @@ export function UploadWizard({
       : "single"
     : null;
 
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["assignments", organizationId, gameId],
+    queryFn: () =>
+      apiFetch<{ assignments: Assignment[] }>(
+        `/api/v1/organizations/${organizationId}/games/${gameId}/assignments`,
+      ).then((r) => r.assignments),
+    enabled: open,
+  });
+
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms", organizationId],
+    queryFn: () =>
+      apiFetch<{ platforms: Platform[] }>(
+        `/api/v1/organizations/${organizationId}/platforms`,
+      ).then((r) => r.platforms),
+    enabled: open,
+  });
+
+  const platformById = new Map(platforms.map((platform) => [platform.id, platform]));
+  const effectivePlatformId =
+    assignments.length === 1 ? (assignments[0] as Assignment).platformId : platformId || null;
+  const effectivePlatformSlug =
+    effectivePlatformId === null ? null : platformById.get(effectivePlatformId)?.slug ?? null;
+
   React.useEffect(() => {
     if (!open) {
       setPhase("select");
       setPicked(null);
+      setPlatformId("");
       setVersion("1.0.0");
       setEntryPoint("index.html");
       setCrossOriginIsolation(false);
@@ -152,6 +184,7 @@ export function UploadWizard({
           method: "POST",
           data: JSON.stringify({
             filename: picked.name,
+            ...(effectivePlatformId === null ? {} : { platformId: effectivePlatformId }),
             version,
             contentType: picked.contentType,
             sizeBytes: picked.sizeBytes,
@@ -265,6 +298,30 @@ export function UploadWizard({
           </div>
 
           <div className="space-y-1.5">
+            <Label>Platform</Label>
+            {assignments.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Assign the game to a platform before uploading a build.
+              </p>
+            ) : assignments.length === 1 ? (
+              <p className="text-sm">
+                Builds publish to{" "}
+                <span className="font-mono font-medium">{effectivePlatformSlug}</span>.
+              </p>
+            ) : (
+              <SearchableSelect
+                value={platformId}
+                onValueChange={setPlatformId}
+                placeholder="Choose a platform"
+                options={assignments.map((assignment) => ({
+                  value: assignment.platformId,
+                  label: platformById.get(assignment.platformId)?.slug ?? assignment.platformId,
+                }))}
+              />
+            )}
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="upload-version">Version</Label>
             <Input
               id="upload-version"
@@ -341,7 +398,11 @@ export function UploadWizard({
             <Button
               size="sm"
               onClick={startUpload}
-              disabled={!version || (kind === "bundle" && !entryPoint)}
+              disabled={
+                !version ||
+                (kind === "bundle" && !entryPoint) ||
+                effectivePlatformId === null
+              }
               className="gap-1.5"
             >
               Upload
@@ -374,6 +435,7 @@ export function UploadWizard({
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {picked.name} · {formatBytes(picked.sizeBytes)}
+              {createdFile.platformSlug !== null && ` · ${createdFile.platformSlug}`}
             </p>
           </motion.div>
           <div className="flex justify-center gap-2">

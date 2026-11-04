@@ -47,7 +47,7 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
       const gameContext =
         session.gameId === null ? null : await games.context(scope, session.gameId);
 
-      const tools = i.toolsFor(scope, { memberId, userId }, runId, session.gameId, log);
+      const tools = i.toolsFor(scope, { memberId, userId }, runId, session.id, session.gameId, log);
       const activeTools = mode === "plan" ? [...READ_ONLY_TOOL_NAMES] : undefined;
 
       yield* i.settle(
@@ -133,7 +133,7 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
         endpoint: i.endpointOf(provider),
         instructions: i.systemOf(await i.readOrg(scope), gameContext, "agent"),
         requestId,
-        tools: i.toolsFor(scope, { memberId, userId }, row.id, session.gameId, log),
+        tools: i.toolsFor(scope, { memberId, userId }, row.id, session.id, session.gameId, log),
         thread: session.id,
         resource: `${scope.organizationId}:${memberId}`,
       });
@@ -173,7 +173,7 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
         session.gameId === null ? null : await games.context(scope, session.gameId);
 
       const log = i.logOf(requestId, scope, row.id);
-      const tools = i.toolsFor(scope, { memberId, userId }, row.id, session.gameId, log);
+      const tools = i.toolsFor(scope, { memberId, userId }, row.id, session.id, session.gameId, log);
 
       await audit.record({
         organizationId: scope.organizationId,

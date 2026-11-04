@@ -80,7 +80,6 @@ export function createPlatformService(db: Db) {
           .update(platform)
           .set({
             ...(patch.name !== undefined ? { name: patch.name } : {}),
-            ...(patch.slug !== undefined ? { slug: patch.slug } : {}),
             ...(patch.description !== undefined ? { description: patch.description } : {}),
             updatedAt: new Date(),
           })

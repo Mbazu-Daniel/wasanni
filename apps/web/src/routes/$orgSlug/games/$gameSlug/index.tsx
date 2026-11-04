@@ -80,7 +80,9 @@ function GameDetailPage() {
   const { data: versions = [] } = useQuery({
     queryKey: ["versions", organizationId, game?.id],
     queryFn: () =>
-      apiFetch<{ files: { id: string; status: string; isCurrent: boolean }[] }>(
+      apiFetch<
+        { files: { id: string; status: string; isCurrent: boolean; platformSlug: string | null }[] }
+      >(
         `/api/v1/organizations/${organizationId}/games/${game!.id}/files`,
       ).then((r) => r.files),
     enabled: !!game,
@@ -128,6 +130,11 @@ function GameDetailPage() {
               gameId={game.id}
               fileId={currentFile?.id ?? null}
               hosting={game.hosting}
+              stablePath={
+                currentFile?.platformSlug
+                  ? `/s/${currentFile.platformSlug}/${game.slug}/`
+                  : undefined
+              }
             />
           </div>
         }

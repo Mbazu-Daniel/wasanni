@@ -47,4 +47,11 @@ jobs:
 
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
-      - run: bun test
+      # Tests are gitignored in this repo, so a checkout may carry none.
+      # `bun test` exits 1 on an empty suite, which would fail every build.
+      - run: |
+          if git ls-files '*.test.*' | grep -q .; then
+            bun test
+          else
+            echo "no tracked test files; skipping bun test"
+          fi

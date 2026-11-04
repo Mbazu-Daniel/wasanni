@@ -42,13 +42,19 @@ The call answers `201`:
 {
   "session": { "id": "01J9…", "status": "active", "startedAt": "…", "expiresAt": "…", "config": { … } },
   "sessionToken": "…",
-  "realtimeUrl": "wss://rt.wasanni.test/rt/01J9…?token=…"
+  "realtimeUrl": "wss://rt.wasanni.test/rt/01J9…?token=…",
+  "joinCode": "K7qZ2mX4pQ",
+  "playUrl": "https://api.wasanni.test/s/arcade/remote-racer/?sessionId=01J9…&code=K7qZ2mX4pQ"
 }
 ```
 
-`sessionToken` is returned only by this call. Hand it to the game client, which
-uses it as a bearer token for its own score (see `scores`). Your backend keeps
-using the api key and never needs the token.
+`sessionToken` is returned only by this call. Your backend keeps using the api
+key and never needs the token again. Hand the player the `joinCode` instead:
+a 10-character code that resolves at `GET /api/v1/join/:code` into the play
+url, the realtime url, and the session's platform, game, tournament and
+player, and that authenticates exactly like the token. Or hand over the
+`playUrl` directly: it loads the platform's current build with the session
+already attached.
 
 ## What must already be true
 
@@ -69,8 +75,9 @@ Sessions are also rate limited per api key:
 
 `expiresAt` is the moment the session was opened plus the `sessionDurationSeconds`
 of the config snapshot. Anything other than an integer between 60 and 86 400
-falls back to 3 600 seconds rather than refusing the session, so a typo in a
-config widens the window instead of breaking play.
+falls back to 1 800 seconds (30 minutes) rather than refusing the session, so a
+typo in a config widens the window instead of breaking play. An ended or
+expired session is dead: no score and no join code is accepted for it again.
 
 A session row is `active`, `ended`, or `expired`. Nothing marks a session
 `expired` when it is only read: the worker's session sweep flips `active` rows

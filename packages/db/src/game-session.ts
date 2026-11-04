@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gt, or } from "drizzle-orm";
 import type { Db, GameSessionCredential } from "./types.ts";
 import { gameSession } from "./schema/play/game-session.ts";
+import { joinCode } from "./schema/play/join-code.ts";
 
 export async function readGameSessionByToken(
   db: Db,
@@ -18,7 +19,13 @@ export async function readGameSessionByToken(
       expiresAt: gameSession.expiresAt,
     })
     .from(gameSession)
-    .where(eq(gameSession.tokenHash, tokenHash))
+    .leftJoin(joinCode, eq(joinCode.sessionId, gameSession.id))
+    .where(
+      or(
+        eq(gameSession.tokenHash, tokenHash),
+        and(eq(joinCode.codeHash, tokenHash), gt(joinCode.expiresAt, new Date())),
+      ),
+    )
     .limit(1);
 
   return row ?? null;

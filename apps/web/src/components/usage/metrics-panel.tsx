@@ -1,9 +1,10 @@
 import {
   IconBroadcast,
-  IconChartBar,
+  IconDatabase,
   IconDeviceGamepad2,
   IconMedal,
   IconPlayerPlay,
+  IconRobot,
   IconSwords,
 } from "@tabler/icons-react";
 import { formatBytes } from "@/lib/format";
@@ -35,22 +36,20 @@ const CARDS: {
     icon: IconMedal,
     format: (value) => value.toLocaleString(),
   },
-  {
-    metric: "bandwidth_bytes",
-    label: "Bandwidth",
-    icon: IconChartBar,
-    format: formatBytes,
-  },
 ];
 
 export function UsageMetrics({
   totals,
   gameCount,
   platformCount,
+  storageBytes,
+  providerCount,
 }: {
   totals: Record<string, number>;
   gameCount: number;
   platformCount: number;
+  storageBytes: number | null;
+  providerCount: number | null;
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7">
@@ -75,6 +74,18 @@ export function UsageMetrics({
           format={card.format}
         />
       ))}
+      <Card
+        label="Storage"
+        icon={IconDatabase}
+        value={storageBytes}
+        format={formatBytes}
+      />
+      <Card
+        label="AI providers"
+        icon={IconRobot}
+        value={providerCount}
+        format={count}
+      />
     </div>
   );
 }
@@ -88,7 +99,7 @@ function Card({
   format,
 }: {
   label: string;
-  value: number;
+  value: number | null;
   icon: Icon;
   format: (value: number) => string;
 }) {
@@ -99,7 +110,7 @@ function Card({
         {label}
       </div>
       <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">
-        {format(value)}
+        {value === null ? "—" : format(value)}
       </p>
     </div>
   );

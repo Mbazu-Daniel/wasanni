@@ -13,7 +13,7 @@ import {
   TEXT_ATTACHMENT_EXTENSIONS,
 } from "./constants.ts";
 import type { ProviderEndpoint } from "./transport.ts";
-import { createAgentTools } from "./tools.ts";
+import { createAgentTools, type GameBinding } from "./tools.ts";
 import { classifyProviderError } from "./provider-error.ts";
 import type { AgentRunOutcome } from "./run-agent.ts";
 import type { ProviderFailure } from "./provider-error.ts";
@@ -293,17 +293,30 @@ export function createAgentInternals(deps: AgentModuleDeps) {
   ): string =>
     `${DEFAULT_SYSTEM_PROMPT}\n${MODE_INSTRUCTIONS[mode]}\nThis chat runs inside the organization "${org.name}" (id ${org.id}, slug ${org.slug}). Use that organization directly; never ask the user to supply an organization id, slug, or name.` +
     (gameContext === null
-      ? ""
+      ? "\nThis chat is not bound to a game. deploy_game will refuse until the developer picks one in the chat header; never claim a deploy started."
       : `\nThis chat is bound to the game "${gameContext.name}" (id ${gameContext.id}, slug ${gameContext.slug}, hosting ${gameContext.hosting}, status ${gameContext.status}, current version ${gameContext.currentVersion ?? "none"}). deploy_game publishes to this game.`);
 
   const toolsFor = (
     scope: Scope,
     actor: { memberId: string; userId: string },
     agentRunId: string,
+    sessionId: string,
     gameId: string | null,
     log: Logger,
-  ) =>
-    createAgentTools({
+  ) => {
+    const binding: GameBinding = {
+      current: gameId,
+      bind: async (next) => {
+        binding.current = next;
+
+        await db
+          .update(agentSession)
+          .set({ gameId: next })
+          .where(scopeTo(scope, agentSession, eq(agentSession.id, sessionId)));
+      },
+    };
+
+    return createAgentTools({
       api,
       games,
       integrator,
@@ -311,10 +324,11 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       scope,
       actor,
       agentRunId,
-      gameId,
+      binding,
       log,
       audit,
     });
+  };
 
   const touchSession = (sessionId: string) =>
     db

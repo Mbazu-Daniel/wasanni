@@ -113,6 +113,15 @@ function OverviewPage() {
     enabled: org !== null,
   });
 
+  const { data: providers = [] } = useQuery({
+    queryKey: ["providers", organizationId],
+    queryFn: () =>
+      apiFetch<{ providers: { id: string }[] }>(
+        `/api/v1/organizations/${organizationId}/agents/providers`,
+      ).then((response) => response.providers),
+    enabled: org !== null,
+  });
+
   const { data: orgKeys = [] } = useQuery({
     queryKey: ["keys", organizationId, "all"],
     queryFn: () =>
@@ -303,6 +312,8 @@ function OverviewPage() {
             totals={totals}
             gameCount={games.length}
             platformCount={platforms.length}
+            storageBytes={storage?.total ?? null}
+            providerCount={providers.length}
           />
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">

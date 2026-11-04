@@ -298,7 +298,7 @@ export const createAgentRoutes = <T extends PrincipalApi>(
         params: AgentSessionParams,
         body: UpdateAgentSessionBody,
         response: { 200: AgentSessionView },
-        detail: { tags: ["agents"], summary: "Rename or pin an agent session" },
+        detail: { tags: ["agents"], summary: "Rename, pin, move, or bind an agent session to a game" },
       },
     )
     .delete(

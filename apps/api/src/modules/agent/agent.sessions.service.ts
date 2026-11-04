@@ -70,7 +70,7 @@ const toTurns = (row: RunRow): AgentTurnView[] => {
 };
 
 export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInternals) {
-  const { db, runtime } = deps;
+  const { db, games, runtime } = deps;
 
   const totalsFor = async (
     scope: Scope,
@@ -199,9 +199,15 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
       const current = await i.readSession(scope, memberId, sessionId);
       const title = body.title ?? current.title;
       const projectId = body.projectId === undefined ? current.projectId : body.projectId;
+      const gameId = body.gameId === undefined ? current.gameId : body.gameId;
 
       if (projectId !== null && projectId !== current.projectId) {
         await i.readProject(scope, memberId, projectId);
+      }
+
+      if (gameId !== null && gameId !== current.gameId) {
+        const context = await games.context(scope, gameId);
+        if (context === null) throw new NotFoundError("game not found");
       }
 
       if (body.title !== undefined && body.title !== current.title) {
@@ -214,6 +220,7 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
           title,
           pinned: body.pinned ?? current.pinned,
           projectId,
+          gameId,
           updatedAt: current.updatedAt,
         })
         .where(scopeTo(scope, agentSession, eq(agentSession.id, sessionId)))

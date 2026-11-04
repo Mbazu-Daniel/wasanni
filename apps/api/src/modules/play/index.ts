@@ -1,6 +1,8 @@
 import type { PrincipalApi } from "../../plugins/types.ts";
 import { createLeaderboardRoutes } from "./leaderboard.routes.ts";
 import { createLeaderboardService } from "./leaderboard.service.ts";
+import { createJoinRoutes } from "./join.routes.ts";
+import { createJoinService } from "./join.service.ts";
 import { createReplayRoutes } from "./replay.routes.ts";
 import { createReplayService } from "./replay.service.ts";
 import { createScoreRoutes } from "./score.routes.ts";
@@ -10,9 +12,14 @@ import { createSessionService } from "./session.service.ts";
 import type { PlayDeps, PlayRouteDeps, PlayServices } from "./types.ts";
 
 export const createPlayServices = (deps: PlayDeps): PlayServices => {
+  const joins = createJoinService(deps.db, {
+    apiBaseUrl: deps.apiBaseUrl,
+    realtimeBaseUrl: deps.realtimeBaseUrl,
+  });
   const sessions = createSessionService(deps.db, {
     dispatcher: deps.dispatcher,
     enqueuer: deps.enqueuer,
+    apiBaseUrl: deps.apiBaseUrl,
     realtimeBaseUrl: deps.realtimeBaseUrl,
     verifier: deps.verifier,
     usage: deps.usage,
@@ -31,16 +38,17 @@ export const createPlayServices = (deps: PlayDeps): PlayServices => {
   const leaderboards = createLeaderboardService(deps.db);
   const replay = createReplayService(deps.db, deps.storage, deps.events);
 
-  return { sessions, scores, leaderboards, replay };
+  return { sessions, scores, leaderboards, joins, replay };
 };
 
 export const createPlayRoutes = <T extends PrincipalApi>(api: T, deps: PlayRouteDeps) => {
-  const { sessions, scores, leaderboards, replay } = deps.services;
+  const { sessions, scores, leaderboards, joins, replay } = deps.services;
   const rateLimit = deps.rateLimit ?? {};
 
   createSessionRoutes(api, { service: sessions, ...rateLimit });
   createScoreRoutes(api, { service: scores, ...rateLimit });
   createLeaderboardRoutes(api, { service: leaderboards, ...rateLimit });
+  createJoinRoutes(api, { service: joins, ...rateLimit });
   createReplayRoutes(api, { service: replay });
 
   return api;

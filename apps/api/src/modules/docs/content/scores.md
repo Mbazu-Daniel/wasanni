@@ -14,7 +14,7 @@ The server door needs a platform key; an organization key cannot carry
 | | client | server |
 |---|---|---|
 | route | `POST /api/v1/play/sessions/{sessionId}/score` | `POST /api/v1/sessions/{sessionId}/score` |
-| credential | `authorization: Bearer <sessionToken>` | `x-api-key` with `score:create` |
+| credential | `authorization: Bearer <sessionToken>` or the session's 10-character join code | `x-api-key` with `score:create` |
 | `source` recorded | `client` | `server` |
 | rate limit | `SCORE_RATE_LIMIT_PER_MINUTE` per session (120 by default) | none |
 | verification | runs when the config asks for it | never runs |
