@@ -19,24 +19,6 @@ services:
       timeout: 3s
       retries: 10
 
-  pgdog:
-    image: ghcr.io/pgdogdev/pgdog:main
-    command: ["/usr/local/bin/pgdog", "run", "-p", "50"]
-    environment:
-      PGDOG_DATABASE_URL_1: postgres://${POSTGRES_USER:-wasanni}:${POSTGRES_PASSWORD:-wasanni}@postgres:5432/${POSTGRES_DB:-wasanni}
-    volumes:
-      - ./deploy/pgdog.toml:/pgdog/pgdog.toml:ro
-      - ./deploy/users.toml:/pgdog/users.toml:ro
-    ports: ["6432:6432"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "(echo > /dev/tcp/127.0.0.1/6432) >/dev/null 2>&1"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
   redis:
     image: redis:7-alpine
     command:

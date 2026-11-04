@@ -26,18 +26,6 @@ services:
       timeout: 3s
       retries: 10
 
-  pgdog:
-    image: ghcr.io/pgdogdev/pgdog:main
-    restart: always
-    command: ["/usr/local/bin/pgdog", "run", "-p", "50"]
-    volumes:
-      - ./deploy/pgdog.toml:/pgdog/pgdog.toml:ro
-      - ./deploy/users.toml:/pgdog/users.toml:ro
-    ulimits: *ulimits
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   redis:
     image: redis:7-alpine
     restart: always
@@ -64,12 +52,12 @@ services:
     command: ["sh", "-c", "bun run packages/db/src/cli-migrate.ts && exec bun run apps/api/src/index.ts"]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@postgres:5432/wasanni
       REDIS_URL: redis://redis:6379
     ports: ["3000:3000"]
     depends_on:
-      pgdog:
-        condition: service_started
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -80,11 +68,11 @@ services:
     ulimits: *ulimits
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@postgres:5432/wasanni
       REDIS_URL: redis://redis:6379
     depends_on:
-      pgdog:
-        condition: service_started
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -95,14 +83,14 @@ services:
     ulimits: *ulimits
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://wasanni:wasanni@pgdog:6432/wasanni
+      DATABASE_URL: postgres://wasanni:wasanni@postgres:5432/wasanni
       REDIS_URL: redis://redis:6379
       REALTIME_PORT: 3001
       REALTIME_PUBLIC_URL: ws://localhost:3001
     ports: ["3001:3001"]
     depends_on:
-      pgdog:
-        condition: service_started
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
 
