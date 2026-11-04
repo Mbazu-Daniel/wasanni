@@ -17,6 +17,7 @@ export function ConversationPane({
   orgSlug,
   sessionId,
   games,
+  platforms,
   selectedGameId,
   onGameChange,
   hasProviders,
@@ -44,6 +45,7 @@ export function ConversationPane({
   orgSlug: string;
   sessionId: string | null;
   games: { id: string; name: string; imageUrl: string | null }[];
+  platforms: { id: string; name: string }[];
   selectedGameId: string | null;
   onGameChange: (gameId: string | null) => void;
   hasProviders: boolean;
@@ -220,6 +222,8 @@ export function ConversationPane({
             <ApprovalRow
               approval={approval}
               gameName={approvalGameName}
+              games={games}
+              platforms={platforms}
               onDecide={onDecide}
             />
           )}
