@@ -16,6 +16,7 @@ import { PlayButton } from "./play-button";
 type Version = {
   id: string;
   version: string;
+  platformSlug: string | null;
   status: "pending_upload" | "extracting" | "ready" | "failed";
   isCurrent: boolean;
   kind: "single" | "bundle";
@@ -32,6 +33,7 @@ export function GameVersionsPanel({
   organizationId: string;
   game: {
     id: string;
+    slug: string;
     hosting: "hosted" | "external";
     status: "draft" | "active" | "archived";
   };
@@ -104,6 +106,11 @@ export function GameVersionsPanel({
           <span className="font-mono text-sm font-semibold">
             v{version.version}
           </span>
+          {version.platformSlug !== null && (
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {version.platformSlug}
+            </span>
+          )}
           {version.isCurrent && (
             <Badge variant="success" className="text-[10px]">
               current
@@ -148,6 +155,11 @@ export function GameVersionsPanel({
               gameId={game.id}
               fileId={version.id}
               hosting={game.hosting}
+              stablePath={
+                version.isCurrent && version.platformSlug !== null
+                  ? `/s/${version.platformSlug}/${game.slug}/`
+                  : undefined
+              }
             />
           )}
           {!version.isCurrent && version.status === "ready" && (

@@ -9,12 +9,14 @@ export function PlayButton({
   hosting,
   disabled,
   size = "sm",
+  stablePath,
 }: {
   gameId: string;
   fileId: string | null;
   hosting: "hosted" | "external";
   disabled?: boolean;
   size?: "sm" | "default";
+  stablePath?: string | null;
 }) {
   if (hosting === "external") {
     return (
@@ -34,7 +36,7 @@ export function PlayButton({
     );
   }
 
-  const url = `${API_URL}/play/${gameId}/${fileId}/`;
+  const url = stablePath ? `${API_URL}${stablePath}` : `${API_URL}/play/${gameId}/${fileId}/`;
 
   return (
     <a href={url} target="_blank" rel="noreferrer">

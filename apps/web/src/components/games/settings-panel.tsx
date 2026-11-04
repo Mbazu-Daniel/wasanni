@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { IconPhoto } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
 import { uploadImage } from "@/lib/image-upload";
-import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +37,6 @@ export function GameSettingsPanel({
   const navigate = useNavigate();
 
   const [name, setName] = React.useState(game.name);
-  const [slug, setSlug] = React.useState(game.slug);
   const [description, setDescription] = React.useState(game.description ?? "");
   const [hints, setHints] = React.useState<string[]>(game.hints);
   const [saving, setSaving] = React.useState(false);
@@ -49,7 +47,6 @@ export function GameSettingsPanel({
 
   const dirty =
     name !== game.name ||
-    slug !== game.slug ||
     description !== (game.description ?? "") ||
     cleanHints.join("\n") !== game.hints.join("\n");
 
@@ -78,7 +75,6 @@ export function GameSettingsPanel({
         method: "PATCH",
         data: JSON.stringify({
           name,
-          slug: slugify(slug),
           description: description || null,
           hints: cleanHints,
         }),
@@ -86,13 +82,6 @@ export function GameSettingsPanel({
       toast.success("Game updated");
       queryClient.invalidateQueries({ queryKey: ["games", organizationId] });
       queryClient.invalidateQueries({ queryKey: ["game", organizationId] });
-      if (slug !== game.slug) {
-        navigate({
-          to: "/$orgSlug/games/$gameSlug",
-          params: { orgSlug: organizationSlug, gameSlug: slugify(slug) },
-          search: { tab: "settings" },
-        });
-      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save");
     } finally {
@@ -127,14 +116,10 @@ export function GameSettingsPanel({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="game-slug">Slug</Label>
-          <Input
-            id="game-slug"
-            value={slug}
-            onChange={(event) => setSlug(slugify(event.target.value))}
-          />
+          <Label>Slug</Label>
+          <p className="font-mono text-sm text-muted-foreground">{game.slug}</p>
           <p className="text-xs text-muted-foreground">
-            Changing the slug breaks existing links.
+            Set once at creation. Deploy URLs embed it, so it never changes.
           </p>
         </div>
         <div className="space-y-1.5">
