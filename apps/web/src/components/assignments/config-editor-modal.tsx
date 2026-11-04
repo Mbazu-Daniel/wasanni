@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog } from "@/components/ui/dialog";
 import { Tabs } from "@/components/ui/tabs";
-import type { ScoreFlagRule, ScoreGameType } from "@wasanni/contracts";
+import type { ScoreFlagRule, ScoreGameType, ScoreVerificationMode } from "@wasanni/contracts";
 
 export type ConfigRow = {
   id: string;
@@ -22,7 +22,15 @@ export type ConfigRow = {
   updatedAt: string;
 };
 
-type VerificationMode = "none" | "callback";
+type VerificationMode = ScoreVerificationMode;
+
+const VERIFICATION_HINTS: Record<VerificationMode, string> = {
+  none: "Every score is stored. Rules can flag it, but it is never rejected.",
+  callback:
+    "Wasanni POSTs each score to your endpoint. Its response is recorded as a flag; it never removes the score.",
+  vision:
+    "The game sends its last frame with the score. A referee reads the score off the screen and flags a submission that does not match it.",
+};
 
 type ConfigShape = {
   sessionDurationSeconds?: number;
@@ -162,7 +170,7 @@ export function ConfigEditorModal({
           ? ""
           : String(shape.rules.maxScorePerSecond),
       );
-      setVerificationMode(shape.scoreVerification?.mode === "callback" ? "callback" : "none");
+      setVerificationMode(shape.scoreVerification?.mode ?? "none");
       setCallbackUrl(shape.scoreVerification?.callback?.url ?? "");
       setCallbackSecret(shape.scoreVerification?.callback?.secret ?? "");
       setCallbackTimeoutMs(
@@ -428,15 +436,12 @@ export function ConfigEditorModal({
                 value={verificationMode}
                 onValueChange={(value) => setVerificationMode(value as VerificationMode)}
                 options={[
-                  { value: "none", label: "None — accept and flag" },
-                  { value: "callback", label: "Callback — your server reviews" },
+                  { value: "none", label: "None: accept and flag" },
+                  { value: "callback", label: "Callback: your server reviews" },
+                  { value: "vision", label: "Vision: a referee reads the frame" },
                 ]}
               />
-              <p className="text-xs text-muted-foreground">
-                {verificationMode === "none"
-                  ? "Every score is stored. Rules can flag it, but it is never rejected."
-                  : "Wasanni POSTs each score to your endpoint. Its response is recorded as a flag; it never removes the score."}
-              </p>
+              <p className="text-xs text-muted-foreground">{VERIFICATION_HINTS[verificationMode]}</p>
             </div>
 
             {showCallbackFields && (

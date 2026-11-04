@@ -2,6 +2,7 @@ import type {
   CreateGameSessionBody,
   ScoreFlag,
   ScoreVerificationMode,
+  ScoreVerificationStatus,
   SubmitScoreBody,
 } from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
@@ -33,12 +34,20 @@ export type ScoreVerificationInput = {
   submittedAt: Date;
   config: Record<string, unknown>;
   callbackSecret?: string | null;
+  screenshot?: string;
 };
 
 export type ScoreVerificationVerdict =
   | { kind: "passed"; flags: ScoreFlag[] }
   | { kind: "unavailable"; flags: ScoreFlag[]; reason: string }
-  | { kind: "failed"; code: string; reason: string };
+  | { kind: "failed"; reason: string; flags?: ScoreFlag[] };
+
+export type ScoreVerificationOutcome = {
+  status: ScoreVerificationStatus;
+  flags: ScoreFlag[];
+  reason: string | null;
+  verified: boolean;
+};
 
 export type GameSessionRow = (typeof gameSession.$inferSelect);
 
@@ -52,6 +61,7 @@ export type SessionCreateInput = {
 export type ScoreSubmitInput = {
   sessionId: string;
   body: SubmitScoreBody;
+  platformId?: string;
 };
 
 export type HidePlayerScoresInput = {

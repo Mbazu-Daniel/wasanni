@@ -10,6 +10,10 @@ export type ScoreVerificationCallback = UnwrapSchema<typeof ScoreVerificationCal
 export const ScoreVerificationConfig = t.Union([
   t.Object({ mode: t.Literal("none") }),
   t.Object({ mode: t.Literal("callback"), callback: ScoreVerificationCallback }),
+  t.Object({
+    mode: t.Literal("vision"),
+    timeoutMs: t.Optional(t.Number({ minimum: 100, maximum: 20_000 })),
+  }),
 ]);
 export type ScoreVerificationConfig = UnwrapSchema<typeof ScoreVerificationConfig>;
 

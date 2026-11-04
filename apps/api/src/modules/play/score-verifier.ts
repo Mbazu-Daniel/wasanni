@@ -9,10 +9,12 @@ import type {
   ScoreVerificationInput,
   ScoreVerificationVerdict,
 } from "./types.ts";
+import type { createVisionReferee } from "./score-vision.ts";
 
 export function createScoreVerifier(
   logger: Logger,
   allowPrivateOutbound: boolean,
+  vision: ReturnType<typeof createVisionReferee>,
 ) {
   const verifyCallback = async (
     input: ScoreVerificationInput,
@@ -32,7 +34,11 @@ export function createScoreVerifier(
     const callbackSecret = input.callbackSecret ?? callbackSecretOf(input.config);
 
     if (callbackSecret === undefined || callbackSecret === null) {
-      return { kind: "failed", code: "callback_config_missing", reason: "the callback secret is missing" };
+      return {
+        kind: "unavailable",
+        flags: ["verification_unavailable"],
+        reason: "the callback secret is missing",
+      };
     }
 
     let callbackUrl: URL;
@@ -40,7 +46,11 @@ export function createScoreVerifier(
     try {
       callbackUrl = await assertSafeOutboundUrl(callback.url, allowPrivateOutbound);
     } catch {
-      return { kind: "failed", code: "callback_config_invalid", reason: "the verifier url is not allowed" };
+      return {
+        kind: "unavailable",
+        flags: ["verification_unavailable"],
+        reason: "the verifier url is not allowed",
+      };
     }
 
     const signature = hmacSign(callbackSecret, body, timestamp);
@@ -97,11 +107,7 @@ export function createScoreVerifier(
     }
 
     if (parsed.valid === false) {
-      return {
-        kind: "failed",
-        code: "callback_rejected",
-        reason: parsed.reason ?? "the verifier rejected the score",
-      };
+      return { kind: "failed", reason: parsed.reason ?? "the verifier rejected the score" };
     }
 
     return {
@@ -115,23 +121,19 @@ export function createScoreVerifier(
     async verify(input: ScoreVerificationInput): Promise<ScoreVerificationVerdict> {
       if (input.mode === "none") return { kind: "passed", flags: [] };
 
+      if (input.mode === "vision") return vision(input);
+
       const callback = callbackEndpointOf(input.config);
 
       if (callback === null) {
         return {
-          kind: "failed",
-          code: "callback_config_missing",
+          kind: "unavailable",
+          flags: ["verification_unavailable"],
           reason: "the callback mode is configured without a callback",
         };
       }
 
-      const result = await verifyCallback(input, callback);
-
-      if (result.kind === "failed") return result;
-
-      if (result.kind === "unavailable") return result;
-
-      return result;
+      return verifyCallback(input, callback);
     },
   };
 }

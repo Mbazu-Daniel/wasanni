@@ -30,9 +30,7 @@ const blockOf = (value: unknown): Record<string, unknown> | null =>
 const readVerificationMode = (config: Record<string, unknown>): ScoreVerificationMode => {
   const mode = blockOf(config.scoreVerification)?.mode;
 
-  if (mode === "callback") return mode;
-
-  return "none";
+  return mode === "callback" || mode === "vision" ? mode : "none";
 };
 
 const readSessionDuration = (config: Record<string, unknown>): number => {
@@ -87,6 +85,14 @@ export const callbackEndpointOf = (config: Record<string, unknown>): { url: stri
   const callback = blockOf(blockOf(config.scoreVerification)?.callback);
   if (callback === null || typeof callback.url !== "string") return null;
   return { url: callback.url, timeoutMs: typeof callback.timeoutMs === "number" ? callback.timeoutMs : null };
+};
+
+export const visionTimeoutOf = (config: Record<string, unknown>): number | null => {
+  const verification = blockOf(config.scoreVerification);
+
+  if (verification?.mode !== "vision") return null;
+
+  return typeof verification.timeoutMs === "number" ? verification.timeoutMs : null;
 };
 
 export const withoutCallbackSecret = (config: Record<string, unknown>): Record<string, unknown> => {

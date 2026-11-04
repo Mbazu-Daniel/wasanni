@@ -11,6 +11,10 @@ export const SCORE_RULE_FLAGS: readonly ScoreFlag[] = [
   "resubmitted",
   "max_score_exceeded",
   "score_rate_exceeded",
-  "verification_unavailable",
   "verification_failed",
+];
+
+export const SCORE_CONFIG_FLAGS: readonly ScoreFlag[] = [
+  "max_score_exceeded",
+  "score_rate_exceeded",
 ];
