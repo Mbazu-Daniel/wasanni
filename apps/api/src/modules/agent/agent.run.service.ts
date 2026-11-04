@@ -20,7 +20,7 @@ import {
 import type { AgentModuleDeps, RunEvent, RunLeg } from "./types.ts";
 
 export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) {
-  const { audit, db, games, runtime, usage } = deps;
+  const { audit, db, games, runtime } = deps;
 
   return {
     async *run(
@@ -67,8 +67,7 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
         }),
         {
           startedAt,
-          baseline: { durationMs: 0, promptTokens: 0, completionTokens: 0, costMicros: 0 },
-          spec: endpoint.spec,
+          baseline: { durationMs: 0 },
           model: endpoint.model,
           log,
           provider,
@@ -88,29 +87,11 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
               output:
                 resolved.state === "failed" && resolved.output === "" ? null : resolved.output,
               status: resolved.state,
-              promptTokens: numbers.promptTokens,
-              completionTokens: numbers.completionTokens,
-              costMicros: numbers.costMicros,
               durationMs: numbers.durationMs,
               error: errorOf(resolved),
             });
 
             await i.touchSession(session.id);
-
-            await usage.incr({
-              organizationId: scope.organizationId,
-              platformId: null,
-              metric: "ai_runs",
-            });
-
-            if (numbers.costMicros > 0) {
-              await usage.incr({
-                organizationId: scope.organizationId,
-                platformId: null,
-                metric: "ai_cost_micros",
-                amount: numbers.costMicros,
-              });
-            }
           },
         },
       );
@@ -220,11 +201,7 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
           startedAt,
           baseline: {
             durationMs: row.durationMs,
-            promptTokens: row.promptTokens,
-            completionTokens: row.completionTokens,
-            costMicros: row.costMicros,
           },
-          spec: endpoint.spec,
           model: endpoint.model,
           log,
           provider,
@@ -239,24 +216,12 @@ export function createAgentRunService(deps: AgentModuleDeps, i: AgentInternals) 
               .set({
                 status: resolved.state,
                 output: resolved.state === "failed" && output === "" ? null : output,
-                promptTokens: numbers.promptTokens,
-                completionTokens: numbers.completionTokens,
-                costMicros: numbers.costMicros,
                 durationMs: numbers.durationMs,
                 error: errorOf(resolved),
               })
               .where(eq(agentRun.id, row.id));
 
             await i.touchSession(session.id);
-
-            if (numbers.costMicros > row.costMicros) {
-              await usage.incr({
-                organizationId: scope.organizationId,
-                platformId: null,
-                metric: "ai_cost_micros",
-                amount: numbers.costMicros - row.costMicros,
-              });
-            }
           },
         },
       );

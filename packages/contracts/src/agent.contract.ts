@@ -14,9 +14,6 @@ export type AgentProviderSpecId = string;
 export const AgentSpecModel = t.Object({
   id: t.String(),
   label: t.String(),
-  priceInputMicrosPerMillion: t.Number(),
-  priceOutputMicrosPerMillion: t.Number(),
-  priceCacheReadMicrosPerMillion: t.Nullable(t.Number()),
 });
 export type AgentSpecModel = UnwrapSchema<typeof AgentSpecModel>;
 
@@ -38,13 +35,6 @@ export const AgentRunStatusSchema = t.Union([
   t.Literal("awaiting_approval"),
 ]);
 
-export const AgentPricing = t.Object({
-  inputMicrosPerMillion: t.Number(),
-  outputMicrosPerMillion: t.Number(),
-  cacheReadMicrosPerMillion: t.Nullable(t.Number()),
-});
-export type AgentPricing = UnwrapSchema<typeof AgentPricing>;
-
 export const AgentProviderView = t.Object({
   id: t.String(),
   name: t.String(),
@@ -53,8 +43,6 @@ export const AgentProviderView = t.Object({
   model: t.String(),
   hasKey: t.Boolean(),
   isDefault: t.Boolean(),
-  maxRequestTokens: t.Nullable(t.Integer()),
-  pricing: t.Nullable(AgentPricing),
   createdAt: t.String({ format: "date-time" }),
 });
 export type AgentProviderView = UnwrapSchema<typeof AgentProviderView>;
@@ -71,7 +59,6 @@ export const CreateAgentProviderBody = t.Object({
   baseUrl: t.Optional(t.String({ format: "uri", maxLength: 500 })),
   apiKey: t.Optional(t.String({ minLength: 1, maxLength: 400 })),
   isDefault: t.Optional(t.Boolean()),
-  maxRequestTokens: t.Optional(t.Integer({ minimum: 1_000, maximum: 10_000_000 })),
 });
 export type CreateAgentProviderBody = UnwrapSchema<
   typeof CreateAgentProviderBody
@@ -82,7 +69,6 @@ export const UpdateAgentProviderBody = t.Object({
   baseUrl: t.Optional(t.String({ format: "uri", maxLength: 500 })),
   apiKey: t.Optional(t.String({ minLength: 1, maxLength: 400 })),
   isDefault: t.Optional(t.Boolean()),
-  maxRequestTokens: t.Optional(t.Integer({ minimum: 1_000, maximum: 10_000_000 })),
 });
 export type UpdateAgentProviderBody = UnwrapSchema<
   typeof UpdateAgentProviderBody
@@ -100,9 +86,6 @@ export const AgentRunView = t.Object({
   prompt: t.String(),
   output: t.Nullable(t.String()),
   status: AgentRunStatusSchema,
-  promptTokens: t.Number(),
-  completionTokens: t.Number(),
-  costMicros: t.Number(),
   durationMs: t.Number(),
   error: t.Nullable(t.String()),
   createdAt: t.String({ format: "date-time" }),
@@ -159,7 +142,6 @@ export const AgentSessionView = t.Object({
   title: t.String(),
   pinned: t.Boolean(),
   runs: t.Number(),
-  costMicros: t.Number(),
   updatedAt: t.String({ format: "date-time" }),
 });
 export type AgentSessionView = UnwrapSchema<typeof AgentSessionView>;
@@ -190,9 +172,6 @@ export const AgentTurnView = t.Object({
   text: t.String(),
   model: t.String(),
   status: AgentRunStatusSchema,
-  costMicros: t.Number(),
-  promptTokens: t.Number(),
-  completionTokens: t.Number(),
   durationMs: t.Number(),
   createdAt: t.String({ format: "date-time" }),
 });
@@ -210,38 +189,6 @@ export const ListAgentModelsBody = t.Object({
   providerId: t.Optional(t.String()),
 });
 export type ListAgentModelsBody = UnwrapSchema<typeof ListAgentModelsBody>;
-
-export const AgentSpendDay = t.Object({
-  date: t.String(),
-  runs: t.Number(),
-  costMicros: t.Number(),
-});
-export type AgentSpendDay = UnwrapSchema<typeof AgentSpendDay>;
-
-export const AgentSpendModel = t.Object({
-  model: t.String(),
-  runs: t.Number(),
-  promptTokens: t.Number(),
-  completionTokens: t.Number(),
-  costMicros: t.Number(),
-  avgDurationMs: t.Number(),
-});
-export type AgentSpendModel = UnwrapSchema<typeof AgentSpendModel>;
-
-export const AgentSpendQuery = t.Object({
-  days: t.Optional(t.Number({ minimum: 1, maximum: 365 })),
-});
-export type AgentSpendQuery = UnwrapSchema<typeof AgentSpendQuery>;
-
-export const AgentSpendView = t.Object({
-  runs: t.Number(),
-  costMicros: t.Number(),
-  promptTokens: t.Number(),
-  completionTokens: t.Number(),
-  daily: t.Array(AgentSpendDay),
-  models: t.Array(AgentSpendModel),
-});
-export type AgentSpendView = UnwrapSchema<typeof AgentSpendView>;
 
 export const AgentParams = t.Object({
   organizationId: t.String(),

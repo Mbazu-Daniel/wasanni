@@ -14,7 +14,6 @@ import type {
 import type { Scope } from "@wasanni/kit";
 import { NotFoundError } from "@wasanni/kit";
 import { NEW_SESSION_TITLE, RECENT_SESSIONS_LIMIT } from "./constants.ts";
-import { dailyDates } from "../../daily-dates.ts";
 import type { AgentInternals } from "./agent-internals.ts";
 import type {
   AgentModuleDeps,
@@ -29,9 +28,6 @@ const toRunView = (row: RunRow): AgentRunView => ({
   prompt: row.prompt,
   output: row.output,
   status: row.status,
-  promptTokens: row.promptTokens,
-  completionTokens: row.completionTokens,
-  costMicros: row.costMicros,
   durationMs: row.durationMs,
   error: row.error,
   createdAt: row.createdAt.toISOString(),
@@ -44,7 +40,6 @@ const toSessionView = (row: SessionTotalRow): AgentSessionView => ({
   title: row.title,
   pinned: row.pinned,
   runs: row.runs,
-  costMicros: row.costMicros,
   updatedAt: row.updatedAt.toISOString(),
 });
 
@@ -59,9 +54,6 @@ const toTurns = (row: RunRow): AgentTurnView[] => {
     runId: row.id,
     model: row.model,
     status: row.status,
-    costMicros: row.costMicros,
-    promptTokens: row.promptTokens,
-    completionTokens: row.completionTokens,
     durationMs: row.durationMs,
     createdAt: row.createdAt.toISOString(),
   } as const;
@@ -97,7 +89,6 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
         createdAt: agentSession.createdAt,
         updatedAt: agentSession.updatedAt,
         runs: sql<number>`count(${agentRun.id})::int`,
-        costMicros: sql<number>`coalesce(sum(${agentRun.costMicros}), 0)::int`,
       })
       .from(agentSession)
       .leftJoin(agentRun, eq(agentRun.sessionId, agentSession.id))
@@ -196,7 +187,7 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
         projectId,
       );
 
-      return toSessionView({ ...row, runs: 0, costMicros: 0 });
+      return toSessionView({ ...row, runs: 0 });
     },
 
     async updateSession(
@@ -230,7 +221,7 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
 
       if (row === undefined) throw new NotFoundError("agent session not found");
 
-      return toSessionView({ ...row, runs: 0, costMicros: 0 });
+      return toSessionView({ ...row, runs: 0 });
     },
 
     async deleteSession(scope: Scope, memberId: string, sessionId: string): Promise<void> {
@@ -270,77 +261,5 @@ export function createAgentSessionService(deps: AgentModuleDeps, i: AgentInterna
       return rows.map(toRunView);
     },
 
-    async spend(scope: Scope, days: number) {
-      const from = new Date(Date.now() - (days - 1) * 86_400_000);
-      from.setUTCHours(0, 0, 0, 0);
-
-      const scopedTo = sql`organization_id = ${scope.organizationId}
-            and created_at >= ${from.toISOString()}::timestamptz`;
-
-      const [rows, priced] = await Promise.all([
-        db.execute<{ day: string; runs: number; cost_micros: string | number }>(sql`
-          select
-            to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day,
-            count(*)::int as runs,
-            coalesce(sum(cost_micros), 0)::bigint as cost_micros
-          from agent_run
-          where ${scopedTo}
-          group by day
-          order by day
-        `),
-        db.execute<{
-          model: string;
-          runs: number;
-          prompt_tokens: string | number;
-          completion_tokens: string | number;
-          cost_micros: string | number;
-          avg_duration_ms: number;
-        }>(sql`
-          select
-            model,
-            count(*)::int as runs,
-            coalesce(sum(prompt_tokens), 0)::bigint as prompt_tokens,
-            coalesce(sum(completion_tokens), 0)::bigint as completion_tokens,
-            coalesce(sum(cost_micros), 0)::bigint as cost_micros,
-            coalesce(round(avg(duration_ms)), 0)::int as avg_duration_ms
-          from agent_run
-          where ${scopedTo}
-          group by model
-          order by cost_micros desc, model
-        `),
-      ]);
-
-      const byDay = new Map(rows.map((row) => [row.day, row]));
-      const daily = dailyDates(
-        from,
-        new Date(from.getTime() + (days - 1) * 86_400_000),
-      ).map((date) => {
-        const row = byDay.get(date);
-
-        return {
-          date,
-          runs: Number(row?.runs ?? 0),
-          costMicros: Number(row?.cost_micros ?? 0),
-        };
-      });
-
-      const models = priced.map((row) => ({
-        model: row.model,
-        runs: Number(row.runs),
-        promptTokens: Number(row.prompt_tokens),
-        completionTokens: Number(row.completion_tokens),
-        costMicros: Number(row.cost_micros),
-        avgDurationMs: Number(row.avg_duration_ms),
-      }));
-
-      return {
-        runs: models.reduce((sum, row) => sum + row.runs, 0),
-        promptTokens: models.reduce((sum, row) => sum + row.promptTokens, 0),
-        completionTokens: models.reduce((sum, row) => sum + row.completionTokens, 0),
-        costMicros: models.reduce((sum, row) => sum + row.costMicros, 0),
-        daily,
-        models,
-      };
-    },
   };
 }

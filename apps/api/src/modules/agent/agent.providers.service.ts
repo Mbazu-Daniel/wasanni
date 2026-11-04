@@ -3,7 +3,6 @@ import type { Db } from "@wasanni/db";
 import { agentProvider } from "@wasanni/db/schema";
 import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import type {
-  AgentPricing,
   AgentProviderView,
   AgentSpecView,
   CreateAgentProviderBody,
@@ -18,21 +17,9 @@ import {
   NotFoundError,
 } from "@wasanni/kit";
 import { listModels, resolveBaseUrl } from "./transport.ts";
-import { catalogModel, loadAgentCatalog } from "./catalog.ts";
+import { loadAgentCatalog } from "./catalog.ts";
 import { NO_KEY, type AgentInternals } from "./agent-internals.ts";
 import type { AgentModuleDeps, ProviderRow } from "./types.ts";
-
-const pricingOf = (spec: string, model: string): AgentPricing | null => {
-  const entry = catalogModel(spec, model);
-
-  return entry === undefined
-    ? null
-    : {
-        inputMicrosPerMillion: entry.priceInputMicrosPerMillion,
-        outputMicrosPerMillion: entry.priceOutputMicrosPerMillion,
-        cacheReadMicrosPerMillion: entry.priceCacheReadMicrosPerMillion,
-      };
-};
 
 const toView = (row: ProviderRow): AgentProviderView => ({
   id: row.id,
@@ -42,8 +29,6 @@ const toView = (row: ProviderRow): AgentProviderView => ({
   model: row.model,
   hasKey: row.apiKeyCiphertext !== null,
   isDefault: row.isDefault,
-  maxRequestTokens: row.maxRequestTokens,
-  pricing: pricingOf(row.spec, row.model),
   createdAt: row.createdAt.toISOString(),
 });
 
@@ -103,7 +88,6 @@ export function createAgentProviderService(deps: AgentModuleDeps, i: AgentIntern
                 body.apiKey === undefined
                   ? null
                   : encryptSecret(body.apiKey, encryptionKey),
-              maxRequestTokens: body.maxRequestTokens ?? null,
               isDefault: body.isDefault ?? false,
               createdByMemberId: memberId,
             })
@@ -143,7 +127,6 @@ export function createAgentProviderService(deps: AgentModuleDeps, i: AgentIntern
               body.apiKey === undefined
                 ? undefined
                 : encryptSecret(body.apiKey, encryptionKey),
-            maxRequestTokens: body.maxRequestTokens,
             isDefault: body.isDefault,
             updatedAt: new Date(),
           })

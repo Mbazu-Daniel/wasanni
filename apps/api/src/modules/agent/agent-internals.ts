@@ -13,7 +13,6 @@ import {
   TEXT_ATTACHMENT_EXTENSIONS,
 } from "./constants.ts";
 import type { ProviderEndpoint } from "./transport.ts";
-import { catalogModel, estimateCostMicros } from "./catalog.ts";
 import { createAgentTools } from "./tools.ts";
 import { classifyProviderError } from "./provider-error.ts";
 import type { AgentRunOutcome } from "./run-agent.ts";
@@ -91,17 +90,10 @@ const cancelledLeg = (): RunLeg => ({
   output: "",
   parked: null,
   failure: null,
-  promptTokens: 0,
-  completionTokens: 0,
-  cacheReadTokens: 0,
-  trimmedMessages: 0,
 });
 
 export type RunNumbers = {
   readonly durationMs: number;
-  readonly promptTokens: number;
-  readonly completionTokens: number;
-  readonly costMicros: number;
 };
 
 export const titleOf = (prompt: string): string => {
@@ -139,14 +131,12 @@ export function createAgentInternals(deps: AgentModuleDeps) {
     baseUrl: string;
     model: string;
     apiKey: string;
-    maxRequestTokens?: number | null;
   }): ProviderEndpoint => ({
     spec: input.spec,
     baseUrl: input.baseUrl,
     model: input.model,
     apiKey: input.apiKey,
     allowPrivateOutbound,
-    maxRequestTokens: input.maxRequestTokens ?? null,
   });
 
   const endpointOf = (row: ProviderRow | null): ProviderEndpoint =>
@@ -155,7 +145,6 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       baseUrl: row?.baseUrl ?? platformProvider?.baseUrl ?? "",
       model: row?.model ?? platformProvider?.model ?? "",
       apiKey: keyOf(row),
-      maxRequestTokens: row?.maxRequestTokens ?? null,
     });
 
   const readProvider = async (
@@ -357,11 +346,7 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       provider: ProviderRow | null;
       model: string;
       state: AgentRunStatus;
-      costMicros: number;
-      promptTokens: number;
-      completionTokens: number;
       durationMs: number;
-      trimmedMessages: number;
       tools: string[];
     },
   ) =>
@@ -369,11 +354,7 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       provider: input.provider === null ? PLATFORM_PROVIDER_NAME : input.provider.name,
       model: input.model,
       status: input.state,
-      costMicros: input.costMicros,
-      promptTokens: input.promptTokens,
-      completionTokens: input.completionTokens,
       durationMs: input.durationMs,
-      trimmedMessages: input.trimmedMessages,
       tools: input.tools,
     });
 
@@ -412,10 +393,6 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       output: [...stepText.values()].join("\n\n").trim(),
       parked,
       failure,
-      promptTokens: outcome?.promptTokens ?? 0,
-      completionTokens: outcome?.completionTokens ?? 0,
-      cacheReadTokens: outcome?.cacheReadTokens ?? 0,
-      trimmedMessages: outcome?.trimmedMessages ?? 0,
     };
   };
 
@@ -424,7 +401,6 @@ export function createAgentInternals(deps: AgentModuleDeps) {
     context: {
       readonly startedAt: number;
       readonly baseline: RunNumbers;
-      readonly spec: string;
       readonly model: string;
       readonly log: Logger;
       readonly provider: ProviderRow | null;
@@ -434,13 +410,8 @@ export function createAgentInternals(deps: AgentModuleDeps) {
       readonly journal: (leg: RunLeg, numbers: RunNumbers) => Promise<void>;
     },
   ): AsyncGenerator<RunEvent, void, void> {
-    const numbersOf = (resolved: RunLeg): RunNumbers => ({
+    const numbersOf = (): RunNumbers => ({
       durationMs: context.baseline.durationMs + Math.round(performance.now() - context.startedAt),
-      promptTokens: context.baseline.promptTokens + resolved.promptTokens,
-      completionTokens: context.baseline.completionTokens + resolved.completionTokens,
-      costMicros:
-        context.baseline.costMicros +
-        estimateCostMicros(catalogModel(context.spec, context.model), resolved),
     });
 
     let leg: RunLeg | null = null;
@@ -448,7 +419,7 @@ export function createAgentInternals(deps: AgentModuleDeps) {
     try {
       leg = yield* collectLeg(inner);
 
-      const numbers = numbersOf(leg);
+      const numbers = numbersOf();
       await context.journal(leg, numbers);
 
       if (leg.state === "failed") {
@@ -470,11 +441,7 @@ export function createAgentInternals(deps: AgentModuleDeps) {
         provider: context.provider,
         model: context.model,
         state: leg.state,
-        costMicros: numbers.costMicros,
-        promptTokens: numbers.promptTokens,
-        completionTokens: numbers.completionTokens,
         durationMs: numbers.durationMs,
-        trimmedMessages: leg.trimmedMessages,
         tools: context.toolNames,
       });
 
@@ -483,16 +450,12 @@ export function createAgentInternals(deps: AgentModuleDeps) {
         runId: context.runId,
         sessionId: context.sessionId,
         model: context.model,
-        costMicros: numbers.costMicros,
-        promptTokens: numbers.promptTokens,
-        completionTokens: numbers.completionTokens,
         durationMs: numbers.durationMs,
-        trimmedMessages: leg.trimmedMessages,
       };
     } finally {
       if (leg === null) {
         const cancelled = cancelledLeg();
-        await context.journal(cancelled, numbersOf(cancelled));
+        await context.journal(cancelled, numbersOf());
       }
     }
   };

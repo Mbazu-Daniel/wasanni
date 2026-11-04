@@ -47,7 +47,6 @@ export type SessionRow = typeof agentSession.$inferSelect;
 
 export type SessionTotalRow = SessionRow & {
   readonly runs: number;
-  readonly costMicros: number;
 };
 
 export type PlatformProvider = {
@@ -152,7 +151,7 @@ export type RunEvent =
       tool: string;
       args: unknown;
     }
-  | { kind: "done"; runId: string; sessionId: string; model: string; costMicros: number; promptTokens: number; completionTokens: number; durationMs: number; trimmedMessages: number }
+  | { kind: "done"; runId: string; sessionId: string; model: string; durationMs: number }
   | {
       kind: "error";
       code: ProviderErrorCode | "request_refused";
@@ -165,8 +164,4 @@ export type RunLeg = {
   readonly output: string;
   readonly parked: Extract<RunEvent, { kind: "approval" }> | null;
   readonly failure: ProviderFailure | null;
-  readonly promptTokens: number;
-  readonly completionTokens: number;
-  readonly cacheReadTokens: number;
-  readonly trimmedMessages: number;
 };
