@@ -18,7 +18,8 @@
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
     "ci": "bun run typecheck && bun test",
-    "mcp": "bun --env-file=.env apps/mcp/src/index.ts"
+    "mcp": "bun --env-file=.env apps/mcp/src/index.ts",
+    "deploy:web": "bun run --cwd apps/web deploy"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

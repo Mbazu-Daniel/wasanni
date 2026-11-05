@@ -160,7 +160,7 @@ document that contains Better Auth's endpoints and ours, `/llms.txt` and
 ### 14. Operations
 `/healthz` and `/readyz` on every app, `/metrics` as Prometheus text, structured
 logging with one `requestId` per request, `preflight()` proving Redis policy and
-file-descriptor limits before any app connects, pool sizing behind PgBouncer,
+file-descriptor limits before any app connects, pool sizing, no pooler in the path,
 and migrations as generated SQL reviewed by hand.
 
 ## Out of scope

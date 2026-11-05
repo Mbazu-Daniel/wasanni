@@ -413,7 +413,7 @@ fails logs one `warn` and the request stands; a delivery row is written after
 its attempt.
 
 **NFR-6 Deployment constraints are enforced by code.** Acceptance: `isPooled`
-turns prepared statements off behind PgBouncer, every app calls `preflight()`
+turns prepared statements off behind a pooler, every app calls `preflight()`
 before it connects and refuses to boot in production on the wrong Redis
 `maxmemory-policy` or too low a file-descriptor limit, and pool sizes come from
 `DB_POOL_MAX`, `DB_POOL_MAX_WORKER`, `DB_POOL_MAX_REALTIME`.
@@ -455,7 +455,7 @@ analytics path.
 | Constraint | Consequence |
 |---|---|
 | Bun ≥ 1.1, Elysia 1.x, Drizzle over Postgres, ioredis, Better Auth, BullMQ, Mastra | one runtime, one schema dialect (`t`), one queue vocabulary shared through `packages/jobs` |
-| PgBouncer in transaction mode | prepared statements off when the url is pooled |
+| Pooler in transaction mode | prepared statements off when the url is pooled |
 | BullMQ | Redis must keep `maxmemory-policy noeviction`, or jobs are dropped without an error |
 | R2 / S3-compatible bucket | browser uploads need `PUT` and `content-type` in the bucket's CORS; the bucket cannot set the COOP/COEP headers, so the api serves the bundle |
 | ZeptoMail | mail is a queue job with 4 attempts, and a production boot without a transport is refused |

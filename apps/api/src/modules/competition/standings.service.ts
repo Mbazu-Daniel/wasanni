@@ -1,5 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { Standings, TournamentLeaderboard } from "@wasanni/contracts";
+import type {
+  ParticipantSessionList,
+  Standings,
+  TournamentLeaderboard,
+} from "@wasanni/contracts";
 import type { Db } from "@wasanni/db";
 import { scopeTo } from "@wasanni/db";
 import {
@@ -7,7 +11,7 @@ import {
   gameSessionScore,
   tournamentParticipant,
 } from "@wasanni/db/schema";
-import { ConflictError, type Scope } from "@wasanni/kit";
+import { ConflictError, NotFoundError, type Scope } from "@wasanni/kit";
 import { readTournamentRow } from "./tournament.service.ts";
 import type { BracketService } from "./types.ts";
 
@@ -117,6 +121,65 @@ export function createStandingsService(
       return {
         format: "leaderboard",
         rows: (await readLeaderboard(scope, tournamentId)).rows,
+      };
+    },
+
+    async sessionsOf(
+      scope: Scope,
+      tournamentId: string,
+      participantId: string,
+    ): Promise<ParticipantSessionList> {
+      await readTournamentRow(db, scope, tournamentId);
+
+      const [registration] = await db
+        .select({
+          platformId: tournamentParticipant.platformId,
+          externalUserId: tournamentParticipant.externalUserId,
+        })
+        .from(tournamentParticipant)
+        .where(
+          and(
+            eq(tournamentParticipant.id, participantId),
+            eq(tournamentParticipant.tournamentId, tournamentId),
+          ),
+        )
+        .limit(1);
+
+      if (registration === undefined) throw new NotFoundError("participant not found");
+
+      const rows = await db
+        .select({
+          sessionId: gameSession.id,
+          status: gameSession.status,
+          startedAt: gameSession.startedAt,
+          score: gameSessionScore.score,
+          flagged: gameSessionScore.flagged,
+          flags: gameSessionScore.flags,
+          submittedAt: gameSessionScore.submittedAt,
+        })
+        .from(gameSession)
+        .leftJoin(gameSessionScore, eq(gameSessionScore.sessionId, gameSession.id))
+        .where(
+          scopeTo(
+            scope,
+            gameSession,
+            eq(gameSession.tournamentId, tournamentId),
+            eq(gameSession.platformId, registration.platformId),
+            eq(gameSession.externalUserId, registration.externalUserId),
+          ),
+        )
+        .orderBy(desc(gameSession.startedAt));
+
+      return {
+        sessions: rows.map((row) => ({
+          sessionId: row.sessionId,
+          status: row.status,
+          score: row.score ?? null,
+          flagged: row.flagged ?? false,
+          flags: row.flags ?? [],
+          startedAt: row.startedAt.toISOString(),
+          submittedAt: row.submittedAt === null ? null : row.submittedAt.toISOString(),
+        })),
       };
     },
   };

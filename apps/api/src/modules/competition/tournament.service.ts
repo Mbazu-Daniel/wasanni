@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { scopeTo } from "@wasanni/db";
+import { isUniqueViolation, scopeTo } from "@wasanni/db";
 import {
   game,
   gameConfig,
@@ -163,27 +163,36 @@ export function createTournamentService(db: Db, usage: UsageService | null) {
       const status =
         startsAt !== null && startsAt > new Date() ? "scheduled" : "draft";
 
-      const [row] = await db
-        .insert(tournament)
-        .values({
-          id: newId(),
-          organizationId: scope.organizationId,
-          gameId: body.gameId,
-          assignmentId: body.assignmentId ?? null,
-          gameConfigId: body.gameConfigId ?? null,
-          templateId: body.templateId ?? null,
-          name: body.name,
-          slug: body.slug,
-          description: body.description ?? null,
-          format: body.format,
-          maxParticipants: body.maxParticipants ?? null,
-          startsAt,
-          endsAt: body.endsAt === undefined ? null : new Date(body.endsAt),
-          status,
-        })
-        .returning();
+      let row: typeof tournament.$inferSelect | undefined;
 
-      if (row === undefined) throw new InternalServerError("tournament insert returned no row");
+      for (let attempt = 0; attempt < 5 && row === undefined; attempt += 1) {
+        try {
+          [row] = await db
+            .insert(tournament)
+            .values({
+              id: newId(),
+              organizationId: scope.organizationId,
+              gameId: body.gameId,
+              assignmentId: body.assignmentId ?? null,
+              gameConfigId: body.gameConfigId ?? null,
+              templateId: body.templateId ?? null,
+              name: body.name,
+              slug: body.slug,
+              gameSeed: String(Date.now()),
+              description: body.description ?? null,
+              format: body.format,
+              maxParticipants: body.maxParticipants ?? null,
+              startsAt,
+              endsAt: body.endsAt === undefined ? null : new Date(body.endsAt),
+              status,
+            })
+            .returning();
+        } catch (error) {
+          if (!isUniqueViolation(error)) throw error;
+        }
+      }
+
+      if (row === undefined) throw new InternalServerError("a tournament game seed could not be issued");
 
       if (usage !== null) {
         await usage.incr({

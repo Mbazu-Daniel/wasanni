@@ -1,6 +1,6 @@
 import { and, eq, gt } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
-import { game, gameFile, gameSession, joinCode, platform } from "@wasanni/db/schema";
+import { game, gameFile, gameSession, joinCode, platform, tournament } from "@wasanni/db/schema";
 import { NotFoundError, sha256Hex, type ObjectStorage } from "@wasanni/kit";
 import { REALTIME_PATH, type JoinResolveView } from "@wasanni/contracts";
 import { gamePlayUrl, type PlayUrlFile } from "./play-url.ts";
@@ -28,12 +28,14 @@ export function createJoinService(db: Db, deps: JoinServiceDeps) {
           matchId: gameSession.matchId,
           externalUserId: gameSession.externalUserId,
           externalName: gameSession.externalName,
+          gameSeed: tournament.gameSeed,
           expiresAt: joinCode.expiresAt,
         })
         .from(joinCode)
         .innerJoin(gameSession, eq(gameSession.id, joinCode.sessionId))
         .innerJoin(platform, eq(platform.id, joinCode.platformId))
         .innerJoin(game, eq(game.id, joinCode.gameId))
+        .leftJoin(tournament, eq(tournament.id, gameSession.tournamentId))
         .where(
           and(
             eq(joinCode.codeHash, sha256Hex(code)),
@@ -78,6 +80,7 @@ export function createJoinService(db: Db, deps: JoinServiceDeps) {
         sessionId: found.sessionId,
         platformSlug: found.platformSlug,
         gameSlug: found.gameSlug,
+        gameSeed: found.gameSeed,
         tournamentId: found.tournamentId,
         matchId: found.matchId,
         externalUserId: found.externalUserId,

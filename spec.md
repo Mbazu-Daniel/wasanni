@@ -739,7 +739,7 @@ need only an overlap window.
 
 | Constraint | Enforcement |
 |---|---|
-| Prepared statements off behind a pooler | `createDb` decides `prepare` from `isPooled(url)` — ports 6432/6543, `?pgbouncer=true`, `?prepare=false` |
+| Prepared statements off behind a pooler | `createDb` decides `prepare` from `isPooled(url)` — port 6432 or `?prepare=false` |
 | Pool sizes bounded per process | `DB_POOL_MAX`, `DB_POOL_MAX_WORKER`, `DB_POOL_MAX_REALTIME` |
 | Redis must be `maxmemory-policy noeviction`, and file-descriptor limits adequate | `preflight()` in `@wasanni/kit`, called by all three apps; warns outside production, refuses to boot inside it |
 | Migrations are reviewed SQL | `bun run db:generate` writes SQL from the Drizzle schema; a human reads it and commits it; CI applies it against a real Postgres |

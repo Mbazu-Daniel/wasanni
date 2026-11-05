@@ -51,6 +51,7 @@ export const TournamentView = t.Object({
   templateId: t.Union([t.String(), t.Null()]),
   name: t.String(),
   slug: t.String(),
+  gameSeed: t.String(),
   description: t.Union([t.String(), t.Null()]),
   imageUrl: t.Union([t.String(), t.Null()]),
   format: TournamentFormat,
@@ -239,6 +240,22 @@ export const StandingsRow = t.Object({
 export type StandingsRow = UnwrapSchema<typeof StandingsRow>;
 
 export const TournamentLeaderboard = t.Object({ rows: t.Array(StandingsRow) });
+
+export const ParticipantSessionView = t.Object({
+  sessionId: t.String(),
+  status: t.String(),
+  score: t.Union([t.Number(), t.Null()]),
+  flagged: t.Boolean(),
+  flags: t.Array(t.String()),
+  startedAt: t.String({ format: "date-time" }),
+  submittedAt: t.Union([t.String({ format: "date-time" }), t.Null()]),
+});
+export type ParticipantSessionView = UnwrapSchema<typeof ParticipantSessionView>;
+
+export const ParticipantSessionList = t.Object({
+  sessions: t.Array(ParticipantSessionView),
+});
+export type ParticipantSessionList = UnwrapSchema<typeof ParticipantSessionList>;
 export type TournamentLeaderboard = UnwrapSchema<typeof TournamentLeaderboard>;
 
 export const Standings = t.Union([

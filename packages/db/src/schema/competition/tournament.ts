@@ -36,6 +36,7 @@ export const tournament = pgTable(
     }),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
+    gameSeed: text("game_seed").notNull(),
     description: text("description"),
     imageUrl: text("image_url"),
     format: text("format").notNull().$type<TournamentFormat>(),
@@ -57,6 +58,7 @@ export const tournament = pgTable(
   },
   (t) => [
     uniqueIndex("tournament_organization_slug_ux").on(t.organizationId, t.slug),
+    uniqueIndex("tournament_game_seed_ux").on(t.gameSeed),
     index("tournament_organization_ix").on(t.organizationId),
     index("tournament_organization_game_ix").on(t.organizationId, t.gameId),
     index("tournament_status_ix").on(t.status),

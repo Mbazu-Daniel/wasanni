@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import type { Db } from "@wasanni/db";
 import { game, gameConfig, gameFile, gamePlatformAssignment, platform } from "@wasanni/db/schema";
 import { scopeTo } from "@wasanni/db";
@@ -53,7 +53,27 @@ export async function readCurrentGameFile(
   db: Db,
   scope: Scope,
   gameId: string,
+  platformId?: string,
 ): Promise<{ id: string } | null> {
+  if (platformId !== undefined) {
+    const [named] = await db
+      .select({ id: gameFile.id })
+      .from(gameFile)
+      .where(
+        scopeTo(
+          scope,
+          gameFile,
+          eq(gameFile.gameId, gameId),
+          eq(gameFile.platformId, platformId),
+          eq(gameFile.isCurrent, true),
+          eq(gameFile.status, "ready"),
+        ),
+      )
+      .limit(1);
+
+    if (named !== undefined) return named;
+  }
+
   const [row] = await db
     .select({ id: gameFile.id })
     .from(gameFile)
@@ -62,6 +82,7 @@ export async function readCurrentGameFile(
         scope,
         gameFile,
         eq(gameFile.gameId, gameId),
+        ...(platformId === undefined ? [] : [isNull(gameFile.platformId)]),
         eq(gameFile.isCurrent, true),
         eq(gameFile.status, "ready"),
       ),

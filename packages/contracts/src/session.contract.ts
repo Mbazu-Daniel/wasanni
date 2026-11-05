@@ -54,6 +54,7 @@ export const JoinResolveView = t.Object({
   sessionId: t.String(),
   platformSlug: t.String(),
   gameSlug: t.String(),
+  gameSeed: t.Union([t.String(), t.Null()]),
   tournamentId: t.Union([t.String(), t.Null()]),
   matchId: t.Union([t.String(), t.Null()]),
   externalUserId: t.String(),
