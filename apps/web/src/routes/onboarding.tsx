@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { toastAuthError } from "@/lib/auth-error";
 import { api, apiFetch } from "@/lib/api-client";
-import { fetchOrganizations, pickOrganization, requireSession } from "@/lib/session";
+import { fetchOrganizations, requireSession } from "@/lib/session";
+import { resolveOnboardingEntry } from "@/lib/onboarding";
 import { slugify } from "@/lib/utils";
 import type { MemberRow } from "@/lib/member-types";
 import { IMAGE_TYPES, uploadImage } from "@/lib/image-upload";
@@ -20,25 +21,24 @@ import { AuthField, AuthFrame } from "@/components/auth/auth-frame";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({ meta: [{ title: "Set up your workspace · Wasanni" }] }),
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }: { search: Record<string, unknown> }) => {
     if (typeof window === "undefined") return;
 
     const session = await requireSession();
     const organizations = await fetchOrganizations();
-    if (organizations.length === 0) return;
-
-    const target = pickOrganization(
+    const entry = resolveOnboardingEntry({
       organizations,
-      session.session.activeOrganizationId,
-      localStorage.getItem("wasanni:last-org"),
-    );
-    if (target === undefined) return;
+      activeOrganizationId: session.session.activeOrganizationId,
+      lastSlug: localStorage.getItem("wasanni:last-org"),
+      fresh: search.new === "1",
+    });
+    if (entry.kind === "stay") return;
 
-    await authClient.organization.setActive({ organizationId: target.id });
-    localStorage.setItem("wasanni:last-org", target.slug);
+    await authClient.organization.setActive({ organizationId: entry.organizationId });
+    localStorage.setItem("wasanni:last-org", entry.orgSlug);
     throw redirect({
       to: "/$orgSlug/overview",
-      params: { orgSlug: target.slug },
+      params: { orgSlug: entry.orgSlug },
     });
   },
   component: OnboardingPage,

@@ -1,7 +1,8 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { IconTrophy, IconBrackets } from "@tabler/icons-react";
 import { apiFetch } from "@/lib/api-client";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PageHeader } from "@/components/primitives/page-header";
 import { Tabs } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +10,9 @@ import { StatusPill } from "@/components/primitives/status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TournamentOverviewPanel } from "@/components/tournaments/overview-panel";
 import { TournamentParticipantsPanel } from "@/components/tournaments/participants-panel";
+import { TournamentPlayersPanel } from "@/components/tournaments/players-panel";
 import { TournamentBracketPanel } from "@/components/tournaments/bracket-panel";
 import { TournamentMatchesPanel } from "@/components/tournaments/matches-panel";
-import { TournamentStandingsPanel } from "@/components/tournaments/standings-panel";
 import type { TournamentRow } from "@/lib/tournament-types";
 
 export const Route = createFileRoute("/$orgSlug/tournaments/$tournamentSlug")({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/$orgSlug/tournaments/$tournamentSlug")({
   validateSearch: (search: Record<string, unknown>) => ({
     tab:
       typeof search.tab === "string" &&
-      ["overview", "participants", "bracket", "matches", "standings"].includes(
+      ["overview", "participants", "players", "bracket", "matches", "standings"].includes(
         search.tab,
       )
         ? search.tab
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/$orgSlug/tournaments/$tournamentSlug")({
 function TournamentDetailPage() {
   const { org } = Route.useRouteContext();
   const organizationId = org?.id ?? "";
+  const orgSlug = org?.slug ?? "";
+  const navigate = useNavigate();
   const { tournamentSlug } = useParams({
     from: "/$orgSlug/tournaments/$tournamentSlug",
   });
@@ -64,20 +67,36 @@ function TournamentDetailPage() {
   }
 
   const isBracket = tournament.format === "bracket";
-  const showStandings = tournament.format === "leaderboard";
+  const showPlayers = tournament.format === "leaderboard";
 
   const tabs = [
     { value: "overview", label: "Overview" },
-    { value: "participants", label: "Participants" },
+    ...(showPlayers
+      ? [{ value: "players", label: "Players" }]
+      : [{ value: "participants", label: "Participants" }]),
     ...(isBracket ? [{ value: "bracket", label: "Bracket" }] : []),
     ...(isBracket ? [{ value: "matches", label: "Matches" }] : []),
-    ...(showStandings ? [{ value: "standings", label: "Standings" }] : []),
   ];
 
   return (
     <div>
       <PageHeader
-        title={tournament.name}
+        title={
+          <SearchableSelect
+            value={tournament.slug}
+            onValueChange={(slug) => {
+              if (slug !== tournament.slug) {
+                navigate({
+                  to: "/$orgSlug/tournaments/$tournamentSlug",
+                  params: { orgSlug, tournamentSlug: slug },
+                  search: { tab: "overview" },
+                });
+              }
+            }}
+            options={tournaments.map((entry) => ({ value: entry.slug, label: entry.name }))}
+            className="w-72"
+          />
+        }
         actions={
           <div className="flex items-center gap-2">
             <Badge variant="muted" className="gap-1 font-mono">
@@ -115,8 +134,16 @@ function TournamentDetailPage() {
           />
         )}
 
-        {tab === "participants" && (
+        {tab === "participants" && !showPlayers && (
           <TournamentParticipantsPanel
+            organizationId={organizationId}
+            tournament={tournament}
+            onRefresh={() => void refetch()}
+          />
+        )}
+
+        {tab === "players" && showPlayers && (
+          <TournamentPlayersPanel
             organizationId={organizationId}
             tournament={tournament}
             onRefresh={() => void refetch()}
@@ -137,10 +164,11 @@ function TournamentDetailPage() {
           />
         )}
 
-        {tab === "standings" && showStandings && (
-          <TournamentStandingsPanel
+        {tab === "standings" && showPlayers && (
+          <TournamentPlayersPanel
             organizationId={organizationId}
             tournament={tournament}
+            onRefresh={() => void refetch()}
           />
         )}
       </div>

@@ -226,8 +226,28 @@ export function createSessionService(db: Db, deps: SessionServiceDeps) {  const 
 
       let gameFileId: string | null = null;
 
-      if (game.hosting === "hosted") {
-        const file = await readCurrentGameFile(db, scope, input.body.gameId);
+      if (game.hosting === "external" && input.body.gameFileId !== undefined) {
+        throw new BadRequestError("an external game has no game files");
+      }
+
+      if (input.body.gameFileId !== undefined) {
+        const [pinned] = await db
+          .select({ id: gameFile.id })
+          .from(gameFile)
+          .where(
+            scopeTo(
+              scope,
+              gameFile,
+              eq(gameFile.id, input.body.gameFileId),
+              eq(gameFile.gameId, input.body.gameId),
+              eq(gameFile.status, "ready"),
+            ),
+          )
+          .limit(1);
+        if (pinned === undefined) throw new NotFoundError("game file not found");
+        gameFileId = pinned.id;
+      } else if (game.hosting === "hosted") {
+        const file = await readCurrentGameFile(db, scope, input.body.gameId, input.platformId);
         if (file === null) throw new BadRequestError("a hosted game needs a ready game file");
         gameFileId = file.id;
       }

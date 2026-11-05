@@ -54,6 +54,7 @@ export const JoinResolveView = t.Object({
   sessionId: t.String(),
   platformSlug: t.String(),
   gameSlug: t.String(),
+  gameSeed: t.Union([t.String(), t.Null()]),
   tournamentId: t.Union([t.String(), t.Null()]),
   matchId: t.Union([t.String(), t.Null()]),
   externalUserId: t.String(),
@@ -72,11 +73,31 @@ export const CreateGameSessionBody = t.Object({
   externalName: t.Optional(t.String({ maxLength: 200 })),
   mode: t.Optional(t.String({ maxLength: 80 })),
   configId: t.Optional(t.String()),
+  gameFileId: t.Optional(t.String()),
   tournamentId: t.Optional(t.String()),
   matchId: t.Optional(t.String()),
   metadata: t.Optional(t.Record(t.String(), t.Unknown())),
 });
 export type CreateGameSessionBody = UnwrapSchema<typeof CreateGameSessionBody>;
+
+export const PlayTestBody = t.Object({
+  fileId: t.Optional(t.String()),
+  platformId: t.Optional(t.String()),
+  tournamentId: t.Optional(t.String()),
+  externalName: t.Optional(t.String({ maxLength: 200 })),
+});
+export type PlayTestBody = UnwrapSchema<typeof PlayTestBody>;
+
+export const PlayTestView = t.Object({
+  sessionId: t.String(),
+  joinCode: t.String(),
+  playUrl: t.String(),
+  realtimeUrl: t.String(),
+});
+export type PlayTestView = UnwrapSchema<typeof PlayTestView>;
+
+export const PlayTestSingle = t.Object({ playTest: PlayTestView });
+export type PlayTestSingle = UnwrapSchema<typeof PlayTestSingle>;
 
 export const GameSessionIdParams = t.Object({ sessionId: t.String() });
 export type GameSessionIdParams = UnwrapSchema<typeof GameSessionIdParams>;

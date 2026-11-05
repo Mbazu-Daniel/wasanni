@@ -103,6 +103,20 @@ instead of failing, so a client can retry safely.
 
 Submitting a score with `"endSession": true` ends the session in the same call.
 
+## Play-test without handling keys
+
+`POST /api/v1/organizations/:organizationId/games/:gameId/play-test`
+(`session:create`) opens a session for one build of a dashboard game and
+answers the `playUrl` and `joinCode` for it, so a recorded playtest needs no
+platform key anywhere near the browser. The body names the build
+(`fileId`, defaulting to the current ready one), the tournament the scores
+should count on (`tournamentId`, optional, open or running for this game),
+and the display name (`externalName`, optional). The player gets a generated
+`playtest-*` id and is registered on the named tournament. The returned url is
+the game's public build with `?tournamentId=&externalUserId=&code=` on it:
+open it and the game joins itself. A hosted game without a ready build, an
+external game, and an unknown or closed tournament are all refused.
+
 ## Session events
 
 `GET /api/v1/sessions/{sessionId}/events` (`score:read`) answers

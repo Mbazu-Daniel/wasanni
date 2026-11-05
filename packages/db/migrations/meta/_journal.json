@@ -274,6 +274,13 @@
       "when": 1793813870335,
       "tag": "0038_mighty_robbie_robertson",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793839098126,
+      "tag": "0039_tiny_scorpion",
+      "breakpoints": true
     }
   ]
 }

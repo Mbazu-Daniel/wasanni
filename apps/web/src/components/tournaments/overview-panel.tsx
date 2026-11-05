@@ -249,6 +249,11 @@ export function TournamentOverviewPanel({
             <StatusPill status={tournament.status} />
           </Row>
           {tournament.game && <Row label="Game">{tournament.game.name}</Row>}
+          <Row label="Game seed">
+            <span className="font-mono" title="Every player in this tournament plays the same seed, so random events match.">
+              {tournament.gameSeed}
+            </span>
+          </Row>
           {tournament.platform && (
             <Row label="Platform">{tournament.platform.name}</Row>
           )}

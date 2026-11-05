@@ -11,7 +11,7 @@ import { formatDateTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/primitives/status-pill";
-import { PlayButton } from "./play-button";
+import { PlayTestButton } from "./play-test-button";
 
 type Game = {
   id: string;
@@ -173,10 +173,10 @@ export function GameOverviewPanel({
                   Uploaded {formatDateTime(current.createdAt)}
                 </p>
               </div>
-              <PlayButton
+              <PlayTestButton
+                organizationId={organizationId}
                 gameId={game.id}
                 fileId={current.id}
-                hosting={game.hosting}
               />
             </div>
           ) : (

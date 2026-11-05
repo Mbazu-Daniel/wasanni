@@ -4,7 +4,6 @@
 .cursor
 .turbo
 .impeccable
-.playwright-cli
 .resilience-audit
 **/node_modules
 **/dist

@@ -1,5 +1,6 @@
 import {
   BracketSingle,
+  ParticipantSessionList,
   Standings,
   CreateTournamentBody,
   OrganizationIdParams,
@@ -211,6 +212,21 @@ export const createTournamentRoutes = <T extends PrincipalApi>(
         params: TournamentIdParams,
         response: { 200: Standings },
         detail: { tags: ["tournaments"], summary: "Standings for a tournament" },
+      },
+    )
+    .get(
+      "/api/v1/organizations/:organizationId/tournaments/:tournamentId/participants/:participantId/sessions",
+      async ({ principal, params }) =>
+        deps.standings.sessionsOf(
+          organizationScope(principal),
+          params.tournamentId,
+          params.participantId,
+        ),
+      {
+        organizationAuth: PERMISSION.tournamentRead,
+        params: ParticipantParams,
+        response: { 200: ParticipantSessionList },
+        detail: { tags: ["tournaments"], summary: "A player's sessions in a tournament" },
       },
     )
     .get(

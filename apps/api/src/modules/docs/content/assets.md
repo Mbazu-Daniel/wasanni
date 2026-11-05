@@ -83,7 +83,8 @@ public build with the tournament context on it:
 the player that url, or just the code: the game resolves it with
 `GET /api/v1/join/{code}` — no key, rate-limited per caller — and gets back
 the `playUrl` to load, the `realtimeUrl` socket to play on, and the platform,
-game, tournament, match, and player it resolved to. The code is the session
+game, tournament game seed, tournament, match, and player it resolved to. The
+code is the session
 credential: the client opens the socket with `?token=<code>` and sends
 `{"type":"score","score":n}` over it, or posts with
 `Authorization: Bearer <code>`, and every score lands in that session in that

@@ -2,10 +2,9 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import * as schema from "./schema/index.ts";
 
-const POOLED_PORTS = ["6432", "6543"];
+const POOLED_PORTS = ["6432"];
 
 export function isPooled(url: string): boolean {
-  if (url.includes("pgbouncer=true")) return true;
   if (url.includes("prepare=false")) return true;
 
   try {

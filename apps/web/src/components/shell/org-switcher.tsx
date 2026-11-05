@@ -52,6 +52,7 @@ export function OrgSwitcher() {
         <div className="my-1 h-px bg-border" />
         <Link
           to="/onboarding"
+          search={{ new: "1" }}
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-ink/[0.08]"
         >
           <IconPlus className="size-3.5" />
