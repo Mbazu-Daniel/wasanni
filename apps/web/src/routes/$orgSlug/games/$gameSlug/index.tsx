@@ -14,7 +14,7 @@ import { StatusPill } from "@/components/primitives/status-pill";
 import { GameOverviewPanel } from "@/components/games/overview-panel";
 import { GameVersionsPanel } from "@/components/games/versions-panel";
 import { GameSettingsPanel } from "@/components/games/settings-panel";
-import { PlayButton } from "@/components/games/play-button";
+import { PlayTestButton } from "@/components/games/play-test-button";
 import { AssignModal } from "@/components/assignments/assign-modal";
 
 const TABS = [
@@ -126,16 +126,13 @@ function GameDetailPage() {
             <Badge variant="muted" className="font-mono">
               {game.slug}
             </Badge>
-            <PlayButton
-              gameId={game.id}
-              fileId={currentFile?.id ?? null}
-              hosting={game.hosting}
-              stablePath={
-                currentFile?.platformSlug
-                  ? `/s/${currentFile.platformSlug}/${game.slug}/`
-                  : undefined
-              }
-            />
+            {game.hosting === "hosted" && (
+              <PlayTestButton
+                organizationId={organizationId}
+                gameId={game.id}
+                fileId={currentFile?.id}
+              />
+            )}
           </div>
         }
       />

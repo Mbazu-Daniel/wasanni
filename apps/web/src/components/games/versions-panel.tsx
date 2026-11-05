@@ -11,7 +11,7 @@ import { StatusPill } from "@/components/primitives/status-pill";
 import { EmptyState } from "@/components/primitives/empty-state";
 import { ConfirmDialog } from "@/components/primitives/confirm-dialog";
 import { UploadWizard } from "./upload-wizard";
-import { PlayButton } from "./play-button";
+import { PlayTestButton } from "./play-test-button";
 
 type Version = {
   id: string;
@@ -151,15 +151,10 @@ export function GameVersionsPanel({
       render: (version) => (
         <div className="flex items-center justify-end gap-1">
           {version.status === "ready" && (
-            <PlayButton
+            <PlayTestButton
+              organizationId={organizationId}
               gameId={game.id}
               fileId={version.id}
-              hosting={game.hosting}
-              stablePath={
-                version.isCurrent && version.platformSlug !== null
-                  ? `/s/${version.platformSlug}/${game.slug}/`
-                  : undefined
-              }
             />
           )}
           {!version.isCurrent && version.status === "ready" && (

@@ -18,6 +18,7 @@ import type { WebhookDispatcher } from "../webhook/types.ts";
 import type { MatchRecorder } from "../competition/types.ts";
 import type { UsageService } from "../usage/types.ts";
 import type { JoinService } from "./join.service.ts";
+import type { PlayTestService } from "./playtest.service.ts";
 import type { createLeaderboardService } from "./leaderboard.service.ts";
 import type { createReplayService } from "./replay.service.ts";
 import type { createScoreService } from "./score.service.ts";
@@ -111,6 +112,7 @@ export type PlayServices = {
   scores: ScoreService;
   leaderboards: LeaderboardService;
   joins: JoinService;
+  playTests: PlayTestService;
   replay: ReplayService;
 };
 

@@ -52,6 +52,7 @@ import {
   DOCS_PATH,
   JOIN_RESOLVE_RATE_LIMIT_PER_MINUTE,
   LEADERBOARD_RATE_LIMIT_PER_MINUTE,
+  PLAY_TEST_RATE_LIMIT_PER_MINUTE,
   METRICS_PATH,
 } from "./constants.ts";
 import type { AppDeps, ModuleDeps } from "./types.ts";
@@ -112,6 +113,12 @@ export async function createApp(deps: AppDeps) {
         limit: JOIN_RESOLVE_RATE_LIMIT_PER_MINUTE,
         windowMs: 60_000,
         key: ({ request }) => `rl:join:${assistantBucketOf(request.headers)}`,
+      },
+      playTest: {
+        limit: PLAY_TEST_RATE_LIMIT_PER_MINUTE,
+        windowMs: 60_000,
+        key: ({ principal }) =>
+          principal?.kind === "user" ? `rl:playtest:${principal.userId}` : null,
       },
       assistant: {
         limit: ASSISTANT_RATE_LIMIT_PER_MINUTE,
