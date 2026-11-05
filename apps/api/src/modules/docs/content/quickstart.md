@@ -75,7 +75,7 @@ curl -s -X POST http://localhost:3000/api/v1/sessions \
   "sessionToken": "…",
   "realtimeUrl": "ws://localhost:3001/rt/ses_…?token=…",
   "joinCode": "K7qZ2mX4pQ",
-  "playUrl": "http://localhost:3000/s/arcade/drift-kings/?sessionId=ses_…&code=K7qZ2mX4pQ"
+  "playUrl": "http://localhost:3000/s/arcade/drift-kings/?tournamentId=trn_…&externalUserId=player-1&code=K7qZ2mX4pQ"
 }
 ```
 

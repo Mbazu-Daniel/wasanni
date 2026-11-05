@@ -81,6 +81,7 @@ export type ReplayView = {
 export type SessionServiceDeps = {
   dispatcher: WebhookDispatcher;
   enqueuer: Enqueuer | null;
+  storage: ObjectStorage;
   apiBaseUrl: string;
   realtimeBaseUrl: string;
   verifier: ScoreVerifier | null;

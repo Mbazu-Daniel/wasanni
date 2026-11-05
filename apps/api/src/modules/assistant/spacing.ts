@@ -39,9 +39,10 @@ export const spaceSentences = (
   state: SpacingState,
   opts?: { glossary?: boolean },
 ): string => {
-  let text = `${state.word}${state.pending}${input}`;
+  let text = `${state.pending}${state.word}${input}`;
   state.word = "";
   state.pending = "";
+  if (text.startsWith(" ") && state.tail.endsWith(" ")) text = text.slice(1);
 
   let fixed = "";
   let capNext = state.cap;
@@ -93,7 +94,12 @@ export const spaceSentences = (
       continue;
     }
 
-    if (!state.fenced && !state.inline && /[A-Za-z0-9_.]/.test(character)) {
+    if (
+      !state.fenced &&
+      !state.inline &&
+      /[A-Za-z0-9_.]/.test(character) &&
+      (character !== "." || (next !== undefined && /[a-z0-9_.]/.test(next)))
+    ) {
       word += character;
       continue;
     }
@@ -129,9 +135,17 @@ export const spaceSentences = (
     fixed += character;
   }
 
-  state.word = word;
+  if (
+    word !== "" &&
+    (opts?.glossary !== true ||
+      !Object.keys(PROSE_WORDS).some((key) => key.length > word.length && key.startsWith(word)))
+  ) {
+    flushWord();
+  } else {
+    state.word = word;
+  }
   const held = /[ \u2014\u2013]{1,2}$/.exec(fixed);
-  if (held !== null) {
+  if (held !== null && /[\u2014\u2013]/.test(held[0])) {
     state.pending = held[0];
     fixed = fixed.slice(0, -held[0].length);
   }

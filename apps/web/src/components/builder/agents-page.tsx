@@ -74,6 +74,14 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
       ).then((response) => response.games),
   });
 
+  const { data: platforms = [] } = useQuery({
+    queryKey: ["platforms", organizationId],
+    queryFn: () =>
+      apiFetch<{ platforms: { id: string; name: string }[] }>(
+        `/api/v1/organizations/${organizationId}/platforms`,
+      ).then((response) => response.platforms),
+  });
+
   const { data: sessions = [], isPending: sessionsPending } = useQuery({
     queryKey: ["agents", organizationId, "sessions"],
     queryFn: () =>
@@ -567,6 +575,7 @@ export function AgentsPage({ org }: { org: BuilderOrg }) {
           orgSlug={org.slug}
           sessionId={sessionId}
           games={games}
+          platforms={platforms}
           selectedGameId={selectedGameId}
           onGameChange={(gameId) => void bindGame(gameId)}
           hasProviders={providers.length > 0}
