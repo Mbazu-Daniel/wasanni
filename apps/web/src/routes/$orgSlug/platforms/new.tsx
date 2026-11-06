@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiFetch, ApiError } from "@/lib/api-client";
 import { slugify } from "@/lib/utils";
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/$orgSlug/platforms/new")({
 function NewPlatformPage() {
   const { org } = Route.useRouteContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const organizationId = org?.id ?? "";
   const orgSlug = org?.slug ?? "";
@@ -46,6 +48,10 @@ function NewPlatformPage() {
       });
 
       toast.success("Platform created");
+      await queryClient.invalidateQueries({
+        queryKey: ["platforms", organizationId],
+        refetchType: "all",
+      });
       navigate({
         to: "/$orgSlug/platforms/$platformSlug",
         params: { orgSlug, platformSlug: platform.slug },
