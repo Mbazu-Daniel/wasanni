@@ -22,7 +22,7 @@ bun run dev
 ```
 
 `docker-compose.yml` runs Postgres on 5440, Redis on 6390 with
-`noeviction`, and LocalStack on 4566. `.env.example` points `DATABASE_URL` at
+`noeviction`, and LocalStack on 4570. `.env.example` points `DATABASE_URL` at
 Postgres directly; `createDb` still turns prepared statements off when the URL
 names a pooler port, so a pooler can be reintroduced without a code change. The
 api image is built by `Dockerfile` and published to ghcr.io by

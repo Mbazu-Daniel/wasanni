@@ -45,7 +45,7 @@ services:
       SERVICES: s3
       AWS_DEFAULT_REGION: us-east-1
       LS_LOG: warn
-    ports: ["4566:4566"]
+    ports: ["4570:4566"]
     volumes:
       - localstackdata:/var/lib/localstack
       - ./scripts/localstack:/etc/localstack/init/ready.d
